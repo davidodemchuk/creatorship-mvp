@@ -1600,8 +1600,7 @@ function BrandDashboard({nav}){
   CREATOR PORTAL
 ══════════════════════════════════════════════════════*/
 function CreatorPortal({nav}){
-  const[ttConnected,setTtConnected]=useState(false);
-  const[ttUser,setTtUser]=useState({});
+  const[ttStatus,setTtStatus]=useState({connected:false,displayName:"",followers:0,videos:0});
   const[tab,setTab]=useState("connect");
   const[toast,setToast]=useState(null);
   const[deals,setDeals]=useState(null);
@@ -1614,26 +1613,31 @@ function CreatorPortal({nav}){
     try{
       const r=await fetch("/api/tiktok/disconnect",{method:"POST",headers:{"Content-Type":"application/json"}});
       if(!r.ok)throw new Error("Disconnect failed");
-      setTtConnected(false);setTtUser({});fire("Disconnected");
+      setTtStatus({connected:false,displayName:"",followers:0,videos:0});
+      window.history.replaceState({},"","/");
+      window.location.reload();
     }catch(e){fire("Disconnect failed: "+(e.message||"try again"))}
   };
 
   useEffect(()=>{
-    fetch("/api/tiktok/status").then(r=>r.json()).then(d=>{if(d.connected){setTtConnected(true);setTtUser(d);setTab("deals")}}).catch(()=>{});
-    if(window.location.search?.includes("connected=true")){setTtConnected(true);setTab("deals");fire("TikTok connected!")}
+    fetch("/api/tiktok/status").then(r=>r.json()).then(d=>{
+      if(d.connected){setTtStatus({connected:true,displayName:d.display_name||"",followers:d.follower_count||0,videos:d.video_count||0});setTab("deals")}
+      else setTtStatus({connected:false,displayName:"",followers:0,videos:0});
+    }).catch(()=>{});
+    if(window.location.search?.includes("connected=true")){setTtStatus(s=>({...s,connected:true}));setTab("deals");fire("TikTok connected!")}
   },[]);
 
   useEffect(()=>{
-    if(!ttConnected||tab!=="deals")return;
+    if(!ttStatus.connected||tab!=="deals")return;
     setLoadingDeals(true);
     fetch("/api/creator/deals").then(r=>r.json()).then(d=>{setDeals(d);setLoadingDeals(false)}).catch(()=>setLoadingDeals(false));
-  },[ttConnected,tab]);
+  },[ttStatus.connected,tab]);
 
   useEffect(()=>{
-    if(!ttConnected||tab!=="earnings")return;
+    if(!ttStatus.connected||tab!=="earnings")return;
     setLoadingEarnings(true);
     fetch("/api/creator/earnings").then(r=>r.json()).then(d=>{setEarnings(d);setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
-  },[ttConnected,tab]);
+  },[ttStatus.connected,tab]);
 
   const Sidebar=()=><div style={{width:200,background:C.bg2,borderRight:"1px solid "+C.border,padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
     <div style={{padding:"0 16px 20px",cursor:"pointer"}} onClick={()=>nav("#/")}><span style={{fontSize:17,fontWeight:900,...gT(C.coral,C.gold)}}>Creator</span><span style={{fontSize:17,fontWeight:900,...gT(C.blue,C.teal)}}>ship</span><div style={{fontSize:10,color:C.dim,marginTop:1}}>Creator Portal</div></div>
@@ -1646,15 +1650,15 @@ function CreatorPortal({nav}){
     <div style={{flex:1,padding:"28px 36px",maxWidth:700}}>
 
     {tab==="connect"&&<div>
-      {ttConnected?<div>
+      {ttStatus.connected?<div>
         <h1 className="fu" style={{fontSize:24,fontWeight:800,marginBottom:4}}>TikTok Connected</h1>
         <p className="fu d1" style={{fontSize:13,color:C.sub,marginBottom:20}}>Your account is linked. Brands can discover your content.</p>
         <div className="gl fu d2" style={{padding:24,borderColor:C.green+"22"}}>
           <div style={{display:"flex",alignItems:"center",gap:16}}>
             <div style={{width:56,height:56,borderRadius:14,background:C.green+"12",border:"2px solid "+C.green+"30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>✓</div>
             <div style={{flex:1}}>
-              <div style={{fontSize:18,fontWeight:800,color:C.green}}>{ttUser.display_name||"Creator"}</div>
-              <div style={{fontSize:13,color:C.sub,marginTop:2}}>{fN(ttUser.follower_count||0)} followers · {ttUser.video_count||0} videos</div>
+              <div style={{fontSize:18,fontWeight:800,color:C.green}}>{ttStatus.displayName||"Creator"}</div>
+              <div style={{fontSize:13,color:C.sub,marginTop:2}}>{fN(ttStatus.followers||0)} followers · {ttStatus.videos||0} videos</div>
             </div>
             <button onClick={handleDisconnect} style={{padding:"8px 16px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Disconnect</button>
           </div>
@@ -1740,7 +1744,7 @@ function CreatorPortal({nav}){
     {tab==="deals"&&<div>
       <h1 className="fu" style={{fontSize:24,fontWeight:800,marginBottom:4}}>Brand Deals</h1>
       <p className="fu d1" style={{fontSize:13,color:C.sub,marginBottom:20}}>Brands have licensed your videos as Meta ads. You earn commission on every sale they drive.</p>
-      {!ttConnected?<div className="gl" style={{padding:36,textAlign:"center"}}><div style={{fontSize:28,marginBottom:10}}>🔗</div><div style={{fontSize:15,fontWeight:700,marginBottom:6}}>Connect TikTok to see deals</div><div style={{fontSize:13,color:C.dim}}>Brands can't find your content until you link your account.</div></div>:
+      {!ttStatus.connected?<div className="gl" style={{padding:36,textAlign:"center"}}><div style={{fontSize:28,marginBottom:10}}>🔗</div><div style={{fontSize:15,fontWeight:700,marginBottom:6}}>Connect TikTok to see deals</div><div style={{fontSize:13,color:C.dim}}>Brands can't find your content until you link your account.</div></div>:
       loadingDeals?<div className="gl" style={{padding:48,textAlign:"center",color:C.sub}}><span style={{display:"inline-block",width:20,height:20,border:"2px solid rgba(255,255,255,.1)",borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",marginRight:10,verticalAlign:"middle"}}/>Loading deals...</div>:
       <div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
@@ -1775,7 +1779,7 @@ function CreatorPortal({nav}){
     {tab==="earnings"&&<div>
       <h1 className="fu" style={{fontSize:24,fontWeight:800,marginBottom:4}}>Earnings</h1>
       <p className="fu d1" style={{fontSize:13,color:C.sub,marginBottom:20}}>Commission earned from Meta ads running your content.</p>
-      {!ttConnected?<div className="gl" style={{padding:36,textAlign:"center"}}><div style={{fontSize:28,marginBottom:10}}>🔗</div><div style={{fontSize:15,fontWeight:700,marginBottom:6}}>Connect TikTok first</div><div style={{fontSize:13,color:C.dim}}>Link your account to start receiving deals and earning commission.</div></div>:
+      {!ttStatus.connected?<div className="gl" style={{padding:36,textAlign:"center"}}><div style={{fontSize:28,marginBottom:10}}>🔗</div><div style={{fontSize:15,fontWeight:700,marginBottom:6}}>Connect TikTok first</div><div style={{fontSize:13,color:C.dim}}>Link your account to start receiving deals and earning commission.</div></div>:
       loadingEarnings?<div className="gl" style={{padding:48,textAlign:"center",color:C.sub}}><span style={{display:"inline-block",width:20,height:20,border:"2px solid rgba(255,255,255,.1)",borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",marginRight:10,verticalAlign:"middle"}}/>Loading earnings...</div>:
       <div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
