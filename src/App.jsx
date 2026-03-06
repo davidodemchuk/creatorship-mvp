@@ -276,122 +276,62 @@ function HeroSection({nav}){
 }
 
 /*══════════════════════════════════════════════════════
-  SECTION 2 — AI Pipeline Visual
+  SECTION 2 — AI Pipeline Visual (compact, time-saved focus)
 ══════════════════════════════════════════════════════*/
 function AutomationSection(){
   const steps=[
-    {n:"01",title:"You don't know who's selling your product",
-     desc:"Creatorship scans your TikTok Shop listing and surfaces every creator who's posted a video — with their views, engagement, and sales data attached.",
-     pain:"Hundreds of creators are making content about your product right now. You have no idea who they are, how their videos perform, or which ones are actually driving sales.",
-     result:"10 seconds",resultLabel:"to find every creator",icon:"🔍",color:C.teal,
-     visual:[{l:"Creators found",v:"47",c:C.teal},{l:"Videos scanned",v:"183",c:C.purple},{l:"Data points",v:"2,196",c:C.green}]},
-    {n:"02",title:"You can't tell which creators are worth it",
-     desc:"AI scores every video on real performance — views, engagement rate, hook quality, estimated GMV, and predicted ROAS. Only creators above your threshold qualify.",
-     pain:"You're guessing which content will convert. No scoring system, no ranking, no way to compare 50 creators side by side. You end up picking based on follower count alone.",
-     result:"Instant AI scoring",resultLabel:"ranked by real data",icon:"🧠",color:C.purple,
-     visual:[{l:"AI Score",v:"92",c:C.green},{l:"Est. GMV",v:"$14.2K",c:C.teal},{l:"Pred. ROAS",v:"4.2×",c:C.gold}]},
-    {n:"03",title:"Getting the video file takes forever",
-     desc:"Creatorship downloads the winning video directly from TikTok's CDN. No outreach. No waiting. No wrong file formats.",
-     pain:"You email the creator, wait 3 days for a reply, get the wrong aspect ratio, ask again, wait another 2 days. Half the time they never respond at all.",
-     result:"Instant download",resultLabel:"direct from CDN",icon:"⬇",color:C.teal,
-     visual:[{l:"Format",v:"MP4",c:C.teal},{l:"Quality",v:"1080p",c:C.green},{l:"Size",v:"18MB",c:C.dim}]},
-    {n:"04",title:"Building a Meta campaign is a 2-hour job",
-     desc:"AI uploads the video, creates the campaign, sets targeting, writes ad copy from the caption, and builds the creative — all in one click. Launches PAUSED for your review.",
-     pain:"Open Ads Manager. Upload video. Create campaign. Set objective. Build ad set. Choose targeting. Write copy. Create creative. Link ad. You do this per creator, per video.",
-     result:"One click",resultLabel:"full campaign built",icon:"🚀",color:C.coral,
-     visual:[{l:"Campaign",v:"Created",c:C.green},{l:"Ad Set",v:"US 18-65",c:C.teal},{l:"Budget",v:"$50/day",c:C.gold}]},
-    {n:"05",title:"You can't monitor every ad 24/7",
-     desc:"Creatorship tracks every campaign in real time. Auto-scales winners above 3× ROAS, pauses losers below 1×, and catches ad fatigue before you waste spend.",
-     pain:"You check performance once a day — if you remember. By the time you spot a losing ad, it's burned $500. By the time you notice fatigue, the ROAS has already tanked.",
-     result:"24/7 automated",resultLabel:"scale, pause, replace",icon:"📊",color:C.green,
-     visual:[{l:"ROAS",v:"3.8×",c:C.green},{l:"Spend",v:"$1,247",c:C.teal},{l:"Revenue",v:"$4,738",c:C.gold}]},
-    {n:"06",title:"Paying creators is a monthly headache",
-     desc:"Creators get paid automatically. You keep your profit. Creatorship takes 4% of GMV. Stripe handles weekly payouts. No invoices, no chasing.",
-     pain:"You're tracking commissions in spreadsheets, sending PayPal transfers manually, chasing creators for W-9s, and spending hours on accounting that adds zero revenue.",
-     result:"Automated weekly",resultLabel:"zero manual payouts",icon:"💰",color:C.gold,
-     visual:[{l:"Creator",v:"10%",c:C.coral},{l:"Platform",v:"4%",c:C.teal},{l:"You keep",v:"86%",c:C.green}]},
+    {old:"Manual research",new:"10 sec",icon:"🔍",color:C.teal,visual:[{l:"Creators",v:"47"},{l:"Videos",v:"183"}]},
+    {old:"Guessing who converts",new:"AI ranked",icon:"🧠",color:C.purple,visual:[{l:"AI Score",v:"92"},{l:"Est. GMV",v:"$14K"}]},
+    {old:"3–7 days for video",new:"Instant",icon:"⬇",color:C.teal,visual:[{l:"Format",v:"MP4"},{l:"Quality",v:"1080p"}]},
+    {old:"2 hrs per campaign",new:"One click",icon:"🚀",color:C.coral,visual:[{l:"Campaign",v:"Built"},{l:"Targeting",v:"Set"}]},
+    {old:"Check daily",new:"24/7 AI",icon:"📊",color:C.green,visual:[{l:"ROAS",v:"3.8×"},{l:"Auto-scale",v:"On"}]},
+    {old:"Spreadsheet payouts",new:"Weekly auto",icon:"💰",color:C.gold,visual:[{l:"Creator",v:"10%"},{l:"You keep",v:"86%"}]},
   ];
 
-  return <section style={{background:C.bg2,padding:"100px 40px",position:"relative"}}>
+  return <section style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
     <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
     <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
-    <div style={{maxWidth:1000,margin:"0 auto"}}>
-      <div style={{textAlign:"center",marginBottom:64}}>
-        <div className="fu mono" style={{fontSize:11,fontWeight:700,letterSpacing:".15em",color:C.teal,textTransform:"uppercase",marginBottom:10}}>The Full Pipeline</div>
-        <h2 className="fu d1" style={{fontSize:42,fontWeight:900,letterSpacing:"-.03em"}}>Six steps. <span style={gT(C.teal,C.green)}>Fully automated.</span></h2>
-        <p className="fu d2" style={{fontSize:16,color:C.sub,marginTop:12,maxWidth:550,margin:"12px auto 0"}}>Every pain point you've felt managing creator content — solved by AI in minutes instead of weeks.</p>
+    <div style={{maxWidth:960,margin:"0 auto"}}>
+      <div style={{textAlign:"center",marginBottom:48}}>
+        <div className="fu mono" style={{fontSize:11,fontWeight:700,letterSpacing:".15em",color:C.teal,textTransform:"uppercase",marginBottom:8}}>The Full Pipeline</div>
+        <h2 className="fu d1" style={{fontSize:36,fontWeight:900,letterSpacing:"-.03em"}}>Six steps. <span style={gT(C.teal,C.green)}>Fully automated.</span></h2>
+        <p className="fu d2" style={{fontSize:14,color:C.sub,marginTop:8}}>AI turns weeks of work into minutes.</p>
       </div>
 
-      {/* Pipeline */}
-      <div style={{position:"relative"}}>
-        {/* Vertical line */}
-        <div style={{position:"absolute",left:32,top:0,bottom:0,width:2,background:g(C.teal+"30",C.green+"30",C.gold+"30"),zIndex:0}}/>
-
+      {/* Compact visual pipeline — old way → AI way */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
         {steps.map((s,i)=>(
-          <div key={i} className={"fu d"+Math.min(i+1,5)} style={{position:"relative",display:"flex",gap:28,marginBottom:i<steps.length-1?36:0,alignItems:"flex-start"}}>
-            {/* Step number node */}
-            <div style={{width:66,flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",zIndex:1}}>
-              <div style={{width:46,height:46,borderRadius:"50%",background:s.color+"15",border:"2px solid "+s.color+"40",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,position:"relative"}}>
-                <div style={{position:"absolute",inset:-4,borderRadius:"50%",background:s.color,filter:"blur(16px)",opacity:.12}}/>
-                {s.icon}
+          <div key={i} className="gl fu" style={{padding:20,display:"flex",flexDirection:"column",gap:12,animationDelay:(i*0.05)+"s"}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{width:40,height:40,borderRadius:12,background:s.color+"15",border:"1px solid "+s.color+"30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{s.icon}</div>
+              <div>
+                <div style={{fontSize:10,color:C.dim,textDecoration:"line-through"}}>{s.old}</div>
+                <div className="mono" style={{fontSize:15,fontWeight:800,color:C.green}}>→ {s.new}</div>
               </div>
-              <div className="mono" style={{fontSize:10,fontWeight:800,color:s.color,marginTop:6,letterSpacing:".05em"}}>{s.n}</div>
             </div>
-
-            {/* Content card */}
-            <div className="gl" style={{flex:1,padding:0,overflow:"hidden"}}>
-              <div style={{display:"flex"}}>
-                {/* Main content */}
-                <div style={{flex:1,padding:"24px 28px"}}>
-                  {/* Title */}
-                  <div style={{fontSize:20,fontWeight:800,letterSpacing:"-.02em",color:C.text,lineHeight:1.25,marginBottom:14}}>{s.title}</div>
-
-                  {/* Pain — readable, no boxes */}
-                  <p style={{fontSize:14,color:"#8a92a8",lineHeight:1.65,margin:"0 0 16px"}}>{s.pain}</p>
-
-                  {/* Divider */}
-                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
-                    <div style={{height:1,flex:1,background:C.border}}/>
-                    <span style={{fontSize:10,fontWeight:700,letterSpacing:".1em",color:s.color,textTransform:"uppercase",flexShrink:0}}>Creatorship solves this</span>
-                    <div style={{height:1,flex:1,background:C.border}}/>
-                  </div>
-
-                  {/* Solution */}
-                  <p style={{fontSize:14,color:C.text,lineHeight:1.65,margin:"0 0 14px"}}>{s.desc}</p>
-
-                  {/* Result tag */}
-                  <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"7px 14px",background:C.green+"08",borderRadius:8,border:"1px solid "+C.green+"12"}}>
-                    <span className="mono" style={{fontSize:15,fontWeight:800,color:C.green}}>{s.result}</span>
-                    <span style={{fontSize:12,color:C.green+"bb"}}>{s.resultLabel}</span>
-                  </div>
+            <div style={{display:"flex",gap:16,marginTop:4}}>
+              {s.visual.map((v,vi)=>(
+                <div key={vi}>
+                  <div style={{fontSize:9,color:C.dim,textTransform:"uppercase"}}>{v.l}</div>
+                  <div className="mono" style={{fontSize:16,fontWeight:800,color:s.color}}>{v.v}</div>
                 </div>
-
-                {/* Right visual panel */}
-                <div style={{width:150,borderLeft:"1px solid "+C.border,padding:"20px 16px",display:"flex",flexDirection:"column",justifyContent:"center",gap:12,background:"rgba(255,255,255,.008)"}}>
-                  {s.visual.map((v,vi)=>(
-                    <div key={vi}>
-                      <div style={{fontSize:9,fontWeight:700,color:C.dim,letterSpacing:".08em",textTransform:"uppercase",marginBottom:3}}>{v.l}</div>
-                      <div className="mono" style={{fontSize:22,fontWeight:800,color:v.c}}>{v.v}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
 
       {/* Bottom summary */}
-      <div className="fu d5" style={{marginTop:48,textAlign:"center"}}>
-        <div className="gl" style={{display:"inline-flex",gap:32,padding:"20px 40px",alignItems:"center"}}>
+      <div className="fu d5" style={{marginTop:36,textAlign:"center"}}>
+        <div className="gl" style={{display:"inline-flex",gap:32,padding:"18px 36px",alignItems:"center"}}>
           {[
             {v:"6 steps",l:"fully automated",c:C.teal},
-            {v:"< 2 min",l:"paste URL to live campaign",c:C.green},
-            {v:"$0",l:"monthly platform cost",c:C.gold},
-            {v:"24/7",l:"AI monitoring & optimization",c:C.teal},
+            {v:"< 2 min",l:"URL → live campaign",c:C.green},
+            {v:"$0",l:"monthly fee",c:C.gold},
+            {v:"24/7",l:"AI monitoring",c:C.teal},
           ].map((s,i)=>(
             <div key={i} style={{textAlign:"center"}}>
-              <div className="mono" style={{fontSize:20,fontWeight:800,color:s.c}}>{s.v}</div>
+              <div className="mono" style={{fontSize:18,fontWeight:800,color:s.c}}>{s.v}</div>
               <div style={{fontSize:10,color:C.dim,marginTop:2}}>{s.l}</div>
             </div>
           ))}
