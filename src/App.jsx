@@ -583,7 +583,8 @@ function Homepage({nav}){
 function BrandDashboard({nav}){
   const[tab,setTab]=useState("scan");
   const[metaToken,setMetaToken]=useState(KEYS.metaToken);
-  const[productUrl,setProductUrl]=useState("https://www.tiktok.com/shop/pdp/intake-breathing/1729534724196766508");
+  const[brandName,setBrandName]=useState("");
+  const[storeName,setStoreName]=useState("");
   const[commission,setCommission]=useState(10);
   const[gmvFloor,setGmvFloor]=useState(200);
   const[price,setPrice]=useState(39.99);
@@ -659,12 +660,14 @@ function BrandDashboard({nav}){
     if(!camps.some(c=>c.isDemo))ensureDemo();
   },[tab,camps]);
 
-  const isStoreUrl=(url)=>/tiktok\.com\/shop\/store\//i.test(url)||/tiktok\.com\/shop\/[^/]+\/\d+/i.test(url)&&!/pdp/i.test(url);
+  const getStoreUrl=()=>{const s=(storeName||"").trim().replace(/^@/,"");return s?"https://www.tiktok.com/shop/@"+s:""};
+  const storeUrl=getStoreUrl();
 
   const fetchStore=async()=>{
+    if(!storeUrl)return;
     setLoadingStore(true);setStoreProducts(null);setStoreInfo(null);
     try{
-      const r=await fetch("/api/store",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scrapeKey:KEYS.scrape,storeUrl:productUrl})});
+      const r=await fetch("/api/store",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scrapeKey:KEYS.scrape,storeUrl})});
       const d=await r.json();
       if(d.error)throw new Error(d.error);
       setStoreInfo(d.shop);setStoreProducts(d.products||[]);
@@ -673,18 +676,18 @@ function BrandDashboard({nav}){
   };
 
   const selectProduct=(p)=>{
-    setProductUrl(p.url||("https://www.tiktok.com/shop/product/"+p.id));
     setPrice(+p.price||39.99);
     setSelectedStoreProduct(p);
   };
   const backToStore=()=>{
     setSelectedStoreProduct(null);
-    setProductUrl("");
   };
 
   const runScan=async()=>{
     setScanning(true);setError(null);
-    try{const r=await fetch("/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scrapeKey:KEYS.scrape,productUrl,commission,gmvFloor,productPrice:price})});const d=await r.json();if(d.error)throw new Error(d.error);setScan(d);setTab("results")}catch(e){setError(e.message)}
+    const urlToScan=selectedStoreProduct?.url||storeUrl;
+    if(!urlToScan){setError("Enter TikTok Shop store name to scan");return}
+    try{const r=await fetch("/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({scrapeKey:KEYS.scrape,productUrl:urlToScan,commission,gmvFloor,productPrice:price})});const d=await r.json();if(d.error)throw new Error(d.error);setScan(d);setTab("results")}catch(e){setError(e.message)}
     setScanning(false);
   };
 
@@ -805,26 +808,35 @@ function BrandDashboard({nav}){
       return <div>
       <div className="fu" style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
         <div>
-          <h1 style={{fontSize:24,fontWeight:800,letterSpacing:"-.02em",marginBottom:4}}>Find Winning Creator Content</h1>
-          <p style={{fontSize:13,color:"#8a92a8"}}>Scan any TikTok Shop product to discover creators already driving sales — then launch their videos as Meta ads in 90 seconds.</p>
+          <h1 style={{fontSize:24,fontWeight:800,letterSpacing:"-.02em",marginBottom:4}}>Creator Discovery</h1>
+          <p style={{fontSize:13,color:"#8a92a8"}}>Enter your brand and store name. We'll find every TikTok creator already talking about your products.</p>
         </div>
         {scan&&<button onClick={()=>setTab("results")} style={{padding:"8px 16px",background:C.teal+"10",border:"1px solid "+C.teal+"20",borderRadius:8,color:C.teal,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0,marginLeft:16}}>View Results ({scan.qualified?.length||0}) →</button>}
       </div>
 
-      {/* Step 1: Product URL */}
+      {/* Step 1: Brand & Store */}
       <div className="gl fu d1" style={{padding:0,overflow:"hidden",marginBottom:16}}>
         <div style={{padding:"14px 20px",borderBottom:"1px solid "+C.border,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <div style={{width:22,height:22,borderRadius:6,background:C.teal+"12",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,color:C.teal}}>1</div>
-            <span style={{fontSize:13,fontWeight:700,color:C.text}}>TikTok Shop Product</span>
+            <span style={{fontSize:13,fontWeight:700,color:C.text}}>Your TikTok Shop</span>
           </div>
-          <div style={{fontSize:10,color:C.dim}}>Paste a product URL or a store URL to browse all products</div>
+          <div style={{fontSize:10,color:C.dim}}>Enter brand and store handle to browse products or scan</div>
         </div>
         <div style={{padding:"16px 20px"}}>
-          <div style={{display:"flex",gap:8}}>
-            <input value={productUrl} onChange={e=>{setProductUrl(e.target.value);setStoreProducts(null);setStoreInfo(null);setSelectedStoreProduct(null)}} placeholder="https://www.tiktok.com/shop/store/brand-name/... or /pdp/..." style={{flex:1,padding:"11px 14px",background:"rgba(255,255,255,.03)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"'JetBrains Mono'",outline:"none"}} onFocus={e=>e.target.style.borderColor=C.teal} onBlur={e=>e.target.style.borderColor=C.border}/>
-            {isStoreUrl(productUrl)&&!storeProducts&&<button onClick={fetchStore} disabled={loadingStore} style={{padding:"0 16px",background:C.teal,border:"none",borderRadius:8,color:C.bg,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0,opacity:loadingStore?.5:1}}>{loadingStore?"Loading...":"Browse Products"}</button>}
-            {productUrl&&<button onClick={()=>{setProductUrl("");setStoreProducts(null);setStoreInfo(null);setSelectedStoreProduct(null)}} style={{padding:"0 12px",background:"rgba(255,255,255,.03)",border:"1px solid "+C.border,borderRadius:8,color:C.dim,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Clear</button>}
+          <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:180}}>
+              <label style={{fontSize:11,fontWeight:600,color:C.sub,display:"block",marginBottom:6}}>Brand Name</label>
+              <input value={brandName} onChange={e=>{setBrandName(e.target.value);setStoreProducts(null);setStoreInfo(null);setSelectedStoreProduct(null)}} placeholder="e.g. Intake Breathing" style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,.03)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit",outline:"none"}} onFocus={e=>e.target.style.borderColor=C.teal} onBlur={e=>e.target.style.borderColor=C.border}/>
+            </div>
+            <div style={{flex:1,minWidth:180}}>
+              <label style={{fontSize:11,fontWeight:600,color:C.sub,display:"block",marginBottom:6}}>TikTok Shop Store Name</label>
+              <div style={{display:"flex",gap:8}}>
+                <input value={storeName} onChange={e=>{setStoreName(e.target.value);setStoreProducts(null);setStoreInfo(null);setSelectedStoreProduct(null)}} placeholder="e.g. intakebreathing" style={{flex:1,padding:"11px 14px",background:"rgba(255,255,255,.03)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"'JetBrains Mono'",outline:"none"}} onFocus={e=>e.target.style.borderColor=C.teal} onBlur={e=>e.target.style.borderColor=C.border}/>
+                {storeUrl&&!storeProducts&&<button onClick={fetchStore} disabled={loadingStore} style={{padding:"0 16px",background:C.teal,border:"none",borderRadius:8,color:C.bg,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0,opacity:loadingStore?.5:1}}>{loadingStore?"Loading...":"Browse Products"}</button>}
+                {(brandName||storeName)&&<button onClick={()=>{setBrandName("");setStoreName("");setStoreProducts(null);setStoreInfo(null);setSelectedStoreProduct(null)}} style={{padding:"0 12px",background:"rgba(255,255,255,.03)",border:"1px solid "+C.border,borderRadius:8,color:C.dim,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Clear</button>}
+              </div>
+            </div>
           </div>
 
           {/* Store product picker — show list when no product selected */}
@@ -1029,9 +1041,9 @@ function BrandDashboard({nav}){
             ))}
           </div>
 
-          <button onClick={runScan} disabled={scanning||!productUrl} style={{width:"100%",padding:14,background:(!productUrl)?C.dim:C.teal,color:C.bg,fontSize:14,fontWeight:700,border:"none",borderRadius:8,cursor:(!productUrl)?"not-allowed":"pointer",fontFamily:"inherit",opacity:scanning?.5:1,letterSpacing:"-.01em",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+          <button onClick={runScan} disabled={scanning||!storeUrl} style={{width:"100%",padding:14,background:(!storeUrl)?C.dim:C.teal,color:C.bg,fontSize:14,fontWeight:700,border:"none",borderRadius:8,cursor:(!storeUrl)?"not-allowed":"pointer",fontFamily:"inherit",opacity:scanning?.5:1,letterSpacing:"-.01em",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
             {scanning?<><span style={{display:"inline-block",width:14,height:14,border:"2px solid rgba(0,0,0,.2)",borderTopColor:C.bg,borderRadius:"50%",animation:"pulse 1s infinite"}}/>Scanning affiliate creators...</>:
-            !productUrl?"Enter a TikTok Shop product URL above":"Scan Product for Creators →"}
+            !storeUrl?"Enter TikTok Shop store name above":"Scan Product for Creators →"}
           </button>
           {error&&<div style={{marginTop:12,padding:"10px 14px",background:C.coral+"08",border:"1px solid "+C.coral+"18",borderRadius:8,fontSize:12,color:C.coral,display:"flex",alignItems:"center",gap:8}}>
             {error}

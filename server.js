@@ -17,11 +17,13 @@ const VIDEO_DIR = path.join(__dirname, 'videos');
 const DATA_DIR = path.join(__dirname, 'data');
 
 // ═══ CONFIG ═══
-// Set TUNNEL_URL env var when running with cloudflared
+// TUNNEL_URL: base URL when using ngrok/cloudflared (e.g. https://xxx.ngrok.io)
+// TIKTOK_REDIRECT_URI: override - must match EXACTLY what's in TikTok Developer Portal > Login Kit
+// TikTok requires HTTPS for web (localhost may fail). Use ngrok: ngrok http 3001
 const TUNNEL_URL = process.env.TUNNEL_URL || 'http://localhost:3001';
+const REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI || (TUNNEL_URL + '/auth/tiktok/callback');
 const TT_CLIENT_KEY = 'sbawac1agovodah2p9';
 const TT_CLIENT_SECRET = 'EdFAfJUJtKHXDLPgenNkHlt788y1dHZX';
-const REDIRECT_URI = TUNNEL_URL + '/auth/tiktok/callback';
 
 function ensureDir(d) { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); }
 function saveJson(f, d) { fs.writeFileSync(f, JSON.stringify(d, null, 2)); }
@@ -845,7 +847,10 @@ app.listen(3001, () => {
   console.log('');
   console.log('  Creatorship API: http://localhost:3001');
   console.log('  Tunnel URL:      ' + TUNNEL_URL);
-  console.log('  Redirect URI:    ' + REDIRECT_URI);
-  console.log('  Verify file:     ' + TUNNEL_URL + '/auth/tiktok/callback/tiktokkMo4lcclKQtMA9J4mUi9oZCD9XrdJh5U.txt');
+  console.log('  TikTok Redirect: ' + REDIRECT_URI);
+  if (!REDIRECT_URI.startsWith('https')) {
+    console.log('  ⚠ TikTok Login Kit requires HTTPS. For local dev, run: ngrok http 3001');
+    console.log('  Then set TUNNEL_URL=https://YOUR-NGROK-URL and add that redirect in TikTok Developer Portal.');
+  }
   console.log('');
 });
