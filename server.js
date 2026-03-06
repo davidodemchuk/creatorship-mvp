@@ -7,7 +7,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -830,6 +831,14 @@ app.get('/terms', (req, res) => {
 app.get('/privacy', (req, res) => {
   res.send('<html><body style="font-family:sans-serif;max-width:600px;margin:60px auto;padding:0 20px"><h1>Creatorship Privacy Policy</h1><p>We collect your TikTok display name, follower count, and public video data. We never post on your behalf. Data is used solely to match your content with brand advertising opportunities. We do not sell your data.</p></body></html>');
 });
+
+// ═══ STATIC (Vite build) — production only ═══
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
+}
 
 // ═══ START ═══
 app.listen(3001, () => {

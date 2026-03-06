@@ -1610,6 +1610,14 @@ function CreatorPortal({nav}){
   const[loadingEarnings,setLoadingEarnings]=useState(false);
   const fire=useCallback(m=>{setToast(m);setTimeout(()=>setToast(null),4000)},[]);
 
+  const handleDisconnect=async()=>{
+    try{
+      const r=await fetch("/api/tiktok/disconnect",{method:"POST",headers:{"Content-Type":"application/json"}});
+      if(!r.ok)throw new Error("Disconnect failed");
+      setTtConnected(false);setTtUser({});fire("Disconnected");
+    }catch(e){fire("Disconnect failed: "+(e.message||"try again"))}
+  };
+
   useEffect(()=>{
     fetch("/api/tiktok/status").then(r=>r.json()).then(d=>{if(d.connected){setTtConnected(true);setTtUser(d);setTab("deals")}}).catch(()=>{});
     if(window.location.search?.includes("connected=true")){setTtConnected(true);setTab("deals");fire("TikTok connected!")}
@@ -1648,7 +1656,7 @@ function CreatorPortal({nav}){
               <div style={{fontSize:18,fontWeight:800,color:C.green}}>{ttUser.display_name||"Creator"}</div>
               <div style={{fontSize:13,color:C.sub,marginTop:2}}>{fN(ttUser.follower_count||0)} followers · {ttUser.video_count||0} videos</div>
             </div>
-            <button onClick={async()=>{await fetch("/api/tiktok/disconnect",{method:"POST"});setTtConnected(false);setTtUser({});fire("Disconnected")}} style={{padding:"8px 16px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Disconnect</button>
+            <button onClick={handleDisconnect} style={{padding:"8px 16px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Disconnect</button>
           </div>
         </div>
         <div className="gl fu d3" style={{padding:20,marginTop:12}}>

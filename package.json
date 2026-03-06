@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js & npx vite",
+    "build": "vite build",
+    "start": "node server.js",
     "server": "node server.js",
-    "client": "npx vite",
-    "build": "vite build"
+    "client": "npx vite"
   },
   "dependencies": {
     "react": "^18.2.0",
