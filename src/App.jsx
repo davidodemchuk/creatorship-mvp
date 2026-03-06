@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { Routes, Route, useNavigate, Link } from "react-router-dom";
 
 /*══════════════════════════════════════════════════════
   CREATORSHIP MVP
@@ -38,7 +39,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bor
 input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing}
 `;
 
-function useRoute(){const[r,s]=useState(window.location.hash.slice(1)||"/");useEffect(()=>{const h=()=>s(window.location.hash.slice(1)||"/");window.addEventListener("hashchange",h);return()=>window.removeEventListener("hashchange",h)},[]);return[r,r2=>{window.location.hash=r2}]}
+const navPath=(p)=>(p||'/').replace(/^#/,'')||'/';
 
 /*══════════════════════════════════════════════════════
   ROI CALCULATOR
@@ -206,7 +207,7 @@ function ROICalculator({nav}){
             </div>
           ))}
         </div>
-        <button onClick={()=>nav("#/brand")} style={{padding:"10px 24px",background:C.teal,color:C.bg,fontSize:13,fontWeight:700,border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit"}}>Start Free →</button>
+        <Link to="/brand" style={{padding:"10px 24px",background:C.teal,color:C.bg,fontSize:13,fontWeight:700,border:"none",borderRadius:8,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"inline-block"}}>Start Free →</Link>
       </div>
     </div>
   </div>;
@@ -265,8 +266,8 @@ function HeroSection({nav}){
       </p>
 
       <div className="fu d3" style={{display:"flex",gap:12,justifyContent:"center"}}>
-        <button onClick={()=>nav("#/brand")} style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em"}}>I'm a Brand →</button>
-        <button onClick={()=>nav("#/creator")} style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em"}}>I'm a Creator</button>
+        <Link to="/brand" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>I'm a Brand →</Link>
+        <Link to="/creator" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>I'm a Creator</Link>
       </div>
 
       <ROICalculator nav={nav}/>
@@ -467,7 +468,7 @@ function EarnSection({nav}){
             <div style={{textAlign:"center",padding:"12px 16px",background:"rgba(255,255,255,.02)",borderRadius:8,border:"1px solid "+C.border}}>
               <div style={{fontSize:13,color:"#8a92a8",lineHeight:1.5}}>All from videos you already posted. No extra work. No uploads. No negotiations.</div>
             </div>
-            <button onClick={()=>nav("#/creator")} style={{marginTop:16,width:"100%",padding:"13px 0",background:C.coral,border:"none",borderRadius:10,color:C.bg,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Connect TikTok — Start Earning →</button>
+            <Link to="/creator" style={{marginTop:16,width:"100%",padding:"13px 0",background:C.coral,border:"none",borderRadius:10,color:C.bg,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"block",textAlign:"center"}}>Connect TikTok — Start Earning →</Link>
           </div>
         </div>
       </div>
@@ -541,7 +542,7 @@ function EarnSection({nav}){
               <div style={{marginTop:6,fontSize:12,color:C.teal,textAlign:"center",fontWeight:600}}>Test every creator. Even the ones that "weren't worth the time" before.</div>
             </div>
 
-            <button onClick={()=>nav("#/brand")} style={{width:"100%",padding:"13px 0",background:C.teal,border:"none",borderRadius:10,color:C.bg,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Launch Your First Campaign →</button>
+            <Link to="/brand" style={{width:"100%",padding:"13px 0",background:C.teal,border:"none",borderRadius:10,color:C.bg,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"block",textAlign:"center"}}>Launch Your First Campaign →</Link>
           </div>
         </div>
       </div>
@@ -564,10 +565,10 @@ function CTASection(){
 function Homepage({nav}){
   return <div>
     <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:100,padding:"14px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(3,7,17,.85)",backdropFilter:"blur(20px)",borderBottom:"1px solid "+C.border}}>
-      <div style={{fontSize:20,fontWeight:900,cursor:"pointer"}} onClick={()=>nav("#/")}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></div>
+      <Link to="/" style={{fontSize:20,fontWeight:900,cursor:"pointer",textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
       <div style={{display:"flex",gap:8}}>
-        <button onClick={()=>nav("#/brand")} style={{padding:"8px 20px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Brands</button>
-        <button onClick={()=>nav("#/creator")} style={{padding:"8px 20px",background:C.teal,border:"none",borderRadius:8,color:C.bg,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Creators</button>
+        <Link to="/brand" style={{padding:"8px 20px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Brands</Link>
+        <Link to="/creator" style={{padding:"8px 20px",background:C.teal,border:"none",borderRadius:8,color:C.bg,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Creators</Link>
       </div>
     </nav>
     <HeroSection nav={nav}/>
@@ -1626,8 +1627,7 @@ function CreatorPortal({nav}){
       const r=await fetch("/api/tiktok/disconnect",{method:"POST",headers:{"Content-Type":"application/json"}});
       if(!r.ok)throw new Error("Disconnect failed");
       setTtStatus({connected:false,displayName:"",followers:0,videos:0});
-      window.history.replaceState({},"","/");
-      window.location.reload();
+      nav("/");
     }catch(e){fire("Disconnect failed: "+(e.message||"try again"))}
   };
 
@@ -1833,15 +1833,185 @@ function CreatorPortal({nav}){
 }
 
 /*══════════════════════════════════════════════════════
+  BRAND PORTAL — login/signup + brand dashboard
+══════════════════════════════════════════════════════*/
+const BRAND_STORAGE = 'creatorship_brand';
+
+function BrandAuthForm({ onSuccess }) {
+  const [mode, setMode] = useState('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [storeName, setStoreName] = useState('');
+  const [brandName, setBrandName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const fire = useCallback(m => { setError(m); setTimeout(() => setError(null), 4000); }, []);
+
+  const submit = async () => {
+    setError(null);
+    if (mode === 'signup' && (!storeName.trim() || !brandName.trim())) {
+      fire('Store name and brand name required');
+      return;
+    }
+    if (!email.trim() || !password) { fire('Email and password required'); return; }
+    setLoading(true);
+    try {
+      const ep = mode === 'signup' ? '/api/brands/signup' : '/api/brands/login';
+      const body = mode === 'signup' ? { email, password, storeName, brandName } : { email, password };
+      const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      localStorage.setItem(BRAND_STORAGE, JSON.stringify({ id: d.id, email: d.email, storeName: d.storeName, brandName: d.brandName }));
+      onSuccess(d);
+    } catch (e) { fire(e.message || 'Failed'); }
+    setLoading(false);
+  };
+
+  return <div className="gl" style={{maxWidth:420,margin:"80px auto",padding:32}}>
+    <h1 style={{fontSize:24,fontWeight:800,marginBottom:8}}>{mode==='login'?'Brand Login':'Create Account'}</h1>
+    <p style={{fontSize:13,color:C.sub,marginBottom:24}}>{mode==='login'?'Sign in to your brand dashboard.':'Sign up to get started.'}</p>
+    {mode==='signup'&&<>
+      <input type="text" placeholder="Brand name" value={brandName} onChange={e=>setBrandName(e.target.value)}
+        style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+      <input type="text" placeholder="Store name (TikTok @handle)" value={storeName} onChange={e=>setStoreName(e.target.value)}
+        style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+    </>}
+    <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)}
+      style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+    <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)}
+      style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:16,fontFamily:"inherit"}}/>
+    {error&&<div style={{color:C.coral,fontSize:13,marginBottom:12}}>{error}</div>}
+    <button onClick={submit} disabled={loading} style={{width:"100%",padding:"14px",background:C.teal,color:C.bg,border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer",fontFamily:"inherit"}}>{loading?'...':mode==='login'?'Sign In':'Sign Up'}</button>
+    <div style={{marginTop:16,fontSize:13,color:C.sub,textAlign:"center"}}>
+      {mode==='login'?'No account? ':'Already have an account? '}
+      <button onClick={()=>{setMode(m=>m==='login'?'signup':'login');setError(null)}} style={{background:"none",border:"none",color:C.teal,cursor:"pointer",fontWeight:600,fontFamily:"inherit",fontSize:13}}>{mode==='login'?'Sign up':'Log in'}</button>
+    </div>
+  </div>;
+}
+
+function BrandDashboardView({ brand, nav }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch('/api/brand/dashboard?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
+  }, [brand.id]);
+
+  const logout = () => { localStorage.removeItem(BRAND_STORAGE); window.location.href = '/brand'; };
+
+  return <div style={{minHeight:"100vh",background:C.bg}}>
+    <nav style={{padding:"14px 32px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
+      <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
+      <div style={{display:"flex",alignItems:"center",gap:16}}>
+        <span style={{fontSize:13,color:C.sub}}>{brand.storeName}</span>
+        <button onClick={logout} style={{padding:"8px 16px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Logout</button>
+      </div>
+    </nav>
+    <div style={{padding:"32px 40px",maxWidth:900,margin:"0 auto"}}>
+      <h1 style={{fontSize:28,fontWeight:800,marginBottom:8}}>{brand.brandName}</h1>
+      <p style={{fontSize:14,color:C.sub,marginBottom:28}}>Store: @{brand.storeName}</p>
+      {loading ? <div style={{color:C.sub}}>Loading...</div> : <div style={{display:"grid",gap:16}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
+          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Store</div><div className="mono" style={{fontSize:22,fontWeight:800,color:C.teal,marginTop:4}}>@{data?.storeName||brand.storeName}</div></div>
+          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Creators</div><div className="mono" style={{fontSize:22,fontWeight:800,color:C.green,marginTop:4}}>{data?.creators?.length||0}</div></div>
+          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Campaigns</div><div className="mono" style={{fontSize:22,fontWeight:800,color:C.gold,marginTop:4}}>{data?.campaigns?.length||0}</div></div>
+        </div>
+        <div className="gl" style={{padding:0,overflow:"hidden"}}>
+          <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,fontSize:12,fontWeight:700,color:C.dim}}>Creator pipeline</div>
+          {data?.creators?.length ? <div style={{maxHeight:200,overflow:"auto"}}>
+            {data.creators.slice(0,8).map((c,i)=><div key={i} style={{padding:"12px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontWeight:600}}>{c.creator}</span>
+              <span className="mono" style={{color:C.teal,fontSize:13}}>AI {c.ai_score}</span>
+            </div>)}
+          </div> : <div style={{padding:32,textAlign:"center",color:C.dim}}>Run a scan in the admin dashboard to find creators.</div>}
+        </div>
+        <div className="gl" style={{padding:0,overflow:"hidden"}}>
+          <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,fontSize:12,fontWeight:700,color:C.dim}}>Campaigns</div>
+          {data?.campaigns?.length ? <div style={{maxHeight:200,overflow:"auto"}}>
+            {data.campaigns.map((c,i)=><div key={i} style={{padding:"12px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span>{c.productTitle||c.creator}</span>
+              <span style={{fontSize:12,color:C.sub}}>{c.launchedAt?.slice(0,10)}</span>
+            </div>)}
+          </div> : <div style={{padding:32,textAlign:"center",color:C.dim}}>No campaigns yet. Contact admin to launch.</div>}
+        </div>
+      </div>}
+    </div>
+  </div>;
+}
+
+function BrandPortal() {
+  const navigate = useNavigate();
+  const nav = (p) => navigate(navPath(p));
+  const [brand, setBrand] = useState(() => {
+    try { const j = localStorage.getItem(BRAND_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
+  });
+  if (brand) return <BrandDashboardView brand={brand} nav={nav} />;
+  return <div style={{minHeight:"100vh",background:C.bg}}>
+    <nav style={{padding:"14px 32px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
+      <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
+    </nav>
+    <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} />
+  </div>;
+}
+
+/*══════════════════════════════════════════════════════
+  ADMIN PORTAL — password gate + full brand dashboard
+══════════════════════════════════════════════════════*/
+const ADMIN_STORAGE = 'creatorship_admin';
+
+function AdminPasswordGate({ onSuccess }) {
+  const [pw, setPw] = useState('');
+  const [err, setErr] = useState(false);
+  const submit = async () => {
+    const r = await fetch('/api/admin/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
+    const d = await r.json();
+    if (d.ok) { sessionStorage.setItem(ADMIN_STORAGE, '1'); onSuccess(); }
+    else setErr(true);
+  };
+  return <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+    <div className="gl" style={{width:360,padding:32}}>
+      <h1 style={{fontSize:22,fontWeight:800,marginBottom:8}}>Admin Access</h1>
+      <p style={{fontSize:13,color:C.sub,marginBottom:20}}>Enter password to continue</p>
+      <input type="password" value={pw} onChange={e=>{setPw(e.target.value);setErr(false)}}
+        onKeyDown={e=>e.key==='Enter'&&submit()}
+        placeholder="Password"
+        style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+(err?C.coral:C.border),borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+      {err&&<div style={{color:C.coral,fontSize:13,marginBottom:12}}>Incorrect password</div>}
+      <button onClick={submit} style={{width:"100%",padding:"14px",background:C.teal,color:C.bg,border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Enter</button>
+    </div>
+  </div>;
+}
+
+function AdminPortal() {
+  const navigate = useNavigate();
+  const nav = (p) => navigate(navPath(p));
+  const [verified, setVerified] = useState(() => !!sessionStorage.getItem(ADMIN_STORAGE));
+  if (!verified) return <AdminPasswordGate onSuccess={() => setVerified(true)} />;
+  return <BrandDashboard nav={nav} isAdmin />;
+}
+
+/*══════════════════════════════════════════════════════
   APP ROOT
 ══════════════════════════════════════════════════════*/
-export default function App(){
-  const[route,nav]=useRoute();
-  const p=route.startsWith("/brand")?"brand":route.startsWith("/creator")?"creator":"home";
+export default function App() {
   return <div style={{background:C.bg,color:C.text,minHeight:"100vh"}}>
     <style>{CSS}</style>
-    {p==="home"&&<Homepage nav={nav}/>}
-    {p==="brand"&&<BrandDashboard nav={nav}/>}
-    {p==="creator"&&<CreatorPortal nav={nav}/>}
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/brand/*" element={<BrandPortal />} />
+      <Route path="/creator/*" element={<CreatorPortalWrapper />} />
+      <Route path="/admin/*" element={<AdminPortal />} />
+    </Routes>
   </div>;
+}
+
+function LandingPage() {
+  const navigate = useNavigate();
+  const nav = (p) => navigate(navPath(p));
+  return <Homepage nav={nav} />;
+}
+
+function CreatorPortalWrapper() {
+  const navigate = useNavigate();
+  const nav = (p) => navigate(navPath(p));
+  return <CreatorPortal nav={nav} />;
 }

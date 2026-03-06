@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +16,7 @@ app.use(express.json());
 
 const VIDEO_DIR = path.join(__dirname, 'videos');
 const DATA_DIR = path.join(__dirname, 'data');
+const SCANS_DIR = path.join(DATA_DIR, 'scans');
 
 // ═══ CONFIG ═══
 // TUNNEL_URL: base URL when using ngrok/cloudflared (e.g. https://xxx.ngrok.io)
@@ -131,7 +133,7 @@ app.get('/auth/tiktok', (req, res) => {
 
 app.get('/auth/tiktok/callback', (req, res) => {
   const { code, error: err, error_description } = req.query;
-  if (err) return res.send('<h1>' + err + '</h1><p>' + (error_description || '') + '</p><a href="http://localhost:5173">Back</a>');
+  if (err) return res.send('<h1>' + err + '</h1><p>' + (error_description || '') + '</p><a href="' + (process.env.FRONTEND_URL || 'http://localhost:5173') + '">Back</a>');
   if (!code) return res.send('<h1>No code</h1><pre>' + JSON.stringify(req.query) + '</pre>');
 
   const body = new URLSearchParams({ client_key: TT_CLIENT_KEY, client_secret: TT_CLIENT_SECRET, code: code, grant_type: 'authorization_code', redirect_uri: REDIRECT_URI }).toString();
@@ -150,9 +152,9 @@ app.get('/auth/tiktok/callback', (req, res) => {
           apiFetch('https://open.tiktokapis.com/v2/user/info/?fields=display_name,avatar_url,follower_count,video_count', { headers: { 'Authorization': 'Bearer ' + t.access_token } })
             .then(p => { if (p.data && p.data.user) { ttTokens.display_name = p.data.user.display_name; ttTokens.avatar_url = p.data.user.avatar_url; ttTokens.follower_count = p.data.user.follower_count; ttTokens.video_count = p.data.user.video_count; } })
             .catch(() => {})
-            .finally(() => { ensureDir(DATA_DIR); saveJson(path.join(DATA_DIR, 'tt_tokens.json'), ttTokens); console.log('Connected:', ttTokens.display_name || ttTokens.open_id); res.redirect('http://localhost:5173/?connected=true'); });
+            .finally(() => { ensureDir(DATA_DIR); saveJson(path.join(DATA_DIR, 'tt_tokens.json'), ttTokens); console.log('Connected:', ttTokens.display_name || ttTokens.open_id); const front = process.env.FRONTEND_URL || 'http://localhost:5173'; res.redirect(front + '/creator?connected=true'); });
         } else {
-          res.send('<h1>Token Error</h1><pre>' + JSON.stringify(t, null, 2) + '</pre><a href="http://localhost:5173">Back</a>');
+          res.send('<h1>Token Error</h1><pre>' + JSON.stringify(t, null, 2) + '</pre><a href="' + (process.env.FRONTEND_URL || 'http://localhost:5173') + '">Back</a>');
         }
       } catch (e) { res.send('<h1>Error</h1><pre>' + data + '</pre>'); }
     });
@@ -283,6 +285,60 @@ app.post('/api/tiktok/disconnect', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
+// BRANDS — signup / login
+// ═══════════════════════════════════════════════════════════
+const BRANDS_FILE = path.join(DATA_DIR, 'brands.json');
+
+function loadBrands() {
+  try { return loadJson(BRANDS_FILE) || []; } catch (_) { return []; }
+}
+
+function saveBrands(brands) {
+  ensureDir(DATA_DIR);
+  saveJson(BRANDS_FILE, brands);
+}
+
+app.post('/api/brands/signup', async (req, res) => {
+  const { email, password, storeName, brandName } = req.body;
+  if (!email || !password || !storeName || !brandName) {
+    return res.status(400).json({ error: 'email, password, storeName, and brandName required' });
+  }
+  const brands = loadBrands();
+  if (brands.some(b => (b.email || '').toLowerCase() === (email || '').toLowerCase())) {
+    return res.status(400).json({ error: 'Email already registered' });
+  }
+  const hash = await bcrypt.hash(password, 10);
+  const id = 'b' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
+  const brand = { id, email: email.toLowerCase(), password: hash, storeName, brandName, createdAt: new Date().toISOString() };
+  brands.push(brand);
+  saveBrands(brands);
+  res.json({ id, email: brand.email, storeName, brandName });
+});
+
+app.post('/api/brands/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  const brands = loadBrands();
+  const brand = brands.find(b => (b.email || '').toLowerCase() === (email || '').toLowerCase());
+  if (!brand || !(await bcrypt.compare(password, brand.password))) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+  res.json({ id: brand.id, email: brand.email, storeName: brand.storeName, brandName: brand.brandName });
+});
+
+// ═══════════════════════════════════════════════════════════
+// ADMIN — password verify
+// ═══════════════════════════════════════════════════════════
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'creatorship2026';
+
+app.post('/api/admin/verify', (req, res) => {
+  const { password } = req.body;
+  if (!password) return res.status(400).json({ error: 'password required' });
+  const ok = password === ADMIN_PASSWORD;
+  res.json({ ok });
+});
+
+// ═══════════════════════════════════════════════════════════
 // STORE PRODUCTS
 // ═══════════════════════════════════════════════════════════
 app.post('/api/store', async (req, res) => {
@@ -341,7 +397,7 @@ app.post('/api/store', async (req, res) => {
 // SCRAPE + SCAN
 // ═══════════════════════════════════════════════════════════
 app.post('/api/scan', async (req, res) => {
-  const { scrapeKey, productUrl, commission = 10, gmvFloor = 200, productPrice = 39.99 } = req.body;
+  const { scrapeKey, productUrl, commission = 10, gmvFloor = 200, productPrice = 39.99, brandId } = req.body;
   if (!scrapeKey || !productUrl) return res.status(400).json({ error: 'scrapeKey and productUrl required' });
   try {
     const data = await apiFetch('https://api.scrapecreators.com/v1/tiktok/product?url=' + encodeURIComponent(productUrl) + '&get_related_videos=true&region=US', { headers: { 'x-api-key': scrapeKey, 'Content-Type': 'application/json' } });
@@ -434,8 +490,13 @@ app.post('/api/scan', async (req, res) => {
       qualified: videos.filter(v => v.est_gmv >= gmvFloor).sort((a, b) => b.ai_score - a.ai_score),
       filtered: videos.filter(v => v.est_gmv < gmvFloor),
       total: videos.length,
+      brandId: brandId || null,
     };
     ensureDir(DATA_DIR);
+    if (brandId) {
+      ensureDir(SCANS_DIR);
+      saveJson(path.join(SCANS_DIR, brandId + '.json'), scan);
+    }
     saveJson(path.join(DATA_DIR, 'latest_scan.json'), scan);
     res.json(scan);
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -445,7 +506,7 @@ app.post('/api/scan', async (req, res) => {
 // DEEP SCAN — keyword search with pagination to find ALL videos
 // ═══════════════════════════════════════════════════════════
 app.get('/api/deep-scan', async (req, res) => {
-  const { scrapeKey, productId, searchQuery, maxPages = 50, productPrice = 39.99 } = req.query;
+  const { scrapeKey, productId, searchQuery, maxPages = 50, productPrice = 39.99, brandId } = req.query;
   if (!scrapeKey || !searchQuery) return res.status(400).json({ error: 'scrapeKey and searchQuery required' });
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -541,13 +602,17 @@ app.get('/api/deep-scan', async (req, res) => {
     const broader = allVideos.filter(v => !v.matchesProduct);
 
     const deepScan = {
-      time: new Date().toISOString(), searchQuery, productId,
+      time: new Date().toISOString(), searchQuery, productId, brandId: brandId || null,
       confirmed: confirmed.sort((a, b) => b.views - a.views),
       broader: broader.sort((a, b) => b.views - a.views),
       totalFound: allVideos.length, confirmedCount: confirmed.length,
       pages: page, credits: totalCredits,
     };
     ensureDir(DATA_DIR);
+    if (brandId) {
+      ensureDir(SCANS_DIR);
+      saveJson(path.join(SCANS_DIR, brandId + '_deep.json'), deepScan);
+    }
     saveJson(path.join(DATA_DIR, 'latest_deep_scan.json'), deepScan);
 
     send({ type: 'complete', ...deepScan });
@@ -560,10 +625,26 @@ app.get('/api/deep-scan', async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // DOWNLOAD + META LAUNCH
 // ═══════════════════════════════════════════════════════════
+function getScanForBrand(brandId) {
+  if (brandId) {
+    const f = path.join(SCANS_DIR, brandId + '.json');
+    if (fs.existsSync(f)) return loadJson(f);
+  }
+  return loadJson(path.join(DATA_DIR, 'latest_scan.json'));
+}
+
+function getDeepScanForBrand(brandId) {
+  if (brandId) {
+    const f = path.join(SCANS_DIR, brandId + '_deep.json');
+    if (fs.existsSync(f)) return loadJson(f);
+  }
+  return loadJson(path.join(DATA_DIR, 'latest_deep_scan.json'));
+}
+
 app.post('/api/download', async (req, res) => {
-  const { videoId, scrapeKey } = req.body;
-  const scan = loadJson(path.join(DATA_DIR, 'latest_scan.json'));
-  const deep = loadJson(path.join(DATA_DIR, 'latest_deep_scan.json'));
+  const { videoId, scrapeKey, brandId } = req.body;
+  const scan = getScanForBrand(brandId);
+  const deep = getDeepScanForBrand(brandId);
   const allVideos = [
     ...(scan?.qualified || []), ...(scan?.filtered || []),
     ...(deep?.confirmed || []), ...(deep?.broader || []),
@@ -585,10 +666,10 @@ app.post('/api/download', async (req, res) => {
 });
 
 app.post('/api/launch', async (req, res) => {
-  const { videoId, metaToken, adAccount, pageId, dailyBudget = 50 } = req.body;
+  const { videoId, metaToken, adAccount, pageId, dailyBudget = 50, brandId } = req.body;
   if (!metaToken || !adAccount) return res.status(400).json({ error: 'metaToken and adAccount required' });
-  const scan = loadJson(path.join(DATA_DIR, 'latest_scan.json'));
-  const deep = loadJson(path.join(DATA_DIR, 'latest_deep_scan.json'));
+  const scan = getScanForBrand(brandId);
+  const deep = getDeepScanForBrand(brandId);
   const allVideos = [
     ...(scan?.qualified || []), ...(scan?.filtered || []),
     ...(deep?.confirmed || []), ...(deep?.broader || []),
@@ -631,10 +712,11 @@ app.post('/api/launch', async (req, res) => {
     try { if (fs.existsSync(registryPath)) registry = loadJson(registryPath); } catch (_) {}
     registry[ids.campaign] = {
       creator: video.creator,
-      commission: scan.commission || 10,
-      productPrice: scan.product?.minPrice ? parseFloat(scan.product.minPrice) : (scan.product?.price ? parseFloat(String(scan.product.price).replace(/[^0-9.]/g, '')) : 39.99),
-      productTitle: scan.product?.title || 'Product',
-      brand: scan.product?.seller || '',
+      commission: scan?.commission || 10,
+      productPrice: scan?.product?.minPrice ? parseFloat(scan.product.minPrice) : (scan?.product?.price ? parseFloat(String(scan.product.price).replace(/[^0-9.]/g, '')) : 39.99),
+      productTitle: scan?.product?.title || 'Product',
+      brand: scan?.product?.seller || '',
+      brandId: brandId || null,
       launchedAt: new Date().toISOString(),
     };
     saveJson(registryPath, registry);
@@ -643,8 +725,34 @@ app.post('/api/launch', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-  const s = loadJson(path.join(DATA_DIR, 'latest_scan.json'));
+  const brandId = req.query.brandId;
+  const s = getScanForBrand(brandId);
   res.json(s ? { hasScan: true, ...s } : { hasScan: false });
+});
+
+// Brand dashboard — store name, creators, campaigns, spend (from registry)
+app.get('/api/brand/dashboard', (req, res) => {
+  const brandId = req.query.brandId;
+  if (!brandId) return res.status(400).json({ error: 'brandId required' });
+  const brands = loadBrands();
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand) return res.status(404).json({ error: 'Brand not found' });
+  const scan = getScanForBrand(brandId);
+  const registry = (() => { try { return loadJson(path.join(DATA_DIR, 'campaign_registry.json')) || {}; } catch (_) { return {}; } })();
+  const brandCampaigns = Object.entries(registry)
+    .filter(([, m]) => m.brandId === brandId)
+    .map(([id, m]) => ({ id, ...m }));
+  const totalSpend = 0; // Meta spend would require token; could aggregate from insights if needed
+  const totalRevenue = 0; // Would come from Meta insights if token available
+  res.json({
+    storeName: brand.storeName,
+    brandName: brand.brandName,
+    creators: scan?.qualified?.slice(0, 10) || [],
+    campaigns: brandCampaigns,
+    totalSpend,
+    totalRevenue,
+    hasScan: !!scan,
+  });
 });
 
 app.get('/api/campaigns/demo', (req, res) => {
@@ -668,7 +776,7 @@ app.get('/api/campaigns/demo', (req, res) => {
 // META CAMPAIGN INSIGHTS
 // ═══════════════════════════════════════════════════════════
 app.get('/api/campaigns', async (req, res) => {
-  const { metaToken, adAccount } = req.query;
+  const { metaToken, adAccount, brandId } = req.query;
   if (!metaToken || !adAccount) return res.status(400).json({ error: 'metaToken and adAccount required' });
   try {
     const fields = 'id,name,status,daily_budget,lifetime_budget,objective,created_time,updated_time,start_time,stop_time';
@@ -679,7 +787,12 @@ app.get('/api/campaigns', async (req, res) => {
 
     const registry = (() => { try { return loadJson(path.join(DATA_DIR, 'campaign_registry.json')) || {}; } catch (_) { return {}; } })();
     const results = [];
-    for (const c of (campaigns.data || [])) {
+    const metaCampaigns = campaigns.data || [];
+    for (const c of metaCampaigns) {
+      if (brandId) {
+        const meta = registry[c.id] || {};
+        if (meta.brandId && meta.brandId !== brandId) continue;
+      }
       let insights = null;
       try {
         const insightFields = 'spend,impressions,reach,frequency,clicks,unique_clicks,cpc,cpm,ctr,cpp,actions,cost_per_action_type,purchase_roas,video_avg_time_watched_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p100_watched_actions,quality_ranking,engagement_rate_ranking,conversion_rate_ranking';
