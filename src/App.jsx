@@ -266,7 +266,7 @@ function HeroSection({nav}){
 
       <div className="fu d3" style={{display:"flex",gap:12,justifyContent:"center"}}>
         <button onClick={()=>nav("#/brand")} style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em"}}>I'm a Brand →</button>
-        <button onClick={()=>nav("#/creator")} style={{padding:"15px 36px",background:"transparent",color:C.text,fontSize:15,fontWeight:700,border:"1px solid "+C.border,borderRadius:12,cursor:"pointer",fontFamily:"inherit"}}>I'm a Creator</button>
+        <button onClick={()=>nav("#/creator")} style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em"}}>I'm a Creator</button>
       </div>
 
       <ROICalculator nav={nav}/>
