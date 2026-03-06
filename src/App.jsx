@@ -1793,19 +1793,20 @@ function BrandAuthForm({ onSuccess }) {
 
   const submit = async () => {
     setError(null);
-    if (mode === 'signup' && (!storeName.trim() || !brandName.trim())) {
-      fire('Store name and brand name required');
+    if (mode === 'signup' && !brandName.trim()) {
+      fire('Brand name required');
       return;
     }
     if (!email.trim() || !password) { fire('Email and password required'); return; }
     setLoading(true);
     try {
-      const ep = mode === 'signup' ? '/api/brands/signup' : '/api/brands/login';
-      const body = mode === 'signup' ? { email, password, storeName, brandName } : { email, password };
+      const ep = mode === 'signup' ? '/api/brand/signup' : '/api/brand/login';
+      const body = mode === 'signup' ? { brandName, storeName, email, password } : { email, password };
       const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = await r.json();
       if (d.error) throw new Error(d.error);
-      localStorage.setItem(BRAND_STORAGE, JSON.stringify({ id: d.id, email: d.email, storeName: d.storeName, brandName: d.brandName }));
+      if (!d.success || !d.brand) throw new Error('Invalid response');
+      localStorage.setItem(BRAND_STORAGE, JSON.stringify(d.brand));
       onSuccess(d);
     } catch (e) { fire(e.message || 'Failed'); }
     setLoading(false);

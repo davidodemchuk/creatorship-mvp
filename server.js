@@ -285,45 +285,38 @@ app.post('/api/tiktok/disconnect', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// BRANDS — signup / login
+// BRAND AUTH — signup / login
 // ═══════════════════════════════════════════════════════════
 const BRANDS_FILE = path.join(DATA_DIR, 'brands.json');
-
 function loadBrands() {
-  try { return loadJson(BRANDS_FILE) || []; } catch (_) { return []; }
+  try { return JSON.parse(fs.readFileSync(BRANDS_FILE, 'utf8')); } catch (_) { return []; }
 }
-
-function saveBrands(brands) {
+function saveBrands(b) {
   ensureDir(DATA_DIR);
-  saveJson(BRANDS_FILE, brands);
+  fs.writeFileSync(BRANDS_FILE, JSON.stringify(b, null, 2));
 }
 
-app.post('/api/brands/signup', async (req, res) => {
-  const { email, password, storeName, brandName } = req.body;
-  if (!email || !password || !storeName || !brandName) {
-    return res.status(400).json({ error: 'email, password, storeName, and brandName required' });
-  }
+app.post('/api/brand/signup', async (req, res) => {
+  const { brandName, storeName, email, password } = req.body;
+  if (!brandName || !email || !password) return res.json({ error: 'Missing required fields' });
   const brands = loadBrands();
-  if (brands.some(b => (b.email || '').toLowerCase() === (email || '').toLowerCase())) {
-    return res.status(400).json({ error: 'Email already registered' });
-  }
-  const hash = await bcrypt.hash(password, 10);
-  const id = 'b' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
-  const brand = { id, email: email.toLowerCase(), password: hash, storeName, brandName, createdAt: new Date().toISOString() };
+  if (brands.find(b => (b.email || '').toLowerCase() === (email || '').toLowerCase())) return res.json({ error: 'Email already registered' });
+  const hashed = await bcrypt.hash(password, 10);
+  const brand = { id: Date.now().toString(), brandName, storeName: storeName || '', email: (email || '').toLowerCase(), password: hashed, createdAt: new Date().toISOString() };
   brands.push(brand);
   saveBrands(brands);
-  res.json({ id, email: brand.email, storeName, brandName });
+  res.json({ success: true, brand: { id: brand.id, brandName, storeName: brand.storeName, email: brand.email } });
 });
 
-app.post('/api/brands/login', async (req, res) => {
+app.post('/api/brand/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  if (!email || !password) return res.json({ error: 'Missing email or password' });
   const brands = loadBrands();
   const brand = brands.find(b => (b.email || '').toLowerCase() === (email || '').toLowerCase());
-  if (!brand || !(await bcrypt.compare(password, brand.password))) {
-    return res.status(401).json({ error: 'Invalid email or password' });
-  }
-  res.json({ id: brand.id, email: brand.email, storeName: brand.storeName, brandName: brand.brandName });
+  if (!brand) return res.json({ error: 'No account found with that email' });
+  const match = await bcrypt.compare(password, brand.password);
+  if (!match) return res.json({ error: 'Incorrect password' });
+  res.json({ success: true, brand: { id: brand.id, brandName: brand.brandName, storeName: brand.storeName, email: brand.email } });
 });
 
 // ═══════════════════════════════════════════════════════════
