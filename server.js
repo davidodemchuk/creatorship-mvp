@@ -305,7 +305,7 @@ app.post('/api/brand/signup', async (req, res) => {
   const brand = { id: Date.now().toString(), brandName, storeName: storeName || '', email: (email || '').toLowerCase(), password: hashed, createdAt: new Date().toISOString() };
   brands.push(brand);
   saveBrands(brands);
-  res.json({ success: true, brand: { id: brand.id, brandName, storeName: brand.storeName, email: brand.email } });
+  res.json({ success: true, brand: { id: brand.id, brandName, storeName: brand.storeName, email: brand.email, hasMetaToken: !!brand.metaToken, adAccount: brand.adAccount || '', pageId: brand.pageId || '' } });
 });
 
 app.post('/api/brand/login', async (req, res) => {
@@ -316,7 +316,64 @@ app.post('/api/brand/login', async (req, res) => {
   if (!brand) return res.json({ error: 'No account found with that email' });
   const match = await bcrypt.compare(password, brand.password);
   if (!match) return res.json({ error: 'Incorrect password' });
-  res.json({ success: true, brand: { id: brand.id, brandName: brand.brandName, storeName: brand.storeName, email: brand.email } });
+  res.json({ success: true, brand: { id: brand.id, brandName: brand.brandName, storeName: brand.storeName, email: brand.email, hasMetaToken: !!brand.metaToken, adAccount: brand.adAccount || '', pageId: brand.pageId || '' } });
+});
+
+app.get('/api/brand/me', (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.json({ error: 'Email required' });
+  const brands = loadBrands();
+  const brand = brands.find(b => (b.email || '').toLowerCase() === (email || '').toLowerCase());
+  if (!brand) return res.json({ error: 'Not found' });
+  res.json({ id: brand.id, brandName: brand.brandName, storeName: brand.storeName || '', email: brand.email, hasMetaToken: !!brand.metaToken, adAccount: brand.adAccount || '', pageId: brand.pageId || '' });
+});
+
+app.post('/api/brand/settings', async (req, res) => {
+  const { email, metaToken, adAccount, pageId, brandName, storeName } = req.body;
+  if (!email) return res.json({ error: 'Email required' });
+  const brands = loadBrands();
+  const idx = brands.findIndex(b => (b.email || '').toLowerCase() === (email || '').toLowerCase());
+  if (idx === -1) return res.json({ error: 'Brand not found' });
+  if (metaToken !== undefined) brands[idx].metaToken = metaToken;
+  if (adAccount !== undefined) brands[idx].adAccount = adAccount;
+  if (pageId !== undefined) brands[idx].pageId = pageId;
+  if (brandName !== undefined) brands[idx].brandName = brandName;
+  if (storeName !== undefined) brands[idx].storeName = (storeName || '').toString().replace(/^@/, '');
+  saveBrands(brands);
+  const b = brands[idx];
+  res.json({ success: true, brand: { id: b.id, brandName: b.brandName, storeName: b.storeName, email: b.email, hasMetaToken: !!b.metaToken, adAccount: b.adAccount || '', pageId: b.pageId || '' } });
+});
+
+app.delete('/api/brand/account', (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.json({ error: 'Email required' });
+  const brands = loadBrands().filter(b => (b.email || '').toLowerCase() !== (email || '').toLowerCase());
+  if (brands.length === loadBrands().length) return res.json({ error: 'Brand not found' });
+  saveBrands(brands);
+  res.json({ success: true });
+});
+
+app.get('/api/brand/campaigns', async (req, res) => {
+  const { brandId } = req.query;
+  if (!brandId) return res.json({ campaigns: [], error: 'brandId required' });
+  const brands = loadBrands();
+  const brand = brands.find(b => b.id === brandId);
+  if (!brand) return res.json({ campaigns: [], error: 'Brand not found' });
+  const metaToken = brand.metaToken;
+  const adAccount = brand.adAccount || process.env.META_AD_ACCOUNT;
+  if (!metaToken || !adAccount) return res.json({ campaigns: [], error: 'Connect Meta API in Settings' });
+  try {
+    const fields = 'id,name,status,daily_budget,lifetime_budget,objective,created_time';
+    const filtering = encodeURIComponent(JSON.stringify([{ field: 'name', operator: 'CONTAIN', value: 'Creatorship' }]));
+    const apiUrl = `https://graph.facebook.com/v22.0/${adAccount}/campaigns?fields=${fields}&filtering=${filtering}&limit=50&access_token=${metaToken}`;
+    const campaigns = await apiFetch(apiUrl);
+    if (campaigns.error) return res.json({ campaigns: [], error: campaigns.error?.message || 'Meta API error' });
+    const registry = (() => { try { return loadJson(path.join(DATA_DIR, 'campaign_registry.json')) || {}; } catch (_) { return {}; } })();
+    const filtered = (campaigns.data || []).filter(c => { const m = registry[c.id] || {}; return !m.brandId || m.brandId === brandId; });
+    res.json({ campaigns: filtered.map(c => ({ ...c, ...(registry[c.id] || {}) })) });
+  } catch (e) {
+    res.json({ campaigns: [], error: e.message || 'Failed to fetch campaigns' });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════

@@ -1834,52 +1834,219 @@ function BrandAuthForm({ onSuccess }) {
   </div>;
 }
 
-function BrandDashboardView({ brand, nav }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+const stripAt = s => (s || '').toString().replace(/^@+/, '') || '';
+
+function BrandDashboardView({ brand, setBrand, nav }) {
+  const [tab, setTab] = useState('overview');
+  const [profile, setProfile] = useState(brand);
+  const [creators, setCreators] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [campError, setCampError] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [loadingCreators, setLoadingCreators] = useState(false);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+
+  const refreshProfile = useCallback(() => {
+    setLoadingProfile(true);
+    fetch('/api/brand/me?email=' + encodeURIComponent(brand.email)).then(r => r.json()).then(d => {
+      if (d.error) return;
+      setProfile(d);
+      const updated = { ...brand, ...d };
+      localStorage.setItem(BRAND_STORAGE, JSON.stringify(updated));
+      setBrand(updated);
+    }).finally(() => setLoadingProfile(false));
+  }, [brand.email, setBrand]);
+
+  useEffect(() => { refreshProfile(); }, [brand.id]);
+
   useEffect(() => {
-    fetch('/api/brand/dashboard?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => { setData(d); setLoading(false); }).catch(() => setLoading(false));
+    setLoadingCreators(true);
+    fetch('/api/creators').then(r => r.json()).then(d => { setCreators(Array.isArray(d) ? d : []); setLoadingCreators(false); }).catch(() => setLoadingCreators(false));
+  }, []);
+
+  useEffect(() => {
+    setLoadingCampaigns(true); setCampError(null);
+    fetch('/api/brand/campaigns?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => {
+      setCampaigns(d.campaigns || []);
+      setCampError(d.error || null);
+      setLoadingCampaigns(false);
+    }).catch(() => { setLoadingCampaigns(false); setCampError('Failed to load'); });
   }, [brand.id]);
 
-  const logout = () => { localStorage.removeItem(BRAND_STORAGE); window.location.href = '/brand'; };
+  const logout = () => { localStorage.removeItem(BRAND_STORAGE); setBrand(null); window.location.href = '/brand'; };
+  const storeDisplay = stripAt(profile.storeName || brand.storeName);
 
-  return <div style={{minHeight:"100vh",background:C.bg}}>
-    <nav style={{padding:"14px 32px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
-      <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
-      <div style={{display:"flex",alignItems:"center",gap:16}}>
-        <span style={{fontSize:13,color:C.sub}}>{brand.storeName}</span>
-        <button onClick={logout} style={{padding:"8px 16px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Logout</button>
+  const Sidebar = () => (
+    <div style={{width:200,background:C.bg2,borderRight:"1px solid "+C.border,padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
+      <div style={{padding:"0 16px 20px",cursor:"pointer"}} onClick={()=>nav("/")}>
+        <span style={{fontSize:17,fontWeight:900,...gT(C.coral,C.gold)}}>Creator</span><span style={{fontSize:17,fontWeight:900,...gT(C.blue,C.teal)}}>ship</span>
+        <div style={{fontSize:10,color:C.dim,marginTop:1}}>Brand Portal</div>
       </div>
-    </nav>
-    <div style={{padding:"32px 40px",maxWidth:900,margin:"0 auto"}}>
-      <h1 style={{fontSize:28,fontWeight:800,marginBottom:8}}>{brand.brandName}</h1>
-      <p style={{fontSize:14,color:C.sub,marginBottom:28}}>Store: @{brand.storeName}</p>
-      {loading ? <div style={{color:C.sub}}>Loading...</div> : <div style={{display:"grid",gap:16}}>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}}>
-          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Store</div><div className="mono" style={{fontSize:22,fontWeight:800,color:C.teal,marginTop:4}}>@{data?.storeName||brand.storeName}</div></div>
-          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Creators</div><div className="mono" style={{fontSize:22,fontWeight:800,color:C.green,marginTop:4}}>{data?.creators?.length||0}</div></div>
-          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Campaigns</div><div className="mono" style={{fontSize:22,fontWeight:800,color:C.gold,marginTop:4}}>{data?.campaigns?.length||0}</div></div>
+      {[{id:"overview",l:"Overview",i:"🏠"},{id:"creators",l:"Creators",i:"👥"},{id:"campaigns",l:"Campaigns",i:"🚀"},{id:"settings",l:"Settings",i:"⚙️"}].map(t=>
+        <div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"10px 16px",cursor:"pointer",fontSize:13,fontWeight:tab===t.id?600:400,color:tab===t.id?C.teal:C.sub,background:tab===t.id?C.teal+"06":"transparent",borderRight:tab===t.id?"2px solid "+C.teal:"2px solid transparent"}}>{t.i} {t.l}</div>
+      )}
+      <div style={{flex:1}}/>
+      <div style={{padding:"10px 16px",fontSize:11,color:C.dim}}>{storeDisplay ? '@'+storeDisplay : '—'}</div>
+      <div style={{padding:"8px 16px",fontSize:11,color:C.sub,cursor:"pointer"}} onClick={logout}>Logout</div>
+    </div>
+  );
+
+  return <div style={{display:"flex",minHeight:"100vh",background:C.bg}}>
+    <Sidebar/>
+    <div style={{flex:1,padding:"28px 36px",maxWidth:800}}>
+
+      {tab==="overview"&&<div>
+        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Overview</h1>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:32}}>
+          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Store</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.teal,marginTop:4}}>{storeDisplay ? '@'+storeDisplay : '—'}</div></div>
+          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Connected Creators</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.green,marginTop:4}}>{creators.length}</div></div>
+          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Active Campaigns</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.gold,marginTop:4}}>{campaigns.length}</div></div>
         </div>
-        <div className="gl" style={{padding:0,overflow:"hidden"}}>
-          <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,fontSize:12,fontWeight:700,color:C.dim}}>Creator pipeline</div>
-          {data?.creators?.length ? <div style={{maxHeight:200,overflow:"auto"}}>
-            {data.creators.slice(0,8).map((c,i)=><div key={i} style={{padding:"12px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span style={{fontWeight:600}}>{c.creator}</span>
-              <span className="mono" style={{color:C.teal,fontSize:13}}>AI {c.ai_score}</span>
-            </div>)}
-          </div> : <div style={{padding:32,textAlign:"center",color:C.dim}}>Run a scan in the admin dashboard to find creators.</div>}
-        </div>
-        <div className="gl" style={{padding:0,overflow:"hidden"}}>
-          <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,fontSize:12,fontWeight:700,color:C.dim}}>Campaigns</div>
-          {data?.campaigns?.length ? <div style={{maxHeight:200,overflow:"auto"}}>
-            {data.campaigns.map((c,i)=><div key={i} style={{padding:"12px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <span>{c.productTitle||c.creator}</span>
-              <span style={{fontSize:12,color:C.sub}}>{c.launchedAt?.slice(0,10)}</span>
-            </div>)}
-          </div> : <div style={{padding:32,textAlign:"center",color:C.dim}}>No campaigns yet. Contact admin to launch.</div>}
+        <div className="gl" style={{padding:24}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Getting Started</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}><span style={{color:C.green}}>✓</span><span>Account created</span></div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{color:profile.hasMetaToken?C.green:C.dim}}>{profile.hasMetaToken?'✓':'☐'}</span>
+              <span>Connect Meta API</span>
+              {!profile.hasMetaToken&&<button onClick={()=>setTab("settings")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Settings</button>}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{color:creators.length>0?C.green:C.dim}}>{creators.length>0?'✓':'☐'}</span>
+              <span>Creators in pipeline</span>
+              {creators.length===0&&<button onClick={()=>setTab("creators")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Creators</button>}
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{color:campaigns.length>0?C.green:C.dim}}>{campaigns.length>0?'✓':'☐'}</span>
+              <span>First campaign launched</span>
+            </div>
+          </div>
         </div>
       </div>}
+
+      {tab==="creators"&&<div>
+        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creators</h1>
+        {loadingCreators?<div style={{color:C.sub}}>Loading...</div>:
+        creators.length===0?<div className="gl" style={{padding:40,textAlign:"center"}}><div style={{fontSize:32,marginBottom:12}}>👥</div><div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No creators in your pipeline yet</div><div style={{fontSize:13,color:C.dim}}>Your admin is building your creator list.</div></div>:
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12}}>
+          {creators.map((c,i)=><div key={i} className="gl" style={{padding:16}}>
+            <div style={{fontSize:14,fontWeight:700}}>@{c.display_name||c.open_id||'creator'}</div>
+            <div style={{fontSize:11,color:C.dim,marginTop:8}}>{fN(c.follower_count||0)} followers · {c.video_count||0} videos</div>
+          </div>)}
+        </div>}
+      </div>}
+
+      {tab==="campaigns"&&<div>
+        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Campaigns</h1>
+        {loadingCampaigns?<div style={{color:C.sub}}>Loading...</div>:
+        campaigns.length===0?<div className="gl" style={{padding:40,textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:12}}>🚀</div>
+          <div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No campaigns yet</div>
+          <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Your account manager will launch your first campaign once your Meta API is connected.</div>
+          <button onClick={()=>setTab("settings")} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Connect Meta API →</button>
+        </div>:
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {campaigns.map((c,i)=><div key={i} className="gl" style={{padding:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontWeight:700}}>{c.name||c.creator}</div><div style={{fontSize:12,color:C.sub}}>{c.productTitle||''} · {c.status||'—'}</div></div>
+            <span style={{fontSize:12,color:C.dim}}>{c.created_time?.slice(0,10)}</span>
+          </div>)}
+        </div>}
+        {campError&&!loadingCampaigns&&<div style={{color:C.coral,fontSize:13,marginTop:12}}>{campError}</div>}
+      </div>}
+
+      {tab==="settings"&&<BrandSettingsTab brand={brand} profile={profile} setProfile={setProfile} setBrand={setBrand} refreshProfile={refreshProfile} loading={loadingProfile} />}
     </div>
+  </div>;
+}
+
+function BrandSettingsTab({ brand, profile, setProfile, setBrand, refreshProfile, loading }) {
+  const [metaToken, setMetaToken] = useState('');
+  const [showToken, setShowToken] = useState(false);
+  const [adAccount, setAdAccount] = useState(profile.adAccount || '');
+  const [pageId, setPageId] = useState(profile.pageId || '');
+  const [brandName, setBrandName] = useState(profile.brandName || '');
+  const [storeName, setStoreName] = useState('');
+  useEffect(() => { setAdAccount(profile.adAccount || ''); setPageId(profile.pageId || ''); setBrandName(profile.brandName || ''); setStoreName(stripAt(profile.storeName || '')); }, [profile]);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  const saveMeta = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, metaToken: metaToken||undefined, adAccount: adAccount||undefined, pageId: pageId||undefined }) });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      setProfile(d.brand); setBrand(prev=>prev?{...prev,...d.brand}:null); localStorage.setItem(BRAND_STORAGE, JSON.stringify(d.brand));
+      setMetaToken(''); setToast('Meta credentials saved'); setTimeout(()=>setToast(null),3000);
+    } catch (e) { setToast(e.message); setTimeout(()=>setToast(null),3000); }
+    setSaving(false);
+  };
+
+  const saveStore = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, brandName, storeName }) });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      setProfile(d.brand); setBrand(prev=>prev?{...prev,...d.brand}:null); localStorage.setItem(BRAND_STORAGE, JSON.stringify(d.brand));
+      setToast('Store info saved'); setTimeout(()=>setToast(null),3000); refreshProfile();
+    } catch (e) { setToast(e.message); setTimeout(()=>setToast(null),3000); }
+    setSaving(false);
+  };
+
+  return <div>
+    <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Settings</h1>
+
+    <div className="gl" style={{padding:24,marginBottom:24}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Meta API Credentials</div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        {profile.hasMetaToken?<span style={{padding:"4px 10px",background:C.green+"15",color:C.green,borderRadius:6,fontSize:12,fontWeight:600}}>✓ Connected</span>:<span style={{padding:"4px 10px",background:C.dim+"20",color:C.dim,borderRadius:6,fontSize:12}}>Not connected</span>}
+      </div>
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>META ACCESS TOKEN</label>
+        <div style={{display:"flex",gap:8}}>
+          <input type={showToken?"text":"password"} value={metaToken} onChange={e=>setMetaToken(e.target.value)} placeholder="Token"
+            style={{flex:1,padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
+          <button onClick={()=>setShowToken(!showToken)} style={{padding:"8px 12px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>{showToken?"Hide":"Show"}</button>
+        </div>
+      </div>
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>AD ACCOUNT ID</label>
+        <input type="text" value={adAccount} onChange={e=>setAdAccount(e.target.value)} placeholder="act_XXXXXXXXX"
+          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
+      </div>
+      <div style={{marginBottom:16}}>
+        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>PAGE ID</label>
+        <input type="text" value={pageId} onChange={e=>setPageId(e.target.value)} placeholder="XXXXXXXXXXXXXXXXX"
+          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
+      </div>
+      <button onClick={saveMeta} disabled={saving} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",fontFamily:"inherit"}}>Save</button>
+    </div>
+
+    <div className="gl" style={{padding:24,marginBottom:24}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Store Info</div>
+      <div style={{marginBottom:12}}>
+        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>Brand Name</label>
+        <input type="text" value={brandName} onChange={e=>setBrandName(e.target.value)}
+          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
+      </div>
+      <div style={{marginBottom:16}}>
+        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>TikTok Shop Store Name</label>
+        <input type="text" value={storeName} onChange={e=>setStoreName(stripAt(e.target.value))} placeholder="Store handle (no @)"
+          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
+      </div>
+      <button onClick={saveStore} disabled={saving} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",fontFamily:"inherit"}}>Save</button>
+    </div>
+
+    <div className="gl" style={{padding:24}}>
+      <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Account</div>
+      <div style={{marginBottom:16}}><label style={{fontSize:11,color:C.dim}}>Email</label><div style={{fontSize:14,marginTop:4}}>{brand.email}</div></div>
+      {!deleteConfirm?<button onClick={()=>setDeleteConfirm(true)} style={{padding:"10px 20px",background:C.coral,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Delete Account</button>:
+      <div><span style={{fontSize:13,color:C.sub,marginRight:12}}>Are you sure?</span><button onClick={()=>setDeleteConfirm(false)} style={{padding:"6px 12px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,fontSize:12,cursor:"pointer",fontFamily:"inherit",color:C.sub,marginRight:8}}>Cancel</button><button onClick={async()=>{try{const r=await fetch('/api/brand/account',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:brand.email})});const d=await r.json();if(d.success){localStorage.removeItem(BRAND_STORAGE);setBrand(null);window.location.href='/brand';}else setToast(d.error||'Failed');}catch(e){setToast(e.message);}setDeleteConfirm(false);}} style={{padding:"6px 12px",background:C.coral,color:C.bg,border:"none",borderRadius:6,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Yes, delete</button></div>}
+    </div>
+
+    {toast&&<div style={{position:"fixed",bottom:20,right:20,padding:"11px 18px",borderRadius:11,fontSize:13,fontWeight:600,zIndex:999,background:"rgba(8,13,28,.95)",border:"1px solid "+C.border}}>{toast}</div>}
   </div>;
 }
 
@@ -1889,7 +2056,7 @@ function BrandPortal() {
   const [brand, setBrand] = useState(() => {
     try { const j = localStorage.getItem(BRAND_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
   });
-  if (brand) return <BrandDashboardView brand={brand} nav={nav} />;
+  if (brand) return <BrandDashboardView brand={brand} setBrand={setBrand} nav={nav} />;
   return <div style={{minHeight:"100vh",background:C.bg}}>
     <nav style={{padding:"14px 32px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
       <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
