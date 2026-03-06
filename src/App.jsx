@@ -1612,7 +1612,7 @@ function BrandDashboard({nav}){
 /*══════════════════════════════════════════════════════
   CREATOR PORTAL
 ══════════════════════════════════════════════════════*/
-function CreatorPortal({nav}){
+function CreatorPortal({nav,creator}){
   const[ttStatus,setTtStatus]=useState({connected:false,displayName:"",followers:0,videos:0});
   const[tab,setTab]=useState("connect");
   const[toast,setToast]=useState(null);
@@ -1651,10 +1651,14 @@ function CreatorPortal({nav}){
     fetch("/api/creator/earnings").then(r=>r.json()).then(d=>{setEarnings(d);setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
   },[ttStatus.connected,tab]);
 
+  const logout=()=>{localStorage.removeItem(CREATOR_STORAGE);window.location.href="/creator";};
   const Sidebar=()=><div style={{width:200,background:C.bg2,borderRight:"1px solid "+C.border,padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
-    <div style={{padding:"0 16px 20px",cursor:"pointer"}} onClick={()=>nav("#/")}><span style={{fontSize:17,fontWeight:900,...gT(C.coral,C.gold)}}>Creator</span><span style={{fontSize:17,fontWeight:900,...gT(C.blue,C.teal)}}>ship</span><div style={{fontSize:10,color:C.dim,marginTop:1}}>Creator Portal</div></div>
+    <div style={{padding:"0 16px 20px",cursor:"pointer"}} onClick={()=>nav("/")}><span style={{fontSize:17,fontWeight:900,...gT(C.coral,C.gold)}}>Creator</span><span style={{fontSize:17,fontWeight:900,...gT(C.blue,C.teal)}}>ship</span><div style={{fontSize:10,color:C.dim,marginTop:1}}>Creator Portal</div></div>
     {[{id:"connect",l:"Connect TikTok",i:"🔗"},{id:"deals",l:"Deals",i:"💰"},{id:"earnings",l:"Earnings",i:"📈"}].map(t=><div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"9px 16px",cursor:"pointer",fontSize:13,fontWeight:tab===t.id?600:400,color:tab===t.id?C.teal:C.sub,background:tab===t.id?C.teal+"06":"transparent",borderRight:tab===t.id?"2px solid "+C.teal:"2px solid transparent"}}>{t.i} {t.l}</div>)}
-    <div style={{flex:1}}/><div style={{padding:"10px 16px",borderTop:"1px solid "+C.border,fontSize:11,color:C.dim,cursor:"pointer"}} onClick={()=>nav("#/brand")}>Brand Dashboard →</div>
+    <div style={{flex:1}}/>
+    <div style={{padding:"10px 16px",borderTop:"1px solid "+C.border,fontSize:11,color:C.dim,cursor:"pointer"}} onClick={()=>nav("/brand")}>Brand Dashboard →</div>
+    <div style={{padding:"8px 16px",fontSize:11,color:C.sub}}>{creator?.email}</div>
+    <div style={{padding:"8px 16px",fontSize:11,color:C.coral,cursor:"pointer"}} onClick={logout}>Logout</div>
   </div>;
 
   return <div style={{display:"flex"}}>
@@ -1954,6 +1958,62 @@ function BrandPortal() {
 }
 
 /*══════════════════════════════════════════════════════
+  CREATOR PORTAL — login/signup gate
+══════════════════════════════════════════════════════*/
+const CREATOR_STORAGE = 'creatorship_creator';
+
+function CreatorAuthForm({ onSuccess }) {
+  const [mode, setMode] = useState('login');
+  const [displayName, setDisplayName] = useState('');
+  const [tiktokHandle, setTiktokHandle] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const fire = useCallback(m => { setError(m); setTimeout(() => setError(null), 4000); }, []);
+
+  const submit = async () => {
+    setError(null);
+    if (!email.trim() || !password) { fire('Email and password required'); return; }
+    if (mode === 'signup' && !displayName.trim()) { fire('Display name required'); return; }
+    setLoading(true);
+    try {
+      const ep = mode === 'signup' ? '/api/creators/signup' : '/api/creators/login';
+      const body = mode === 'signup' ? { email, password, displayName, tiktokHandle } : { email, password };
+      const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const text = await r.text();
+      let d;
+      try { d = JSON.parse(text); } catch (_) { fire('Server error — ensure API is running (npm run dev)'); setLoading(false); return; }
+      if (d.error) throw new Error(d.error);
+      localStorage.setItem(CREATOR_STORAGE, JSON.stringify({ id: d.id, email: d.email, displayName: d.displayName, tiktokHandle: d.tiktokHandle }));
+      onSuccess(d);
+    } catch (e) { fire(e.message || 'Failed'); }
+    setLoading(false);
+  };
+
+  return <div className="gl" style={{maxWidth:420,margin:"80px auto",padding:32}}>
+    <h1 style={{fontSize:24,fontWeight:800,marginBottom:8}}>{mode==='login'?'Creator Login':'Create Account'}</h1>
+    <p style={{fontSize:13,color:C.sub,marginBottom:24}}>{mode==='login'?'Sign in to view your deals and earnings.':'Sign up to get started.'}</p>
+    {mode==='signup'&&<>
+      <input type="text" placeholder="Display name" value={displayName} onChange={e=>setDisplayName(e.target.value)}
+        style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+      <input type="text" placeholder="@TikTok handle" value={tiktokHandle} onChange={e=>setTiktokHandle(e.target.value)}
+        style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+    </>}
+    <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)}
+      style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+    <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)}
+      style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:16,fontFamily:"inherit"}}/>
+    {error&&<div style={{color:C.coral,fontSize:13,marginBottom:12}}>{error}</div>}
+    <button onClick={submit} disabled={loading} style={{width:"100%",padding:"14px",background:C.coral,color:C.bg,border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer",fontFamily:"inherit"}}>{loading?'...':mode==='login'?'Sign In':'Sign Up'}</button>
+    <div style={{marginTop:16,fontSize:13,color:C.sub,textAlign:"center"}}>
+      {mode==='login'?'No account? ':'Already have an account? '}
+      <button onClick={()=>{setMode(m=>m==='login'?'signup':'login');setError(null)}} style={{background:"none",border:"none",color:C.coral,cursor:"pointer",fontWeight:600,fontFamily:"inherit",fontSize:13}}>{mode==='login'?'Sign up':'Log in'}</button>
+    </div>
+  </div>;
+}
+
+/*══════════════════════════════════════════════════════
   ADMIN PORTAL — password gate + full brand dashboard
 ══════════════════════════════════════════════════════*/
 const ADMIN_STORAGE = 'creatorship_admin';
@@ -2013,5 +2073,14 @@ function LandingPage() {
 function CreatorPortalWrapper() {
   const navigate = useNavigate();
   const nav = (p) => navigate(navPath(p));
-  return <CreatorPortal nav={nav} />;
+  const [creator, setCreator] = useState(() => {
+    try { const j = localStorage.getItem(CREATOR_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
+  });
+  if (!creator) return <div style={{minHeight:"100vh",background:C.bg}}>
+    <nav style={{padding:"14px 32px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
+      <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
+    </nav>
+    <CreatorAuthForm onSuccess={() => setCreator(JSON.parse(localStorage.getItem(CREATOR_STORAGE)))} />
+  </div>;
+  return <CreatorPortal nav={nav} creator={creator} />;
 }

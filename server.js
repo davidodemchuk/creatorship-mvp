@@ -327,6 +327,46 @@ app.post('/api/brands/login', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
+// CREATORS — signup / login
+// ═══════════════════════════════════════════════════════════
+const CREATORS_FILE = path.join(DATA_DIR, 'creators.json');
+
+function loadCreators() {
+  try { return loadJson(CREATORS_FILE) || []; } catch (_) { return []; }
+}
+
+function saveCreators(creators) {
+  ensureDir(DATA_DIR);
+  saveJson(CREATORS_FILE, creators);
+}
+
+app.post('/api/creators/signup', async (req, res) => {
+  const { email, password, displayName, tiktokHandle } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  const creators = loadCreators();
+  if (creators.some(c => (c.email || '').toLowerCase() === (email || '').toLowerCase())) {
+    return res.status(400).json({ error: 'Email already registered' });
+  }
+  const hash = await bcrypt.hash(password, 10);
+  const id = 'c' + Date.now() + '_' + crypto.randomBytes(4).toString('hex');
+  const creator = { id, email: email.toLowerCase(), password: hash, displayName: (displayName || '').trim() || null, tiktokHandle: (tiktokHandle || '').trim().replace(/^@/, '') || null, createdAt: new Date().toISOString() };
+  creators.push(creator);
+  saveCreators(creators);
+  res.json({ id, email: creator.email, displayName: creator.displayName, tiktokHandle: creator.tiktokHandle });
+});
+
+app.post('/api/creators/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  const creators = loadCreators();
+  const creator = creators.find(c => (c.email || '').toLowerCase() === (email || '').toLowerCase());
+  if (!creator || !(await bcrypt.compare(password, creator.password))) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+  res.json({ id: creator.id, email: creator.email, displayName: creator.displayName || null, tiktokHandle: creator.tiktokHandle || null });
+});
+
+// ═══════════════════════════════════════════════════════════
 // ADMIN — password verify
 // ═══════════════════════════════════════════════════════════
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'creatorship2026';
@@ -937,14 +977,14 @@ app.post('/api/campaigns/budget', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════
-// TERMS & PRIVACY
+// TERMS & PRIVACY — serve static HTML pages
 // ═══════════════════════════════════════════════════════════
+const PUBLIC_DIR = path.join(__dirname, 'public');
 app.get('/terms', (req, res) => {
-  res.send('<html><body style="font-family:sans-serif;max-width:600px;margin:60px auto;padding:0 20px"><h1>Creatorship Terms of Service</h1><p>By connecting your TikTok account you grant Creatorship read-only access to your public profile and video list for the purpose of brand licensing. We never post on your behalf.</p></body></html>');
+  res.sendFile(path.join(PUBLIC_DIR, 'terms.html'));
 });
-
 app.get('/privacy', (req, res) => {
-  res.send('<html><body style="font-family:sans-serif;max-width:600px;margin:60px auto;padding:0 20px"><h1>Creatorship Privacy Policy</h1><p>We collect your TikTok display name, follower count, and public video data. We never post on your behalf. Data is used solely to match your content with brand advertising opportunities. We do not sell your data.</p></body></html>');
+  res.sendFile(path.join(PUBLIC_DIR, 'privacy.html'));
 });
 
 // ═══ STATIC (Vite build) — production only ═══
