@@ -74,6 +74,12 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
 .touch-target{min-height:44px;min-width:44px}
 .overview-grid{grid-template-columns:1fr!important}
 .creators-grid{grid-template-columns:1fr!important}
+.onboarding-progress-track{background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden;height:8px}
+.onboarding-progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#00e0b4,#00b894);transition:width .5s cubic-bezier(.16,1,.3,1)}
+.onboarding-step-card{transition:border-color .2s,background .2s}
+.onboarding-step-card.current{border-color:rgba(0,224,180,.4);background:#1a2236;box-shadow:0 0 0 1px rgba(0,224,180,.15)}
+.onboarding-step-card.completed{border-color:rgba(52,211,153,.3)}
+.onboarding-step-card.locked{opacity:.7}
 .summary-row{flex-wrap:wrap!important;gap:12px!important}
 .bottom-nav{display:flex!important}
 }
@@ -1908,6 +1914,113 @@ const stripAt = s => (s || '').toString().replace(/^@+/, '') || '';
 const inputStyle = { padding: '10px 14px', background: 'rgba(255,255,255,.04)', border: '1px solid '+C.border, borderRadius: 8, color: C.text, fontSize: 13, fontFamily: 'inherit', width: '100%' };
 const btnStyle = { padding: '10px 20px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
 
+// Onboarding design tokens (from creatorship-onboarding spec)
+const OB = { bgDeep: '#0b0f1a', bgCard: '#111827', bgCardHover: '#1a2236', borderDim: 'rgba(255,255,255,0.06)', borderActive: 'rgba(0,224,180,0.4)', accent: '#00e0b4', accentGlow: 'rgba(0,224,180,0.15)', orange: '#ff9f43', textPrimary: '#f0f2f5', textSecondary: '#8b95a8', textDim: '#5a6478', success: '#34d399' };
+
+function BrandOverviewOnboarding({ profile, storeDisplay, creatorsCount, campaignsCount, setBrandTab }) {
+  const steps = [
+    { id: 'account', title: 'Create your account', why: 'Your brand account is the hub for connecting Meta, TikTok Shop, and creators. We use it to persist settings and campaign data.', ctaLabel: null, ctaTab: null },
+    { id: 'meta', title: 'Connect Meta Ads API', why: 'Meta Ads powers your creator campaigns. Connecting your Ad Account and Page ID lets Creatorship create and manage campaigns on your behalf.', ctaLabel: 'Go to Settings', ctaTab: 'settings' },
+    { id: 'tiktok', title: 'Connect TikTok Shop', why: 'Linking your TikTok Shop (store) lets us match your products with creators and track performance. Add your store handle in Settings.', ctaLabel: 'Go to Settings', ctaTab: 'settings' },
+    { id: 'creators', title: 'Add creators to your pipeline', why: 'Creators are the heart of your campaigns. Add at least one creator so we can launch your first campaign.', ctaLabel: 'Go to Creators', ctaTab: 'creators' },
+    { id: 'campaign', title: 'Launch your first campaign', why: 'Once Meta is connected and you have creators, launch a campaign to run ads with creator content. You can monitor performance in Campaigns.', ctaLabel: 'Go to Campaigns', ctaTab: 'campaigns' },
+  ];
+  const completions = [
+    true,
+    !!(profile && profile.hasMetaToken),
+    !!storeDisplay,
+    creatorsCount >= 1,
+    campaignsCount >= 1,
+  ];
+  const completedCount = completions.filter(Boolean).length;
+  const allComplete = completedCount === 5;
+  const currentStepIndex = completions.findIndex(c => !c);
+  const currentStep = currentStepIndex >= 0 ? currentStepIndex : 5;
+
+  const getStepState = (i) => {
+    if (completions[i]) return 'completed';
+    if (i === currentStep) return 'current';
+    return 'locked';
+  };
+
+  return (
+    <div className="fu" style={{ animationDelay: '0.05s' }}>
+      <h1 className="heading-h3" style={{ fontSize: 24, fontWeight: 800, marginBottom: 24, color: OB.textPrimary }}>Overview</h1>
+      {/* Stats row */}
+      <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 32 }}>
+        <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+          <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Store</div>
+          <div className="mono" style={{ fontSize: 20, fontWeight: 800, color: OB.accent, marginTop: 4 }}>{storeDisplay ? '@' + storeDisplay : '—'}</div>
+        </div>
+        <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+          <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Connected Creators</div>
+          <div className="mono" style={{ fontSize: 20, fontWeight: 800, color: OB.success, marginTop: 4 }}>{creatorsCount}</div>
+        </div>
+        <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+          <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Active Campaigns</div>
+          <div className="mono" style={{ fontSize: 20, fontWeight: 800, color: OB.orange, marginTop: 4 }}>{campaignsCount}</div>
+        </div>
+      </div>
+
+      {allComplete ? (
+        <div className="gl mobile-card fu" style={{ padding: 28, background: OB.bgCard, border: '1px solid ' + OB.borderActive, borderRadius: 16, textAlign: 'center', boxShadow: '0 0 0 1px ' + OB.accentGlow }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: OB.success, marginBottom: 8 }}>✓ You're all set!</div>
+          <div style={{ fontSize: 14, color: OB.textSecondary, marginBottom: 20 }}>You've completed onboarding. Head to Campaigns to launch and manage your creator ads.</div>
+          <button onClick={() => setBrandTab('campaigns')} style={{ padding: '12px 24px', background: OB.accent, color: '#0b0f1a', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Campaigns →</button>
+        </div>
+      ) : (
+        <>
+          {/* Progress bar */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ fontSize: 13, color: OB.textSecondary }}>{completedCount} of 5 complete</span>
+            </div>
+            <div className="onboarding-progress-track" style={{ background: OB.borderDim }}>
+              <div className="onboarding-progress-fill" style={{ width: (completedCount / 5) * 100 + '%' }} />
+            </div>
+          </div>
+          {/* Step cards */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {steps.map((step, i) => {
+              const state = getStepState(i);
+              const isCurrent = state === 'current';
+              return (
+                <div
+                  key={step.id}
+                  className={`onboarding-step-card gl mobile-card ${state}`}
+                  style={{
+                    padding: 20,
+                    background: isCurrent ? OB.bgCardHover : OB.bgCard,
+                    border: '1px solid ' + (isCurrent ? OB.borderActive : OB.borderDim),
+                    borderRadius: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, background: state === 'completed' ? OB.success : state === 'current' ? OB.accentGlow : OB.borderDim, color: state === 'completed' ? '#0b0f1a' : state === 'current' ? OB.accent : OB.textDim, border: state === 'current' ? '1px solid ' + OB.borderActive : 'none' }}>
+                      {state === 'completed' ? '✓' : state === 'locked' ? '🔒' : i + 1}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: state === 'locked' ? OB.textDim : OB.textPrimary }}>{step.title}</div>
+                      {isCurrent && (
+                        <>
+                          <p style={{ fontSize: 13, color: OB.textSecondary, marginTop: 10, marginBottom: 14, lineHeight: 1.5 }}>{step.why}</p>
+                          {step.ctaLabel && step.ctaTab && (
+                            <button onClick={() => setBrandTab(step.ctaTab)} style={{ padding: '10px 18px', background: OB.accent, color: '#0b0f1a', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{step.ctaLabel} →</button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function BrandDashboardView({ brand, setBrand, nav }) {
   const [brandTab, setBrandTab] = useState('overview');
   const [profile, setProfile] = useState(brand);
@@ -1991,34 +2104,7 @@ function BrandDashboardView({ brand, setBrand, nav }) {
     <BottomNav/>
     <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:800}}>
 
-      {brandTab==="overview"&&<div>
-        <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Overview</h1>
-        <div className="overview-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:32}}>
-          <div className="gl mobile-card" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Store</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.teal,marginTop:4}}>{storeDisplay ? '@'+storeDisplay : '—'}</div></div>
-          <div className="gl mobile-card" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Connected Creators</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.green,marginTop:4}}>{creators.length}</div></div>
-          <div className="gl mobile-card" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Active Campaigns</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.gold,marginTop:4}}>{campaigns.length}</div></div>
-        </div>
-        <div className="gl mobile-card" style={{padding:24}}>
-          <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Getting Started</div>
-          <div style={{display:"flex",flexDirection:"column",gap:10}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}><span style={{color:C.green}}>✓</span><span>Account created</span></div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{color:profile.hasMetaToken?C.green:C.dim}}>{profile.hasMetaToken?'✓':'☐'}</span>
-              <span>Connect Meta API</span>
-              {!profile.hasMetaToken&&<button onClick={()=>setBrandTab("settings")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Settings</button>}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{color:creators.length>0?C.green:C.dim}}>{creators.length>0?'✓':'☐'}</span>
-              <span>Creators in pipeline</span>
-              {creators.length===0&&<button onClick={()=>setBrandTab("creators")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Creators</button>}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{color:campaigns.length>0?C.green:C.dim}}>{campaigns.length>0?'✓':'☐'}</span>
-              <span>First campaign launched</span>
-            </div>
-          </div>
-        </div>
-      </div>}
+      {brandTab==="overview"&&<BrandOverviewOnboarding profile={profile} storeDisplay={storeDisplay} creatorsCount={creators.length} campaignsCount={campaigns.length} setBrandTab={setBrandTab} />}
 
       {brandTab==="creators"&&<div>
         <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creators</h1>
