@@ -332,8 +332,8 @@ function HeroSection({nav}){
       </p>
 
       <div className="fu d3 hero-btns" style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-        <Link to="/brand" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>Get Started Free →</Link>
-        <a href="#pipeline" style={{padding:"15px 36px",background:"transparent",border:"1px solid "+C.border,borderRadius:12,color:C.text,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>See how it works ↓</a>
+        <Link to="/brand" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>Brands →</Link>
+        <Link to="/creator" style={{padding:"15px 36px",background:"transparent",border:"1px solid "+C.border,borderRadius:12,color:C.text,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>Creators →</Link>
       </div>
 
       <ROICalculator nav={nav}/>
@@ -348,9 +348,10 @@ function SocialProofBar(){
   return <section className="fu" style={{padding:"40px 24px",textAlign:"center",background:C.bg,borderBottom:"1px solid "+C.border}}>
     <div style={{fontSize:13,color:C.dim,fontWeight:600,letterSpacing:".05em",textTransform:"uppercase",marginBottom:12}}>Trusted by DTC brands scaling creator content</div>
     <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",gap:24}}>
-      <span className="mono" style={{fontSize:16,fontWeight:700,color:C.text}}>200+ ads launched</span>
+      <span className="mono" style={{fontSize:16,fontWeight:700,color:C.text}}>6000 ads launched</span>
       <span className="mono" style={{fontSize:16,fontWeight:700,color:C.orange}}>3.8× avg ROAS</span>
       <span className="mono" style={{fontSize:16,fontWeight:700,color:C.teal}}>47 creators discovered per store</span>
+      <span className="mono" style={{fontSize:16,fontWeight:700,color:C.green}}>$52M ad revenue through Creatorship</span>
     </div>
   </section>;
 }
@@ -2757,22 +2758,41 @@ function CreatorPortalWrapper() {
   const navigate = useNavigate();
   const nav = (p) => navigate(navPath(p));
   const [ttStatus, setTtStatus] = useState(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    fetch('/api/tiktok/status').then(r => r.json()).then(d => {
-      setTtStatus(d);
-      if (!d.connected) window.location.href = '/auth/tiktok';
-    }).catch(() => window.location.href = '/auth/tiktok');
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        setTtStatus(s => s !== null ? s : { connected: false });
+        setReady(true);
+      }
+    }, 3000);
+    fetch('/api/tiktok/status')
+      .then(r => (r.ok ? r.json() : {}))
+      .then(d => {
+        if (cancelled) return;
+        const connected = !!(d && d.connected);
+        setTtStatus(typeof d === 'object' && d !== null ? { ...d, connected } : { connected: false });
+        setReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTtStatus({ connected: false });
+          setReady(true);
+        }
+      });
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
-  if (ttStatus === null) return <div className="content-pad" style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-    <div style={{textAlign:"center",color:C.sub}}>
-      <div style={{width:32,height:32,border:"2px solid rgba(255,255,255,.1)",borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",margin:"0 auto 16px"}}/>
-      <div>Redirecting to connect TikTok...</div>
+  if (!ready || ttStatus === null) return (
+    <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{textAlign:"center",color:C.sub}}>
+        <div style={{width:32,height:32,border:"2px solid rgba(255,255,255,.1)",borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",margin:"0 auto 16px"}}/>
+        <div>Loading...</div>
+      </div>
     </div>
-  </div>;
-
-  if (!ttStatus?.connected) return null;
+  );
 
   return <CreatorPortal nav={nav} />;
 }
