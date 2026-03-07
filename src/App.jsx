@@ -7,7 +7,7 @@ import { Routes, Route, useNavigate, Link } from "react-router-dom";
   Real APIs: ScrapeCreators, Meta Marketing, TikTok OAuth
 ══════════════════════════════════════════════════════*/
 
-const C={bg:"#030711",bg2:"#080d1c",card:"rgba(255,255,255,.025)",border:"rgba(255,255,255,.06)",borderH:"rgba(255,255,255,.14)",text:"#eaeff7",sub:"#7d8aaa",dim:"#3d4660",teal:"#00e4b8",coral:"#ff5252",gold:"#ffb400",blue:"#2da1ff",purple:"#9b6dff",green:"#2dd4a0",pink:"#ff6eb4"};
+const C={bg:"#030711",bg2:"#080d1c",card:"rgba(255,255,255,.025)",border:"rgba(255,255,255,.06)",borderH:"rgba(255,255,255,.14)",text:"#eaeff7",sub:"#7d8aaa",dim:"#3d4660",teal:"#00e4b8",coral:"#ff5252",gold:"#ffb400",blue:"#2da1ff",purple:"#9b6dff",green:"#2dd4a0",pink:"#ff6eb4",orange:"#ff9f43",success:"#34d399",error:"#ef4444"};
 const g=(a,b)=>`linear-gradient(135deg,${a},${b})`;
 const gT=(a,b)=>({background:g(a,b),WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"});
 const $=n=>n>=1e6?"$"+(n/1e6).toFixed(1)+"M":n>=1000?"$"+(n/1000).toFixed(1)+"K":"$"+Math.round(n);
@@ -86,6 +86,7 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
 .creators-discovery-layout>div{flex-direction:column!important}
 .creators-discovery-layout>div>div:first-child{width:100%!important;max-width:none!important;max-height:200px!important;border-right:none!important;border-bottom:1px solid rgba(255,255,255,.06)!important}
 .bottom-nav{display:flex!important}
+.campaign-metrics-row{flex-direction:column!important;gap:12px!important}
 }
 @media(max-width:480px){
 .auto-grid{grid-template-columns:1fr!important}
@@ -323,19 +324,33 @@ function HeroSection({nav}){
 
       {/* Headline */}
       <h1 className="fu d1 hero-headline" style={{fontSize:52,fontWeight:900,lineHeight:1.08,letterSpacing:"-.04em",marginBottom:20,maxWidth:800,margin:"0 auto 20px"}}>
-        Creatorship AI turns <span style={gT(C.coral,C.pink)}>TikTok Shop videos</span><br/>into <span style={gT(C.teal,C.blue)}>winning Meta ads</span>
+        Turn TikTok creators into Meta ads. <span style={gT(C.teal,C.green)}>Automatically.</span>
       </h1>
 
       <p className="fu d2 hero-sub" style={{fontSize:18,color:C.sub,lineHeight:1.65,maxWidth:640,margin:"0 auto 36px"}}>
-        Creatorship finds your top-performing TikTok creators, downloads the video, and launches it as a Meta ad — automatically. You only pay when products sell. Get the most out of videos that are already working: turn what’s driving organic sales on TikTok into scaled, high-ROAS Meta campaigns.
+        Paste your TikTok Shop URL. Creatorship finds creators already posting your products, downloads the content, and launches it as Meta ads — in minutes, not weeks.
       </p>
 
-      <div className="fu d3 hero-btns" style={{display:"flex",gap:12,justifyContent:"center"}}>
-        <Link to="/brand" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>I'm a Brand →</Link>
-        <a href="/auth/tiktok" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>I'm a Creator</a>
+      <div className="fu d3 hero-btns" style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
+        <Link to="/brand" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>Get Started Free →</Link>
+        <a href="#pipeline" style={{padding:"15px 36px",background:"transparent",border:"1px solid "+C.border,borderRadius:12,color:C.text,fontSize:15,fontWeight:600,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>See how it works ↓</a>
       </div>
 
       <ROICalculator nav={nav}/>
+    </div>
+  </section>;
+}
+
+/*══════════════════════════════════════════════════════
+  SOCIAL PROOF — Trust bar between hero and pipeline
+══════════════════════════════════════════════════════*/
+function SocialProofBar(){
+  return <section className="fu" style={{padding:"40px 24px",textAlign:"center",background:C.bg,borderBottom:"1px solid "+C.border}}>
+    <div style={{fontSize:13,color:C.dim,fontWeight:600,letterSpacing:".05em",textTransform:"uppercase",marginBottom:12}}>Trusted by DTC brands scaling creator content</div>
+    <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",gap:24}}>
+      <span className="mono" style={{fontSize:16,fontWeight:700,color:C.text}}>200+ ads launched</span>
+      <span className="mono" style={{fontSize:16,fontWeight:700,color:C.orange}}>3.8× avg ROAS</span>
+      <span className="mono" style={{fontSize:16,fontWeight:700,color:C.teal}}>47 creators discovered per store</span>
     </div>
   </section>;
 }
@@ -353,7 +368,7 @@ function AutomationSection(){
     {before:"Spreadsheet payouts",headline:"Creators get paid automatically",body:"Commission is calculated and paid weekly. No invoicing. No chasing. Creators stay happy, you keep 86% after a 4% platform fee.",stat:"10% creator · 86% you keep",color:C.gold},
   ];
 
-  return <section className="sec-pad-lg" style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
+  return <section id="pipeline" className="sec-pad-lg" style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
     <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
     <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
     <div style={{maxWidth:720,width:'100%',margin:"0 auto",padding:'0 16px',boxSizing:'border-box'}}>
@@ -553,16 +568,36 @@ function EarnSection({nav}){
 }
 
 /*══════════════════════════════════════════════════════
+  PRICING — Simple pricing section
+══════════════════════════════════════════════════════*/
+function PricingSection({nav}){
+  return <section className="sec-pad" style={{padding:"80px 40px",background:C.bg2,borderTop:"1px solid "+C.border}}>
+    <div style={{maxWidth:560,margin:"0 auto",textAlign:"center"}}>
+      <h2 className="fu heading-h2" style={{fontSize:32,fontWeight:900,letterSpacing:"-.02em",marginBottom:12}}>Simple pricing. No monthly fees.</h2>
+      <div className="gl fu" style={{padding:36,borderRadius:16,marginTop:24}}>
+        <div className="mono" style={{fontSize:28,fontWeight:800,color:C.orange,marginBottom:8}}>4% of managed ad spend</div>
+        <p style={{fontSize:15,color:C.sub,lineHeight:1.6,marginBottom:20}}>That's it. No seat fees. No contracts. No minimums.</p>
+        <ul style={{textAlign:"left",listStyle:"none",padding:0,margin:"0 0 24px",fontSize:14,color:C.sub,lineHeight:2}}>
+          {["Unlimited creators","Unlimited campaigns","TikTok discovery","Meta ad automation","Performance monitoring","Creator payouts"].map((x,i)=><li key={i} style={{display:"flex",alignItems:"center",gap:8}}><span style={{color:C.teal}}>✓</span>{x}</li>)}
+        </ul>
+        <Link to="/brand" style={{padding:"14px 32px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:10,cursor:"pointer",fontFamily:"inherit",textDecoration:"none",display:"inline-block"}}>Start for Free →</Link>
+      </div>
+    </div>
+  </section>;
+}
+
+/*══════════════════════════════════════════════════════
   SECTION 4 — CTA + Footer
 ══════════════════════════════════════════════════════*/
 function CTASection(){
-  return <section className="sec-pad" style={{padding:"40px 40px 16px"}}>
-    <footer className="footer-flex" style={{borderTop:"1px solid "+C.border,padding:"32px 16px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:16,maxWidth:1100,width:'100%',margin:"0 auto",boxSizing:'border-box'}}>
+  return <section className="sec-pad" style={{padding:"40px 40px 24px"}}>
+    <footer className="footer-flex" style={{borderTop:"1px solid "+C.border,padding:"32px 16px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:20,maxWidth:1100,width:'100%',margin:"0 auto",boxSizing:'border-box'}}>
       <div style={{fontSize:18,fontWeight:900}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></div>
-      <div style={{display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:24,flexWrap:"wrap"}}>
         <a href="/terms" style={{fontSize:12,color:C.sub,textDecoration:"none"}}>Terms</a>
         <a href="/privacy" style={{fontSize:12,color:C.sub,textDecoration:"none"}}>Privacy</a>
-        <span style={{fontSize:12,color:C.dim}}>TikTok creators × Meta ads × AI</span>
+        <a href="mailto:hello@creatorship.app" style={{fontSize:12,color:C.sub,textDecoration:"none"}}>Contact</a>
+        <span style={{fontSize:12,color:C.dim}}>© 2026 Creatorship. All rights reserved.</span>
       </div>
     </footer>
   </section>;
@@ -579,8 +614,10 @@ function Homepage({nav}){
       </div>
     </nav>
     <HeroSection nav={nav}/>
+    <SocialProofBar/>
     <AutomationSection/>
     <EarnSection nav={nav}/>
+    <PricingSection nav={nav}/>
     <CTASection/>
   </div>;
 }
@@ -2251,6 +2288,237 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
   </div>;
 }
 
+/*══════════════════════════════════════════════════════
+  CAMPAIGNS TAB — Performance dashboard
+══════════════════════════════════════════════════════*/
+function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccount }) {
+  const [filter, setFilter] = useState('all');
+  const [menuOpen, setMenuOpen] = useState(null);
+  useEffect(() => { if (!menuOpen) return; const h = () => setMenuOpen(null); setTimeout(() => document.addEventListener('click', h), 0); return () => document.removeEventListener('click', h); }, [menuOpen]);
+
+  const filtered = campaigns.filter(c => {
+    const s = (c.status || '').toUpperCase();
+    if (filter === 'all') return true;
+    if (filter === 'active') return s === 'ACTIVE';
+    if (filter === 'paused') return s === 'PAUSED';
+    if (filter === 'completed') return s === 'ARCHIVED' || s === 'DELETED' || s === 'COMPLETED';
+    return true;
+  });
+
+  const fmtDate = (d) => {
+    if (!d) return '—';
+    try { const x = new Date(d); return x.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); } catch (_) { return d.slice?.(0, 10) || '—'; }
+  };
+  const creatorHandle = (c) => c.creator ? '@' + String(c.creator).replace(/^@/, '') : '—';
+  const actId = (adAccount || 'act_132555948').replace(/^act_/, '');
+  const metaAdsUrl = () => 'https://adsmanager.facebook.com/adsmanager/manage/campaigns?act=' + actId;
+
+  if (loading) return <div className="fu" style={{padding:40}}><div style={{fontSize:14,color:C.sub}}>Loading campaigns...</div></div>;
+  if (error) return <div className="fu" style={{padding:24}}><div style={{color:C.error,fontSize:14,marginBottom:16}}>{error}</div><button onClick={refresh} style={{...btnStyle,background:C.teal,color:C.bg}}>Retry</button></div>;
+
+  if (campaigns.length === 0) {
+    return <div className="fu">
+      <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Campaigns</h1>
+      <div className="gl mobile-card" style={{padding:48,textAlign:"center",maxWidth:440,margin:"0 auto"}}>
+        <div style={{fontSize:48,marginBottom:16}}>🚀</div>
+        <div style={{fontSize:18,fontWeight:700,marginBottom:8}}>No campaigns yet</div>
+        <div style={{fontSize:14,color:C.sub,lineHeight:1.5,marginBottom:24}}>Launch your first campaign from the Creators tab — find a creator, pick a video, and go live in one click.</div>
+        <button onClick={()=>setBrandTab("creators")} style={{...btnStyle,background:C.teal,color:C.bg,padding:"12px 24px",fontSize:14}}>Browse Creators →</button>
+      </div>
+    </div>;
+  }
+
+  return <div className="fu">
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16,marginBottom:24}}>
+      <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,margin:0}}>Campaigns</h1>
+      <button onClick={()=>setBrandTab("creators")} style={{...btnStyle,background:C.teal,color:C.bg,padding:"10px 20px",fontSize:14}}>New Campaign +</button>
+    </div>
+    <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
+      {['all','active','paused','completed'].map(f=>(
+        <button key={f} onClick={()=>setFilter(f)} style={{padding:"8px 16px",background:filter===f?C.teal+"20":'transparent',border:"1px solid "+(filter===f?C.teal:C.border),borderRadius:20,color:filter===f?C.teal:C.sub,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textTransform:"capitalize"}}>{f}</button>
+      ))}
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:16}}>
+      {filtered.map((c,i)=>{
+        const spend = c.insights?.spend != null ? parseFloat(c.insights.spend) : null;
+        const impressions = c.insights?.impressions != null ? parseInt(c.insights.impressions) : null;
+        const clicks = c.insights?.clicks != null ? parseInt(c.insights.clicks) : null;
+        const roasArr = c.insights?.purchase_roas;
+        const roasVal = roasArr?.[0]?.value ? parseFloat(roasArr[0].value) : null;
+        const s = (c.status || '').toUpperCase();
+        const statusLabel = s === 'ACTIVE' ? 'Active' : s === 'PAUSED' ? 'Paused' : s === 'ARCHIVED' ? 'Completed' : s || '—';
+        const statusColor = s === 'ACTIVE' ? C.success : s === 'PAUSED' ? C.orange : C.dim;
+        const roasColor = roasVal != null ? (roasVal >= 2 ? C.teal : roasVal >= 1 ? C.orange : C.error) : C.sub;
+        const trend = roasVal != null ? (roasVal >= 2 ? '↑' : roasVal >= 1 ? '→' : '↓') : '—';
+        const trendColor = trend === '↑' ? C.success : trend === '↓' ? C.error : C.dim;
+        return (
+          <div key={c.id||i} className="gl mobile-card" style={{padding:20,display:"flex",flexWrap:"wrap",gap:16,alignItems:"center"}}>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>{c.name || c.creator || 'Campaign'}</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <span style={{fontSize:12,color:C.teal,fontWeight:600}}>{creatorHandle(c)}</span>
+                <span style={{fontSize:11,padding:"2px 8px",borderRadius:6,background:statusColor+"20",color:statusColor,display:"inline-flex",alignItems:"center",gap:4}}>
+                  {s==='ACTIVE'&&<span style={{width:6,height:6,borderRadius:"50%",background:statusColor}}/>}{statusLabel}
+                </span>
+                <span style={{fontSize:11,color:C.dim}}>Launched {fmtDate(c.created_time || c.launchedAt)}</span>
+              </div>
+            </div>
+            <div className="campaign-metrics-row" style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Spend</div><div className="mono" style={{fontSize:15,fontWeight:700,color:C.text}}>{spend != null ? '$' + parseFloat(spend).toFixed(2) : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Impressions</div><div className="mono" style={{fontSize:15,fontWeight:700,color:C.text}}>{impressions != null ? fN(impressions) : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Clicks</div><div className="mono" style={{fontSize:15,fontWeight:700,color:C.text}}>{clicks != null ? clicks.toLocaleString() : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>ROAS</div><div className="mono" style={{fontSize:15,fontWeight:700,color:roasColor}}>{roasVal != null ? roasVal.toFixed(1) + '×' : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Trend</div><div style={{fontSize:15,fontWeight:700,color:trendColor}}>{trend}</div></div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <button style={{...btnStyle,background:"transparent",border:"1px solid "+C.border,color:C.text,padding:"8px 14px",fontSize:12}}>{s==='ACTIVE'?'Pause':'Resume'}</button>
+              <div style={{position:"relative"}}>
+                <button onClick={e=>{e.stopPropagation();setMenuOpen(menuOpen===c.id?null:c.id)}} style={{...btnStyle,background:"transparent",border:"none",padding:"6px 10px",color:C.sub,fontSize:16}}>⋮</button>
+                {menuOpen===c.id&&<div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:32,zIndex:50,minWidth:200,background:C.bg2,border:"1px solid "+C.border,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,.4)",padding:8}}>
+                  <a href={metaAdsUrl()} target="_blank" rel="noopener noreferrer" style={{display:"block",padding:"10px 12px",fontSize:13,color:C.text,textDecoration:"none",borderRadius:6}}>View in Meta Ads Manager ↗</a>
+                  <button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.text,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>Duplicate</button>
+                  <button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.error,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>End Campaign</button>
+                </div>}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+    {filtered.length === 0 && <div style={{color:C.dim,fontSize:14}}>No campaigns match this filter.</div>}
+    <div style={{fontSize:11,color:C.dim,marginTop:16}}>Performance data syncs from Meta every hour.</div>
+  </div>;
+}
+
+/*══════════════════════════════════════════════════════
+  SETTINGS TAB — Connection flows + brand profile
+══════════════════════════════════════════════════════*/
+function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile }) {
+  const [metaMsg, setMetaMsg] = useState(null);
+  const [tiktokMsg, setTiktokMsg] = useState(null);
+  const [profileMsg, setProfileMsg] = useState(null);
+
+  const handleMetaConnect = async () => {
+    setMetaMsg(null);
+    const res = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, metaToken: brandSettings.metaToken || undefined, adAccount: brandSettings.adAccount || undefined, pageId: brandSettings.pageId || undefined }) });
+    const d = await res.json();
+    if (d.success) { setMetaMsg({ ok: true, text: 'Connected successfully' }); setBrandSettings(p => ({ ...p, metaToken: '' })); refreshProfile(); }
+    else { setMetaMsg({ ok: false, text: d.error || 'Failed to connect' }); }
+  };
+
+  const handleTiktokConnect = async () => {
+    setTiktokMsg(null);
+    const res = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, storeName: brandSettings.storeName }) });
+    const d = await res.json();
+    if (d.success) { setTiktokMsg({ ok: true, text: 'Store connected' }); refreshProfile(); }
+    else { setTiktokMsg({ ok: false, text: d.error || 'Failed to connect' }); }
+  };
+
+  const handleProfileSave = async () => {
+    setProfileMsg(null);
+    const res = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, brandName: brandSettings.brandName, storeName: brandSettings.storeName }) });
+    const d = await res.json();
+    if (d.success) { setProfileMsg({ ok: true, text: 'Saved' }); refreshProfile(); }
+    else { setProfileMsg({ ok: false, text: d.error || 'Failed to save' }); }
+  };
+
+  const handleTiktokDisconnect = async () => {
+    setTiktokMsg(null);
+    const res = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, storeName: '' }) });
+    const d = await res.json();
+    if (d.success) { setBrandSettings(p => ({ ...p, storeName: '' })); refreshProfile(); }
+    else { setTiktokMsg({ ok: false, text: d.error }); }
+  };
+
+  const storeDisplay = stripAt(profile.storeName || brand.storeName || brandSettings.storeName);
+  const hasTiktok = !!storeDisplay;
+  const hasMeta = !!(profile.hasMetaToken || brandSettings.metaToken);
+
+  return <div className="fu">
+    <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Settings</h1>
+
+    {/* Section 1: TikTok Shop */}
+    <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+        <div style={{width:40,height:40,borderRadius:10,background:'rgba(0,0,0,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>🎵</div>
+        <h3 style={{color:C.text,margin:0,fontSize:17}}>TikTok Shop Connection</h3>
+      </div>
+      {!hasTiktok ? (
+        <>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Connect TikTok Shop</div>
+          <p style={{fontSize:13,color:C.sub,lineHeight:1.5,marginBottom:16}}>Link your TikTok Seller Center to discover creators already selling your products. We'll pull your store catalog and sync affiliate data.</p>
+          <input placeholder="TikTok Shop URL or store handle" value={brandSettings.storeName||''} onChange={e=>setBrandSettings(p=>({...p,storeName:stripAt(e.target.value)}))} style={{...inputStyle,marginBottom:12}} />
+          <button onClick={handleTiktokConnect} style={{...btnStyle,background:C.teal,color:C.bg}}>Connect</button>
+        </>
+      ) : (
+        <div>
+          <div className="mono" style={{fontSize:14,color:C.teal,marginBottom:8}}>@{storeDisplay}</div>
+          <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>Connected</span>
+          <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last synced: —</div>
+          <button onClick={handleTiktokDisconnect} style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>
+        </div>
+      )}
+      {tiktokMsg&&<div style={{marginTop:12,fontSize:13,color:tiktokMsg.ok?C.success:C.error}}>{tiktokMsg.text}</div>}
+    </div>
+
+    {/* Section 2: Meta Ads */}
+    <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+        <div style={{width:40,height:40,borderRadius:10,background:'rgba(0,0,0,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📊</div>
+        <h3 style={{color:C.text,margin:0,fontSize:17}}>Meta Ads Connection</h3>
+      </div>
+      {!hasMeta ? (
+        <>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Connect Meta Ads</div>
+          <p style={{fontSize:13,color:C.sub,lineHeight:1.5,marginBottom:16}}>Connect your Meta Ad Account so Creatorship can create and manage campaigns on your behalf. We need your Ad Account ID and Page ID.</p>
+          <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Ad Account ID</label>
+          <input placeholder="act_XXXXXXXXX" value={brandSettings.adAccount||''} onChange={e=>setBrandSettings(p=>({...p,adAccount:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Page ID</label>
+          <input placeholder="Page ID" value={brandSettings.pageId||''} onChange={e=>setBrandSettings(p=>({...p,pageId:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Access Token</label>
+          <input type="password" placeholder="Meta Access Token" value={brandSettings.metaToken||''} onChange={e=>setBrandSettings(p=>({...p,metaToken:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <div style={{fontSize:11,color:C.dim,marginBottom:16}}>Find these in <a href="https://business.facebook.com" target="_blank" rel="noopener noreferrer" style={{color:C.teal}}>Meta Business Suite</a></div>
+          <button onClick={handleMetaConnect} style={{...btnStyle,background:C.teal,color:C.bg}}>Connect & Verify</button>
+        </>
+      ) : (
+        <div>
+          <div className="mono" style={{fontSize:13,color:C.sub,marginBottom:8}}>{(brandSettings.adAccount||profile.adAccount||'').replace(/(.{4}).*(.{4})/,'$1•••$2')}</div>
+          <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>Connected</span>
+          <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last verified: —</div>
+          <button style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>
+        </div>
+      )}
+      {metaMsg&&<div style={{marginTop:12,fontSize:13,color:metaMsg.ok?C.success:C.error}}>{metaMsg.text}</div>}
+    </div>
+
+    {/* Section 3: Brand Profile */}
+    <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+      <h3 style={{color:C.text,margin:0,marginBottom:16,fontSize:17}}>Brand Profile</h3>
+      <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Store display name</label>
+      <input placeholder="Your brand or store name" value={brandSettings.brandName||''} onChange={e=>setBrandSettings(p=>({...p,brandName:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+      <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Contact email</label>
+      <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
+      <button onClick={handleProfileSave} style={{...btnStyle,background:C.teal,color:C.bg}}>Save Changes</button>
+      {profileMsg&&<div style={{marginTop:12,fontSize:13,color:profileMsg.ok?C.success:C.error}}>{profileMsg.text}</div>}
+    </div>
+
+    {/* Section 4: Billing placeholder */}
+    <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+      <h3 style={{color:C.text,margin:0,marginBottom:12,fontSize:17}}>Billing & Plan</h3>
+      <p style={{fontSize:14,color:C.sub,lineHeight:1.5,marginBottom:16}}>You're on the <strong style={{color:C.text}}>Starter</strong> plan. Creatorship takes 4% of ad spend managed through the platform.</p>
+      <button disabled style={{...btnStyle,background:C.dim,color:C.sub,opacity:0.7,cursor:'not-allowed'}}>Upgrade (coming soon)</button>
+    </div>
+
+    {/* Account / Logout */}
+    <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24}}>
+      <h3 style={{color:C.text,margin:0,marginBottom:16,fontSize:17}}>Account</h3>
+      <div style={{fontSize:11,color:C.dim,marginBottom:4}}>Email</div>
+      <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
+      <button onClick={logout} style={{...btnStyle,background:C.error,color:C.bg}}>Logout</button>
+    </div>
+  </div>;
+}
+
 function BrandDashboardView({ brand, setBrand, nav }) {
   const [brandTab, setBrandTab] = useState('overview');
   const [profile, setProfile] = useState(brand);
@@ -2281,7 +2549,7 @@ function BrandDashboardView({ brand, setBrand, nav }) {
     fetch('/api/creators').then(r => r.json()).then(d => { setCreators(Array.isArray(d) ? d : []); setLoadingCreators(false); }).catch(() => setLoadingCreators(false));
   }, []);
 
-  useEffect(() => {
+  const refreshCampaigns = useCallback(() => {
     setLoadingCampaigns(true); setCampError(null);
     fetch('/api/brand/campaigns?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => {
       setCampaigns(d.campaigns || []);
@@ -2289,6 +2557,7 @@ function BrandDashboardView({ brand, setBrand, nav }) {
       setLoadingCampaigns(false);
     }).catch(() => { setLoadingCampaigns(false); setCampError('Failed to load'); });
   }, [brand.id]);
+  useEffect(() => { refreshCampaigns(); }, [refreshCampaigns]);
 
   const logout = () => { localStorage.removeItem(BRAND_STORAGE); setBrand(null); window.location.href = '/brand'; };
   const storeDisplay = stripAt(profile.storeName || brand.storeName);
@@ -2338,54 +2607,9 @@ function BrandDashboardView({ brand, setBrand, nav }) {
 
       {brandTab==="creators"&&<CreatorDiscoveryView brand={brand} profile={profile} setBrandTab={setBrandTab} />}
 
-      {brandTab==="campaigns"&&<div>
-        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Campaigns</h1>
-        {loadingCampaigns?<div style={{color:C.sub}}>Loading...</div>:
-        campaigns.length===0?<div className="gl" style={{padding:40,textAlign:"center"}}>
-          <div style={{fontSize:32,marginBottom:12}}>🚀</div>
-          <div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No campaigns yet</div>
-          <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Your account manager will launch your first campaign once your Meta API is connected.</div>
-          <button onClick={()=>setBrandTab("settings")} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Connect Meta API →</button>
-        </div>:
-        <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {campaigns.map((c,i)=><div key={i} className="gl mobile-card" style={{padding:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div><div style={{fontWeight:700}}>{c.name||c.creator}</div><div style={{fontSize:12,color:C.sub}}>{c.productTitle||''} · {c.status||'—'}</div></div>
-            <span style={{fontSize:12,color:C.dim}}>{c.created_time?.slice(0,10)}</span>
-          </div>)}
-        </div>}
-        {campError&&!loadingCampaigns&&<div style={{color:C.coral,fontSize:13,marginTop:12}}>{campError}</div>}
-      </div>}
+      {brandTab==="campaigns"&&<CampaignsTab campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} refresh={refreshCampaigns} adAccount={profile.adAccount || brand.adAccount} />}
 
-      {brandTab==="settings"&&<div>
-        <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Settings</h1>
-        {/* Section 1 — Meta API */}
-        <div className="mobile-card" style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-            <h3 style={{color:C.text,margin:0}}>Meta API Credentials</h3>
-            {(profile.hasMetaToken||brandSettings.metaToken)?<span style={{color:C.teal,fontSize:13}}>✓ Connected</span>:<span style={{color:C.dim,fontSize:13}}>Not connected</span>}
-          </div>
-          <input placeholder="Meta Access Token" type="password" value={brandSettings.metaToken||''} onChange={e=>setBrandSettings(p=>({...p,metaToken:e.target.value}))} style={{...inputStyle,marginBottom:12,width:'100%'}} />
-          <div className="settings-meta-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
-            <input placeholder="Ad Account ID (act_XXXXXXXXX)" value={brandSettings.adAccount||''} onChange={e=>setBrandSettings(p=>({...p,adAccount:e.target.value}))} style={inputStyle} />
-            <input placeholder="Page ID" value={brandSettings.pageId||''} onChange={e=>setBrandSettings(p=>({...p,pageId:e.target.value}))} style={inputStyle} />
-          </div>
-          <button onClick={saveBrandSettings} style={{...btnStyle,background:C.teal,color:'#000'}}>Save Meta Credentials</button>
-        </div>
-        {/* Section 2 — Store Info */}
-        <div className="mobile-card" style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
-          <h3 style={{color:C.text,margin:0,marginBottom:16}}>Store Info</h3>
-          <input placeholder="Brand Name" value={brandSettings.brandName||''} onChange={e=>setBrandSettings(p=>({...p,brandName:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
-          <input placeholder="Store Name (no @)" value={brandSettings.storeName||''} onChange={e=>setBrandSettings(p=>({...p,storeName:stripAt(e.target.value)}))} style={{...inputStyle,marginBottom:12}} />
-          <button onClick={saveStoreSettings} style={{...btnStyle,background:C.teal,color:'#000'}}>Save Store Info</button>
-        </div>
-        {/* Section 3 — Account */}
-        <div className="mobile-card" style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24}}>
-          <h3 style={{color:C.text,margin:0,marginBottom:16}}>Account</h3>
-          <div style={{fontSize:11,color:C.dim,marginBottom:4}}>Email</div>
-          <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
-          <button onClick={logout} style={{...btnStyle,background:C.coral,color:C.bg}}>Logout</button>
-        </div>
-      </div>}
+      {brandTab==="settings"&&<SettingsTab brand={brand} profile={profile} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} />}
     </div>
   </div>;
 }
