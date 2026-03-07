@@ -40,7 +40,12 @@ const CSS=`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300
 @keyframes dash{to{stroke-dashoffset:0}}
 @keyframes glow{0%,100%{filter:blur(40px) brightness(1)}50%{filter:blur(50px) brightness(1.3)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes creator-step-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes creator-dashboard-in{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes creator-welcome-flash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 4px rgba(52,211,153,.4)}}
 .fu{animation:fu .7s cubic-bezier(.16,1,.3,1) both}
+.creator-step{animation:creator-step-in .3s ease both}
+.creator-dashboard-enter{animation:creator-dashboard-in .5s cubic-bezier(.16,1,.3,1) both}
 .d1{animation-delay:.1s}.d2{animation-delay:.2s}.d3{animation-delay:.3s}.d4{animation-delay:.4s}.d5{animation-delay:.5s}
 .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
 .gl{background:${C.card};backdrop-filter:blur(16px);border:1px solid ${C.border};border-radius:16px;transition:border-color .2s}
@@ -1701,6 +1706,358 @@ const DEMO_CREATOR_DEALS = [
   { brand: 'DermaClear', status: 'pending', videosUsed: 0, totalEarned: 0, commissionRate: '10%', startDate: null },
 ];
 
+const OB_C = { bgCard: '#111827', borderDim: 'rgba(255,255,255,0.06)', accent: '#00e0b4', orange: '#ff9f43', textPrimary: '#f0f2f5', textSecondary: '#8b95a8', textDim: '#5a6478', success: '#34d399' };
+
+function CreatorDemoOnboarding({ nav, exitCreatorDemo }) {
+  const [step, setStep] = useState(1);
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [realCreatorData, setRealCreatorData] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/demo-data').then(r => r.json()).then(d => {
+      if (d?.hasCache === false || !d?.qualified?.length) return;
+      const all = [...(d.qualified || []), ...(d.filtered || [])];
+      if (!all.length) return;
+      const creators = buildCreatorsFromQualified(all);
+      if (!creators?.length) return;
+      const top = creators[0];
+      const creatorHandle = (top.creator || top.handle || '').toString().replace(/^@+/, '') || 'creator';
+      const displayName = creatorHandle.charAt(0).toUpperCase() + creatorHandle.slice(1);
+      const totalViews = Number(top.totalViews) || 0;
+      const estGmvTotal = Number(top.estGmv) || 0;
+      const csPct = 0.4;
+      const profile = {
+        handle: creatorHandle,
+        displayName,
+        avatar: top.avatar,
+        followers: Math.round(totalViews / 7) || 124000,
+        totalViews,
+        totalEarnings: Math.round(estGmvTotal * (1 + csPct)),
+        tiktokConnected: true,
+      };
+      const videos = (top.videos || []).map((v, i) => {
+        const tkRev = Number(v.est_gmv) || 0;
+        const csRev = Math.round(tkRev * csPct);
+        const hasCS = csRev > 0;
+        return {
+          id: v.id || 'v' + i,
+          caption: v.caption || '',
+          thumbnail: v.cover || v.thumbnail,
+          cover: v.cover || v.thumbnail,
+          duration: typeof v.duration === 'number' ? (v.duration >= 1000 ? v.duration / 1000 : v.duration) : v.duration,
+          postDate: '2026-02-15',
+          tiktok: { views: v.views || 0, likes: v.likes || 0, shopRevenue: tkRev },
+          creatorship: hasCS ? { campaignsUsedIn: i < 2 ? 2 : 1, adImpressions: Math.round((v.views || 0) * 0.2), creatorEarnings: csRev } : { campaignsUsedIn: 0, adImpressions: 0, creatorEarnings: 0 },
+          totalEarnings: tkRev + csRev,
+        };
+      }).sort((a, b) => (b.totalEarnings || 0) - (a.totalEarnings || 0));
+      setRealCreatorData({ profile, videos });
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (connecting) {
+      const t = setTimeout(() => { setConnecting(false); setStep(2); }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [connecting]);
+
+  useEffect(() => {
+    if (step === 'dashboard') {
+      setShowWelcome(true);
+      const t = setTimeout(() => setShowWelcome(false), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [step]);
+
+  const profile = realCreatorData?.profile || DEMO_CREATOR_PROFILE;
+  const videos = realCreatorData?.videos?.length ? realCreatorData.videos : DEMO_CREATOR_VIDEOS;
+  const dealsList = DEMO_CREATOR_DEALS;
+  const totalEarnings = profile.totalEarnings || 23770;
+  const tiktokTotal = videos.reduce((s, v) => s + (v.tiktok?.shopRevenue || 0), 0);
+  const csTotal = videos.reduce((s, v) => s + (v.creatorship?.creatorEarnings || 0), 0);
+  const tiktokPct = totalEarnings > 0 ? Math.round((tiktokTotal / totalEarnings) * 100) : 0;
+  const csPct = totalEarnings > 0 ? Math.round((csTotal / totalEarnings) * 100) : 0;
+  const totalViews = profile.totalViews || 892000;
+  const videoCount = videos.length || 38;
+  const shopSalesHighlight = Math.round(tiktokTotal) || 14496;
+  const videosFoundCount = videos.length || 5;
+
+  if (step === 1) {
+    return (
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <nav style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 20px', display: 'flex', alignItems: 'center', background: 'rgba(3,7,17,.9)', borderBottom: '1px solid ' + C.border }}>
+          <Link to="/" style={{ fontSize: 18, fontWeight: 900, textDecoration: 'none', color: 'inherit' }}><span style={gT(C.coral, C.gold)}>Creator</span><span style={gT(C.blue, C.teal)}>ship</span></Link>
+          <div style={{ marginLeft: 16, fontSize: 12, color: OB_C.textDim }}>Step 1 of 3</div>
+        </nav>
+        <div className="creator-step gl" style={{ maxWidth: 440, width: '100%', padding: 32, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 20 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8, color: OB_C.textPrimary }}>Connect your TikTok account</h2>
+          <p style={{ fontSize: 14, color: OB_C.textSecondary, lineHeight: 1.6, marginBottom: 24 }}>We'll pull your profile, videos, and shop data automatically. This is how we find brand deals that match your content.</p>
+          <button
+            onClick={() => setConnecting(true)}
+            disabled={connecting}
+            style={{ width: '100%', padding: 16, background: '#000', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 700, cursor: connecting ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+          >
+            {connecting ? (<><span style={{ width: 20, height: 20, border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'pulse 0.8s infinite' }} /> Connecting...</>) : (<>🎵 Connect with TikTok</>)}
+          </button>
+          <p style={{ fontSize: 12, color: OB_C.textDim, marginTop: 16, textAlign: 'center' }}>Your data is encrypted and never shared without permission.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 2) {
+    const dispHandle = profile.handle || ('@' + (profile.creator || 'creator'));
+    const dispName = profile.displayName || (profile.creator || 'Creator').toString().replace(/\b\w/g, c => c.toUpperCase());
+    const avatarUrl = profile.avatar || profile.profilePic;
+    const initials = (dispName || '?')[0].toUpperCase() + ((dispName || ' ')[1] || '').toUpperCase();
+    return (
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <nav style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 20px', display: 'flex', alignItems: 'center', background: 'rgba(3,7,17,.9)', borderBottom: '1px solid ' + C.border }}>
+          <Link to="/" style={{ fontSize: 18, fontWeight: 900, textDecoration: 'none', color: 'inherit' }}><span style={gT(C.coral, C.gold)}>Creator</span><span style={gT(C.blue, C.teal)}>ship</span></Link>
+          <button onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: OB_C.textSecondary, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginRight: 12 }}>← Back</button>
+          <div style={{ fontSize: 12, color: OB_C.textDim }}>Step 2 of 3</div>
+        </nav>
+        <div className="creator-step gl" style={{ maxWidth: 440, width: '100%', padding: 32, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 20, textAlign: 'center' }}>
+          <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'linear-gradient(135deg, ' + C.teal + ', #22d3ee)', position: 'relative', margin: '0 auto 20px', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 800, color: 'rgba(0,0,0,.6)' }}>{initials}</div>
+            {avatarUrl && <img src={avatarUrl} alt="" onError={(e) => { e.target.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+          </div>
+          <div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.teal, marginBottom: 4 }}>{dispHandle.startsWith('@') ? dispHandle : '@' + dispHandle}</div>
+          <div style={{ fontSize: 16, color: OB_C.textPrimary, marginBottom: 16 }}>{dispName}</div>
+          <div style={{ fontSize: 13, color: OB_C.textDim, marginBottom: 4 }}>{fN(profile.followers || totalViews)} followers · {fN(totalViews)} total views</div>
+          <div style={{ fontSize: 13, color: OB_C.textDim, marginBottom: 20 }}>{videoCount} videos · TikTok Shop ✅ Active</div>
+          <div style={{ padding: 16, background: C.teal + '12', border: '1px solid ' + C.teal + '35', borderRadius: 12, marginBottom: 24, textAlign: 'left' }}>
+            <div style={{ fontSize: 14, color: OB_C.textPrimary }}>🔍 We found {videosFoundCount} videos featuring brand products with ${shopSalesHighlight.toLocaleString()} in shop sales</div>
+          </div>
+          <button onClick={() => setStep(3)} style={{ width: '100%', padding: 14, background: C.teal, color: C.bg, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Continue →</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <nav style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 20px', display: 'flex', alignItems: 'center', background: 'rgba(3,7,17,.9)', borderBottom: '1px solid ' + C.border }}>
+          <Link to="/" style={{ fontSize: 18, fontWeight: 900, textDecoration: 'none', color: 'inherit' }}><span style={gT(C.coral, C.gold)}>Creator</span><span style={gT(C.blue, C.teal)}>ship</span></Link>
+          <button onClick={() => setStep(2)} style={{ background: 'none', border: 'none', color: OB_C.textSecondary, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginRight: 12 }}>← Back</button>
+          <div style={{ fontSize: 12, color: OB_C.textDim }}>Step 3 of 3</div>
+        </nav>
+        <div className="creator-step gl" style={{ maxWidth: 520, width: '100%', padding: 32, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 20 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8, color: OB_C.textPrimary }}>Content licensing agreement</h2>
+          <p style={{ fontSize: 14, color: OB_C.textSecondary, lineHeight: 1.6, marginBottom: 24 }}>Brands on Creatorship want to use your TikTok videos as paid ads on Meta (Instagram & Facebook). Here's how it works:</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            {[
+              { icon: '💰', title: 'You earn commission', body: 'Every time your video runs as an ad and generates a sale, you earn 10% commission. Paid weekly, automatically.' },
+              { icon: '🎬', title: 'Your content, your control', body: 'You approve which videos brands can use. You can revoke access anytime. Your TikTok originals are never modified.' },
+              { icon: '📊', title: 'Full transparency', body: 'See exactly which brands are running your content, how much they\'re spending, and what you\'re earning — all in real time.' },
+            ].map((b, i) => (
+              <div key={i} className="gl" style={{ padding: 16, background: 'rgba(255,255,255,.02)', border: '1px solid ' + OB_C.borderDim, borderRadius: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: OB_C.textPrimary, marginBottom: 6 }}>{b.icon} {b.title}</div>
+                <div style={{ fontSize: 13, color: OB_C.textSecondary, lineHeight: 1.5 }}>{b.body}</div>
+              </div>
+            ))}
+          </div>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 20 }}>
+            <input type="checkbox" checked={termsChecked} onChange={e => setTermsChecked(e.target.checked)} style={{ marginTop: 4 }} />
+            <span style={{ fontSize: 13, color: OB_C.textSecondary }}>I agree to allow approved brands to use my TikTok content as paid advertisements, subject to my approval per-video.</span>
+          </label>
+          <button onClick={() => setStep('dashboard')} disabled={!termsChecked} style={{ width: '100%', padding: 14, background: termsChecked ? C.teal : OB_C.textDim, color: termsChecked ? C.bg : OB_C.textSecondary, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: termsChecked ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>Agree & View Dashboard →</button>
+          <p style={{ fontSize: 11, color: OB_C.textDim, marginTop: 12, textAlign: 'center' }}>You can review the full terms at any time in Settings.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <CreatorDemoDashboard profile={profile} videos={videos} dealsList={dealsList} nav={nav} exitCreatorDemo={exitCreatorDemo} showWelcome={showWelcome} />;
+}
+
+function CreatorDemoDashboard({ profile, videos, dealsList, nav, exitCreatorDemo, showWelcome }) {
+  const totalEarnings = profile.totalEarnings || 23770;
+  const tiktokTotal = videos.reduce((s, v) => s + (v.tiktok?.shopRevenue || 0), 0);
+  const csTotal = videos.reduce((s, v) => s + (v.creatorship?.creatorEarnings || 0), 0);
+  const tiktokPct = totalEarnings > 0 ? Math.round((tiktokTotal / totalEarnings) * 100) : 0;
+  const csPct = totalEarnings > 0 ? Math.round((csTotal / totalEarnings) * 100) : 0;
+  const activeDeals = dealsList.filter(d => d.status === 'active').length;
+  const pendingDeals = dealsList.filter(d => d.status === 'pending').length;
+  const demoGate = (msg) => (
+    <div style={{ padding: 12, background: C.teal + '15', borderRadius: 8, border: '1px solid ' + C.teal + '30', marginTop: 12 }}>
+      <div style={{ fontSize: 13, color: C.sub, marginBottom: 8 }}>{msg}</div>
+      <button onClick={() => exitCreatorDemo && exitCreatorDemo()} style={{ ...btnStyle, background: C.teal, color: C.bg, fontSize: 12 }}>Join Creatorship →</button>
+    </div>
+  );
+
+  return (
+    <div className="bottom-gap" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: C.bg }}>
+      {showWelcome && (
+        <div className="creator-dashboard-enter" style={{ position: 'sticky', top: 0, zIndex: 60, padding: '12px 20px', background: C.success + '18', borderBottom: '1px solid ' + C.success + '40', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'creator-welcome-flash 1.5s ease 2' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: OB_C.textPrimary }}>🎉 Welcome to Creatorship! Here's what your earnings could look like.</span>
+        </div>
+      )}
+      <div style={{ width: '100%', background: C.orange + '18', borderLeft: '4px solid ' + C.orange, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <span style={{ fontSize: 13, color: C.text }}>🟠 Demo Mode — Viewing sample data for @{profile.handle}. Ready to see YOUR earnings?</span>
+        <button onClick={() => exitCreatorDemo && exitCreatorDemo()} style={{ ...btnStyle, background: C.teal, color: C.bg, padding: '8px 16px', fontSize: 12 }}>Join Creatorship →</button>
+      </div>
+      <div style={{ display: 'flex', flex: 1 }}>
+        <div className="sidebar-wrap" style={{ width: 200, background: C.bg2, borderRight: '1px solid ' + C.border, padding: '16px 0', flexShrink: 0, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <div style={{ padding: '0 16px 20px', cursor: 'pointer' }} onClick={() => nav('/') }><span style={{ fontSize: 17, fontWeight: 900, ...gT(C.coral, C.gold) }}>Creator</span><span style={{ fontSize: 17, fontWeight: 900, ...gT(C.blue, C.teal) }}>ship</span><div style={{ fontSize: 10, color: C.dim, marginTop: 1 }}>Creator Portal</div></div>
+          <div style={{ flex: 1 }} />
+          <div style={{ padding: '8px 16px', fontSize: 11, color: C.sub }}>@{profile.handle}</div>
+        </div>
+        <div className="content-pad" style={{ flex: 1, padding: '28px 36px', maxWidth: 800 }}>
+          {/* Profile header */}
+          <div className="creator-dashboard-enter gl" style={{ padding: 20, marginBottom: 24, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 16, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, ' + C.teal + ', #22d3ee)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: 'rgba(0,0,0,.6)', flexShrink: 0 }}>JR</div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: OB_C.textPrimary }}><span className="mono" style={{ color: C.teal }}>@{profile.handle}</span> · {profile.displayName}</div>
+              <div style={{ fontSize: 13, color: OB_C.textDim, marginTop: 4 }}>{fN(profile.followers)} followers · TikTok Shop Active</div>
+              <div style={{ fontSize: 12, color: OB_C.textDim, marginTop: 2 }}>Member since Feb 2026</div>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+            <div className="gl creator-dashboard-enter" style={{ padding: 20, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 16, gridColumn: 'span 1' }}>
+              <div style={{ fontSize: 11, color: OB_C.textDim, textTransform: 'uppercase' }}>Total Earnings</div>
+              <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: OB_C.textPrimary, marginTop: 4 }}>${totalEarnings.toLocaleString()}</div>
+              <div style={{ marginTop: 10, height: 6, borderRadius: 3, overflow: 'hidden', background: C.border, display: 'flex' }}>
+                <div style={{ width: tiktokPct + '%', background: C.orange }} />
+                <div style={{ width: csPct + '%', background: C.teal }} />
+              </div>
+            </div>
+            <div className="gl creator-dashboard-enter" style={{ padding: 20, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 16, animationDelay: '50ms' }}>
+              <div style={{ fontSize: 11, color: OB_C.textDim, textTransform: 'uppercase' }}>TikTok Shop</div>
+              <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.orange, marginTop: 4 }}>${tiktokTotal.toLocaleString()}</div>
+              <div style={{ fontSize: 12, color: C.orange, marginTop: 4 }}>🟠 {tiktokPct}%</div>
+            </div>
+            <div className="gl creator-dashboard-enter" style={{ padding: 20, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 16, animationDelay: '100ms' }}>
+              <div style={{ fontSize: 11, color: OB_C.textDim, textTransform: 'uppercase' }}>Creatorship</div>
+              <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.teal, marginTop: 4 }}>${csTotal.toLocaleString()}</div>
+              <div style={{ fontSize: 12, color: C.teal, marginTop: 4 }}>🟢 {csPct}%</div>
+            </div>
+            <div className="gl creator-dashboard-enter" style={{ padding: 20, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 16, animationDelay: '150ms' }}>
+              <div style={{ fontSize: 11, color: OB_C.textDim, textTransform: 'uppercase' }}>Active Deals</div>
+              <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: OB_C.textPrimary, marginTop: 4 }}>{activeDeals}</div>
+              <div style={{ fontSize: 12, color: OB_C.textDim, marginTop: 4 }}>{pendingDeals} pending</div>
+            </div>
+          </div>
+          <div className="creator-dashboard-enter" style={{ marginBottom: 24, height: 12, borderRadius: 6, overflow: 'hidden', background: C.border, display: 'flex', boxShadow: '0 0 12px rgba(0,224,180,.08)' }}>
+            <div style={{ width: tiktokPct + '%', background: C.orange, borderRadius: '6px 0 0 6px' }} />
+            <div style={{ width: csPct + '%', background: C.teal, borderRadius: tiktokPct > 0 ? 0 : '6px 0 0 6px' }} />
+          </div>
+
+          {/* Earnings callout */}
+          <div className="creator-dashboard-enter gl" style={{ padding: 20, marginBottom: 28, background: OB_C.bgCard, borderLeft: '4px solid ' + C.teal, border: '1px solid ' + C.teal + '25', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 16, color: OB_C.textPrimary }}>💡 Your content earned <span className="mono" style={{ fontWeight: 800, color: C.teal }}>${csTotal.toLocaleString()}</span> EXTRA through Creatorship — that's <strong style={{ color: OB_C.textPrimary }}>70% more income</strong> from videos you already made.</div>
+            </div>
+            <button onClick={() => {}} style={{ ...btnStyle, background: 'transparent', border: '1px solid ' + C.teal, color: C.teal, padding: '8px 16px', fontSize: 13 }}>Learn More</button>
+          </div>
+
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Video performance</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
+            {videos.map((v, idx) => {
+              const tk = v.tiktok || {};
+              const cs = v.creatorship || {};
+              const hasCS = (cs.creatorEarnings || 0) > 0;
+              const total = v.totalEarnings || 0;
+              const tkPct = total > 0 ? Math.round(((tk.shopRevenue || 0) / total) * 100) : 0;
+              const csVPct = total > 0 ? Math.round(((cs.creatorEarnings || 0) / total) * 100) : 0;
+              const rankLabel = idx === 0 ? '#1 Top Earner' : '#' + (idx + 1);
+              const estCreatorship = Math.round((tk.shopRevenue || 0) * 0.4);
+              return (
+                <div key={v.id} className="gl creator-dashboard-enter" style={{ padding: 20, border: '1px solid ' + C.border, borderRadius: 12, animationDelay: (50 * (idx + 2)) + 'ms' }}>
+                  <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                    <div style={{ position: 'relative', width: 160, aspectRatio: '16/9', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, ' + C.teal + ', ' + C.green + ')', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.5)', fontSize: 28 }}>▶</div>
+                      {(v.cover || v.thumbnail) && <img src={v.cover || v.thumbnail} alt="" onError={(e) => { e.target.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      <span style={{ position: 'absolute', top: 8, left: 8, fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 6, background: 'rgba(0,0,0,.7)', color: '#fff' }}>{rankLabel}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, color: C.text, marginBottom: 4 }}>{v.caption?.slice(0, 60)}{(v.caption?.length || 0) > 60 ? '…' : ''}</div>
+                      <div style={{ fontSize: 11, color: C.dim }}>{v.postDate} · {v.duration}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div style={{ padding: 14, background: C.orange + '12', borderRadius: 8, border: '1px solid ' + C.orange + '30' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: C.orange }} /> TikTok Shop</div>
+                      <div style={{ fontSize: 12, color: C.sub }}>{fN(tk.views || 0)} views</div>
+                      <div style={{ fontSize: 12, color: C.sub }}>{(tk.shopSales || 0)} sales</div>
+                      <div className="mono" style={{ fontSize: 16, fontWeight: 800, color: C.orange, marginTop: 4 }}>${(tk.shopRevenue || 0).toLocaleString()} earned</div>
+                    </div>
+                    {hasCS ? (
+                      <div style={{ padding: 14, background: C.teal + '12', borderRadius: 8, border: '1px solid ' + C.teal + '30' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: C.teal }} /> Creatorship</div>
+                        <div style={{ fontSize: 12, color: C.sub }}>Used in {cs.campaignsUsedIn} ads</div>
+                        <div style={{ fontSize: 12, color: C.sub }}>{fN(cs.adImpressions || 0)} impr.</div>
+                        <div className="mono" style={{ fontSize: 16, fontWeight: 800, color: C.teal, marginTop: 4 }}>${(cs.creatorEarnings || 0).toLocaleString()} earned</div>
+                      </div>
+                    ) : (
+                      <div style={{ padding: 14, background: 'transparent', borderRadius: 8, border: '2px dashed ' + C.teal + '50' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, marginBottom: 8 }}>Creatorship</div>
+                        <div style={{ fontSize: 13, color: C.teal, marginBottom: 6 }}>⚡ Not used in campaigns yet</div>
+                        <div style={{ fontSize: 12, color: OB_C.textSecondary, marginBottom: 4 }}>This video could be earning you an extra ~${estCreatorship.toLocaleString()}/mo</div>
+                        <div style={{ fontSize: 11, color: OB_C.textDim }}>(Based on similar videos)</div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid ' + C.border }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}><span style={{ fontSize: 12, color: C.dim }}>Total</span><span className="mono" style={{ fontSize: 18, fontWeight: 800, color: C.green }}>${total.toLocaleString()}</span></div>
+                    <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: C.border, display: 'flex', position: 'relative' }}>
+                      <div style={{ width: tkPct + '%', background: C.orange }} />
+                      <div style={{ width: csVPct + '%', background: C.teal }} />
+                      {tkPct + csVPct > 0 && <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.9)', textShadow: '0 1px 2px rgba(0,0,0,.5)' }}>{tkPct}% / {csVPct}%</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Your Brand Deals</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            {dealsList.map((d, i) => (
+              <div key={i} className="gl" style={{ padding: 18, border: '1px solid ' + OB_C.borderDim, borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: OB_C.textPrimary }}>{d.brand}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: d.status === 'active' ? C.green + '20' : C.gold + '20', color: d.status === 'active' ? C.green : C.gold }}>{d.status === 'active' ? 'Active' : 'Pending'}</span>
+                    <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: d.status === 'active' ? C.green : OB_C.textDim }}>{d.status === 'active' ? '$' + d.totalEarned.toLocaleString() + ' earned' : 'Awaiting'}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: OB_C.textDim }}>{d.videosUsed} videos · {d.commissionRate} commission{d.startDate ? ' · Since ' + (d.startDate.slice(0, 7) === '2026-02' ? 'Feb 2026' : d.startDate) : ''}{d.status === 'pending' ? ' · Review deal →' : ''}</div>
+                </div>
+                <button style={{ ...btnStyle, background: 'transparent', border: '1px solid ' + C.border, fontSize: 12 }} onClick={() => {}}>View Details</button>
+              </div>
+            ))}
+          </div>
+          {demoGate('Like what you see? Sign up to start earning.')}
+
+          <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Earnings</h2>
+          <div className="gl" style={{ padding: 20, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div><div style={{ fontSize: 11, color: C.dim }}>This month</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.text }}>$4,574</div><div style={{ fontSize: 10, color: C.dim }}>$2,840 TikTok + $1,734 Creatorship</div></div>
+              <div><div style={{ fontSize: 11, color: C.dim }}>Last month</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.text }}>$6,892</div></div>
+              <div><div style={{ fontSize: 11, color: C.dim }}>All time</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.green }}>${totalEarnings.toLocaleString()}</div></div>
+            </div>
+            <div style={{ height: 80, background: 'rgba(255,255,255,.03)', borderRadius: 8, display: 'flex', alignItems: 'flex-end', gap: 4, padding: '8px 0' }}>
+              {[40, 55, 45, 70, 65, 80, 60].map((h, i) => (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ height: (h * 0.6) + 'px', background: C.orange + '60', borderRadius: 4 }} />
+                  <div style={{ height: (h * 0.4) + 'px', background: C.teal + '60', borderRadius: 4 }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: C.dim, marginTop: 8 }}>Weekly earnings — orange: TikTok Shop, teal: Creatorship</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CreatorAuthForm({ onSuccess, onDemo }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
@@ -1767,7 +2124,7 @@ function CreatorAuthForm({ onSuccess, onDemo }) {
 /*══════════════════════════════════════════════════════
   CREATOR PORTAL
 ══════════════════════════════════════════════════════*/
-function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo }) {
+function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo, onLogout }) {
   const[ttStatus,setTtStatus]=useState({connected:false,displayName:"",followers:0,videos:0});
   const[tab,setTab]=useState("connect");
   const[toast,setToast]=useState(null);
@@ -1777,129 +2134,7 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo }) {
   const[loadingEarnings,setLoadingEarnings]=useState(false);
   const fire=useCallback(m=>{setToast(m);setTimeout(()=>setToast(null),4000)},[]);
 
-  if (isCreatorDemo) {
-    const profile = DEMO_CREATOR_PROFILE;
-    const videos = DEMO_CREATOR_VIDEOS;
-    const dealsList = DEMO_CREATOR_DEALS;
-    const totalEarnings = profile.totalEarnings || 23770;
-    const tiktokTotal = videos.reduce((s, v) => s + (v.tiktok?.shopRevenue || 0), 0);
-    const csTotal = videos.reduce((s, v) => s + (v.creatorship?.creatorEarnings || 0), 0);
-    const tiktokPct = totalEarnings > 0 ? Math.round((tiktokTotal / totalEarnings) * 100) : 0;
-    const csPct = totalEarnings > 0 ? Math.round((csTotal / totalEarnings) * 100) : 0;
-    const demoGate = (msg) => (
-      <div style={{ padding: 12, background: C.teal + '15', borderRadius: 8, border: '1px solid ' + C.teal + '30', marginTop: 12 }}>
-        <div style={{ fontSize: 13, color: C.sub, marginBottom: 8 }}>{msg}</div>
-        <button onClick={() => exitCreatorDemo && exitCreatorDemo()} style={{ ...btnStyle, background: C.teal, color: C.bg, fontSize: 12 }}>Join Creatorship →</button>
-      </div>
-    );
-    return (
-      <div className="bottom-gap" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: C.bg }}>
-        <div style={{ width: '100%', background: C.teal + '26', borderLeft: '4px solid ' + C.teal, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <span style={{ fontSize: 13, color: C.text }}>You're viewing a demo creator account with sample data.</span>
-          <button onClick={() => exitCreatorDemo && exitCreatorDemo()} style={{ ...btnStyle, background: C.teal, color: C.bg, padding: '8px 16px', fontSize: 12 }}>Join Creatorship →</button>
-        </div>
-        <div style={{ display: 'flex', flex: 1 }}>
-          <div className="sidebar-wrap" style={{ width: 200, background: C.bg2, borderRight: '1px solid ' + C.border, padding: '16px 0', flexShrink: 0, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-            <div style={{ padding: '0 16px 20px', cursor: 'pointer' }} onClick={() => nav('/') }><span style={{ fontSize: 17, fontWeight: 900, ...gT(C.coral, C.gold) }}>Creator</span><span style={{ fontSize: 17, fontWeight: 900, ...gT(C.blue, C.teal) }}>ship</span><div style={{ fontSize: 10, color: C.dim, marginTop: 1 }}>Creator Portal</div></div>
-            <div style={{ flex: 1 }} />
-            <div style={{ padding: '8px 16px', fontSize: 11, color: C.sub }}>@{profile.handle}</div>
-          </div>
-          <div className="content-pad" style={{ flex: 1, padding: '28px 36px', maxWidth: 800 }}>
-            <h1 className="fu heading-h3" style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>Creator Dashboard</h1>
-            <div className="gl" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
-              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>Total Earnings</div><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: C.text, marginTop: 4 }}>${totalEarnings.toLocaleString()}</div></div>
-              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>TikTok Shop</div><div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.orange, marginTop: 4 }}>${tiktokTotal.toLocaleString()}</div></div>
-              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>Creatorship</div><div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.teal, marginTop: 4 }}>${csTotal.toLocaleString()}</div></div>
-              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>Active Deals</div><div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.text, marginTop: 4 }}>{dealsList.filter(d => d.status === 'active').length}</div></div>
-            </div>
-            <div style={{ marginBottom: 28, height: 8, borderRadius: 4, overflow: 'hidden', background: C.border, display: 'flex' }}>
-              <div style={{ width: tiktokPct + '%', background: C.orange }} />
-              <div style={{ width: csPct + '%', background: C.teal }} />
-            </div>
-
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Video performance</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
-              {videos.map((v) => {
-                const tk = v.tiktok || {};
-                const cs = v.creatorship || {};
-                const hasCS = (cs.creatorEarnings || 0) > 0;
-                const total = v.totalEarnings || 0;
-                const tkPct = total > 0 ? Math.round(((tk.shopRevenue || 0) / total) * 100) : 0;
-                const csVPct = total > 0 ? Math.round(((cs.creatorEarnings || 0) / total) * 100) : 0;
-                return (
-                  <div key={v.id} className="gl" style={{ padding: 20, border: '1px solid ' + C.border, borderRadius: 12 }}>
-                    <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-                      <div style={{ width: 120, aspectRatio: '16/9', borderRadius: 8, background: 'linear-gradient(135deg, ' + C.teal + ', ' + C.green + ')', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(0,0,0,.5)', fontSize: 24 }}>▶</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, color: C.text, marginBottom: 4 }}>{v.caption?.slice(0, 60)}{(v.caption?.length || 0) > 60 ? '…' : ''}</div>
-                        <div style={{ fontSize: 11, color: C.dim }}>{v.postDate} · {v.duration}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div style={{ padding: 14, background: C.orange + '12', borderRadius: 8, border: '1px solid ' + C.orange + '30' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 8 }}>TikTok Shop</div>
-                        <div style={{ fontSize: 12, color: C.sub }}>{fN(tk.views || 0)} views</div>
-                        <div style={{ fontSize: 12, color: C.sub }}>{(tk.shopSales || 0)} sales</div>
-                        <div className="mono" style={{ fontSize: 16, fontWeight: 800, color: C.orange, marginTop: 4 }}>${(tk.shopRevenue || 0).toLocaleString()} earned</div>
-                      </div>
-                      <div style={{ padding: 14, background: hasCS ? (C.teal + '12') : 'rgba(255,255,255,.02)', borderRadius: 8, border: '1px solid ' + (hasCS ? C.teal + '30' : C.border) }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, marginBottom: 8 }}>Creatorship</div>
-                        {hasCS ? (
-                          <> <div style={{ fontSize: 12, color: C.sub }}>Used in {cs.campaignsUsedIn} ads</div><div style={{ fontSize: 12, color: C.sub }}>{fN(cs.adImpressions || 0)} impr.</div><div className="mono" style={{ fontSize: 16, fontWeight: 800, color: C.teal, marginTop: 4 }}>${(cs.creatorEarnings || 0).toLocaleString()} earned</div></>
-                        ) : (
-                          <div style={{ fontSize: 12, color: C.dim }}>Not yet used in campaigns — your content could be earning more here.</div>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid ' + C.border }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}><span style={{ fontSize: 12, color: C.dim }}>Total</span><span className="mono" style={{ fontSize: 18, fontWeight: 800, color: C.green }}>${total.toLocaleString()}</span></div>
-                      <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', background: C.border, display: 'flex' }}>
-                        <div style={{ width: tkPct + '%', background: C.orange }} />
-                        <div style={{ width: csVPct + '%', background: C.teal }} />
-                      </div>
-                      <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>TikTok {tkPct}% · Creatorship {csVPct}%</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Brand deals</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-              {dealsList.map((d, i) => (
-                <div key={i} className="gl" style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                  <div><div style={{ fontSize: 15, fontWeight: 700 }}>{d.brand}</div><div style={{ fontSize: 12, color: C.dim }}>{d.videosUsed} videos · {d.commissionRate} · ${d.totalEarned.toLocaleString()} earned</div></div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: d.status === 'active' ? C.green + '20' : C.gold + '20', color: d.status === 'active' ? C.green : C.gold }}>{d.status === 'active' ? 'Active' : 'Pending'}</span>
-                    <button style={{ ...btnStyle, background: 'transparent', border: '1px solid ' + C.border }} onClick={() => {}}>View Details</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {demoGate('Like what you see? Sign up to start earning.')}
-
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Earnings</h2>
-            <div className="gl" style={{ padding: 20, marginBottom: 24 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
-                <div><div style={{ fontSize: 11, color: C.dim }}>This month</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.text }}>$4,574</div><div style={{ fontSize: 10, color: C.dim }}>$2,840 TikTok + $1,734 Creatorship</div></div>
-                <div><div style={{ fontSize: 11, color: C.dim }}>Last month</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.text }}>$6,892</div></div>
-                <div><div style={{ fontSize: 11, color: C.dim }}>All time</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.green }}>${totalEarnings.toLocaleString()}</div></div>
-              </div>
-              <div style={{ height: 80, background: 'rgba(255,255,255,.03)', borderRadius: 8, display: 'flex', alignItems: 'flex-end', gap: 4, padding: '8px 0' }}>
-                {[40, 55, 45, 70, 65, 80, 60].map((h, i) => (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <div style={{ height: (h * 0.6) + 'px', background: C.orange + '60', borderRadius: 4 }} />
-                    <div style={{ height: (h * 0.4) + 'px', background: C.teal + '60', borderRadius: 4 }} />
-                  </div>
-                ))}
-              </div>
-              <div style={{ fontSize: 10, color: C.dim, marginTop: 8 }}>Weekly earnings — orange: TikTok Shop, teal: Creatorship</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (isCreatorDemo) return <CreatorDemoOnboarding nav={nav} exitCreatorDemo={exitCreatorDemo} />;
 
   const handleDisconnect=async()=>{
     try{
@@ -1935,7 +2170,7 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo }) {
     <div style={{padding:"0 16px 20px",cursor:"pointer"}} onClick={()=>nav("/")}><span style={{fontSize:17,fontWeight:900,...gT(C.coral,C.gold)}}>Creator</span><span style={{fontSize:17,fontWeight:900,...gT(C.blue,C.teal)}}>ship</span><div style={{fontSize:10,color:C.dim,marginTop:1}}>Creator Portal</div></div>
     {creatorTabs.map(t=><div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"9px 16px",cursor:"pointer",fontSize:13,fontWeight:tab===t.id?600:400,color:tab===t.id?C.teal:C.sub,background:tab===t.id?C.teal+"06":"transparent",borderRight:tab===t.id?"2px solid "+C.teal:"2px solid transparent"}}>{t.i} {t.l}</div>)}
     <div style={{flex:1}}/>
-    <div style={{padding:"10px 16px",borderTop:"1px solid "+C.border,fontSize:11,color:C.dim,cursor:"pointer"}} onClick={()=>nav("/brand")}>Brand Dashboard →</div>
+    <div style={{padding:"10px 16px",borderTop:"1px solid "+C.border,fontSize:11,color:C.dim,cursor:"pointer"}} onClick={()=>onLogout&&onLogout()}>Logout</div>
     {ttStatus.connected&&<div style={{padding:"8px 16px",fontSize:11,color:C.sub}}>{ttStatus.displayName}</div>}
     {ttStatus.connected&&<div style={{padding:"8px 16px",fontSize:11,color:C.coral,cursor:"pointer"}} onClick={handleDisconnect}>Disconnect TikTok</div>}
   </div>;
@@ -2147,36 +2382,81 @@ const makeDemoVideos = (handle, count) => Array.from({ length: count }, (_, i) =
 function buildCreatorsFromScan(scan) {
   if (!scan || (!scan.qualified?.length && !scan.filtered?.length)) return null;
   const allVideos = [...(scan.qualified || []), ...(scan.filtered || [])];
-  const byHandle = new Map();
+  return buildCreatorsFromQualified(allVideos);
+}
+
+// Transform qualified/filtered video array into creator objects. Handles real API format:
+// - Groups by creator (use creator field; handle may be @@userid)
+// - Display handle: @{creator} when creator is real (not "Creator N")
+// - Adds avatar, estGmv, engagement_rate, predicted_roas from best video
+function buildCreatorsFromQualified(allVideos) {
+  if (!Array.isArray(allVideos) || allVideos.length === 0) return [];
+  const byCreator = new Map();
+  const displayHandle = (v) => {
+    const cr = (v.creator || '').trim();
+    if (cr && !/^Creator\s*\d*$/i.test(cr)) return '@' + cr.replace(/^@+/, '');
+    const h = (v.handle || '').replace(/^@+/, '');
+    return h ? '@' + h : '@creator';
+  };
   allVideos.forEach(v => {
-    const key = (v.handle || v.creator || 'unknown').toLowerCase().replace(/^@/, '');
+    const key = ((v.creator || '').trim() || (v.handle || '').replace(/^@+/g, '')).toLowerCase();
     if (!key) return;
-    if (!byHandle.has(key)) byHandle.set(key, { handle: v.handle || '@' + (v.creator || 'creator'), creator: v.creator, videos: [], bestScore: 0, totalViews: 0 });
-    const c = byHandle.get(key);
+    if (!byCreator.has(key)) {
+      byCreator.set(key, {
+        handle: displayHandle(v),
+        creator: v.creator || v.handle?.replace(/^@+/, '') || 'creator',
+        videos: [],
+        bestScore: 0,
+        totalViews: 0,
+        estGmv: 0,
+        avatar: v.avatar || null,
+        engagement_rate: v.engagement_rate,
+        predicted_roas: v.predicted_roas,
+      });
+    }
+    const c = byCreator.get(key);
     c.videos.push(v);
     c.bestScore = Math.max(c.bestScore, v.ai_score || 0);
     c.totalViews += (c.totalViews || 0) + (v.views || 0);
+    c.estGmv += v.est_gmv || 0;
+    if (!c.avatar && v.avatar) c.avatar = v.avatar;
+    if ((v.ai_score || 0) >= (c.bestScore || 0)) {
+      if (v.engagement_rate != null) c.engagement_rate = v.engagement_rate;
+      if (v.predicted_roas?.length) c.predicted_roas = v.predicted_roas;
+    }
   });
-  return [...byHandle.values()].sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0));
+  return [...byCreator.values()].sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0));
 }
 
 function buildDemoCampaignsFromCreators(creators, productTitle) {
   if (!creators || creators.length === 0) return [];
-  const names = ['serum_v1', 'moisturizer_v2', 'cleanser_v1'];
-  const statuses = ['ACTIVE', 'ACTIVE', 'PAUSED'];
-  return creators.slice(0, 3).map((c, i) => {
-    const handle = (c.handle || c.creator || '').replace(/^@/, '') || 'creator';
-    const spend = [342.50, 187.20, 410.00][i];
-    const impressions = [58400, 31200, 44800][i];
-    const clicks = [2104, 1087, 1560][i];
-    const roas = [3.8, 4.2, 1.4][i];
+  const names = ['serum_v1', 'moisturizer_v2', 'cleanser_v1', 'goli_v1', 'goli_v2'];
+  const statuses = ['ACTIVE', 'ACTIVE', 'PAUSED', 'ACTIVE', 'ACTIVE'];
+  const productSlug = (productTitle || 'goli').toLowerCase().replace(/\s+/g, '_').slice(0, 12);
+  return creators.slice(0, 5).map((c, i) => {
+    const handle = (c.handle || c.creator || '').toString().replace(/^@+/, '') || 'creator';
+    const spend = [342.50, 187.20, 410.00, 95.40, 28.60][i];
+    const impressions = [58400, 31200, 44800, 22100, 8400][i];
+    const clicks = [2104, 1087, 1560, 890, 312][i];
+    const roas = [3.8, 4.2, 1.4, 4.6, 3.1][i];
+    const conversions = [156, 45, 0, 62, 18][i];
+    const firstVideo = Array.isArray(c.videos) && c.videos[0] ? c.videos[0] : null;
     return {
       id: 'camp_demo_' + (i + 1),
-      name: handle + '_' + (names[i] || 'camp'),
+      name: handle + '_' + (names[i] || productSlug + '_v1'),
       creator: handle,
+      creatorHandle: handle,
       status: statuses[i],
       created_time: '2026-03-0' + (i + 1),
       launchedAt: '2026-03-0' + (i + 1),
+      spend,
+      impressions,
+      clicks,
+      roas,
+      conversions,
+      dailyBudget: 50,
+      objective: 'Conversions',
+      cover: firstVideo?.cover || firstVideo?.thumbnail || null,
       insights: { spend: String(spend), impressions: String(impressions), clicks: String(clicks), purchase_roas: [{ value: String(roas) }] },
     };
   });
@@ -2639,10 +2919,18 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
               const status = c?.status ?? (i < 4 ? 'Active' : 'Pending');
               const statusColor = status === 'Active' ? OB.success : OB.orange;
               const barPct = score > 0 ? Math.min(100, score) : 0;
+              const engRate = c?.engagement_rate;
+              const roasRange = c?.predicted_roas;
+              const initials = ((c?.creator || c?.handle || '?').toString().replace(/^@+/, ''))[0]?.toUpperCase() || '?';
               return (
-              <div key={c?.handle ?? i} onClick={()=>setSelectedCreator(i)} style={{padding:"12px 14px",cursor:"pointer",borderLeft:safeCreatorIndex===i?"3px solid "+OB.accent:"3px solid transparent",background:safeCreatorIndex===i?OB.bgCardHover:"transparent",borderBottom:"1px solid "+OB.borderDim}}>
+              <div key={c?.handle ?? i} onClick={()=>setSelectedCreator(i)} style={{padding:"12px 14px",cursor:"pointer",borderLeft:safeCreatorIndex===i?"3px solid "+OB.accent:"3px solid transparent",background:safeCreatorIndex===i?OB.bgCardHover:"transparent",borderBottom:"1px solid "+OB.borderDim,display:"flex",alignItems:"flex-start",gap:10}}>
+                <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",flexShrink:0,position:"relative"}}>
+                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg, #0891b2, #00e0b4)",fontSize:12,fontWeight:700,color:"rgba(0,0,0,.6)"}}>{initials}</div>
+                  {c?.avatar && <img src={c.avatar} alt="" onError={(e)=>{e.target.style.display="none"}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} />}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
                 <div className="mono" style={{fontSize:14,fontWeight:700,color:OB.textPrimary}}>{c?.handle ?? '—'}</div>
-                <div style={{fontSize:11,color:OB.textDim,marginTop:2}}>{followers >= 1000 ? (followers/1000).toFixed(1)+'K' : followers} followers · {videoCount} videos</div>
+                <div style={{fontSize:11,color:OB.textDim,marginTop:2}}>{followers >= 1000 ? (followers/1000).toFixed(1)+'K' : followers || fN(Number(c?.totalViews)||0)} · {videoCount} videos{engRate != null ? ' · '+engRate+'% eng' : ''}{roasRange?.length ? ' · '+roasRange[0]+'-'+roasRange[1]+'× ROAS' : ''}</div>
                 <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginTop:6}}>
                   {score>0&&<span style={{fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:4,background:scoreColor+"20",color:scoreColor}}>AI {score}</span>}
                   <span style={{fontSize:10,color:OB.textDim}}>{gmv} GMV</span>
@@ -2665,7 +2953,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
                 <div style={{fontSize:20,fontWeight:800,color:OB.textPrimary}}>{currentCreator?.handle ?? '—'}</div>
                 <div style={{fontSize:12,color:OB.textDim,marginTop:4}}>{(Array.isArray(currentCreator?.videos) ? currentCreator.videos.length : 0)} videos · {fN(Number(currentCreator?.totalViews) || 0)} views</div>
               </div>
-              {currentCreator?.handle&&<a href={"https://www.tiktok.com/"+String(currentCreator.handle).replace(/^@/,"")} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:OB.accent,fontWeight:600}}>TikTok profile ↗</a>}
+              {currentCreator?.handle&&<a href={"https://www.tiktok.com/@"+String(currentCreator.handle).replace(/^@+/g,"")} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:OB.accent,fontWeight:600}}>TikTok profile ↗</a>}
             </div>
 
             <div style={{flex:1,overflowY:"auto",padding:20}}>
@@ -2674,14 +2962,17 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
                 {videos.map((v,i)=>{
                   const cover = v?.cover ?? v?.thumbnail;
                   const grads = ['135deg, #0891b2, #00e0b4','225deg, #6366f1, #0891b2','45deg, #00e0b4, #34d399','315deg, #f59e0b, #ef4444','180deg, #8b5cf6, #6366f1'];
-                  const bgGrad = cover ? undefined : `linear-gradient(${grads[i % grads.length]})`;
+                  const bgGrad = `linear-gradient(${grads[i % grads.length]})`;
                   const usedInCampaigns = v?.usedInCampaigns ?? (i === 0 ? 1 : 0);
                   const usedColor = usedInCampaigns > 0 ? OB.accent : OB.textDim;
+                  const dur = v?.duration;
+                  const durStr = typeof dur === 'number' ? (dur >= 1000 ? Math.floor(dur / 1000) + 's' : dur + 's') : (dur || '—');
                   return (
                   <div key={v?.id ?? i} className="gl" style={{borderRadius:8,overflow:"hidden",background:OB.bgCard,border:"1px solid "+OB.borderDim}}>
                     <div style={{aspectRatio:"16/9",background:bgGrad,position:"relative",cursor:"pointer"}} onClick={()=>setPlayingVideo(playingVideo===v?.id?null:v?.id)}>
-                      {cover?<img src={cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,.5)",fontSize:32}}>▶</div>}
-                      <div style={{position:"absolute",bottom:6,right:6,fontSize:10,fontWeight:700,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{typeof v?.duration==='number'?Math.floor(v.duration/1000)+'s':(v?.duration||'—')}</div>
+                      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,.5)",fontSize:32,pointerEvents:"none"}}>▶</div>
+                      {cover && <img src={cover} alt="" onError={(e)=>{e.target.style.display='none'}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} />}
+                      <div style={{position:"absolute",bottom:6,right:6,fontSize:10,fontWeight:700,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{durStr}</div>
                       <div style={{position:"absolute",bottom:6,left:6,fontSize:10,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{fN(Number(v?.views)||0)} views</div>
                     </div>
                     <div style={{padding:10,borderTop:"1px solid "+OB.borderDim,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
@@ -2853,8 +3144,9 @@ function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccou
         return (
           <div key={c.id||i} className="gl mobile-card" style={{padding:20,display:"flex",flexWrap:"wrap",gap:16,alignItems:"flex-start"}}>
             <div style={{display:"flex",gap:16,flex:1,minWidth:0,flexWrap:"wrap"}}>
-              <div style={{width:80,height:110,borderRadius:8,overflow:"hidden",flexShrink:0,background:"linear-gradient("+grad+")",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <span style={{color:"rgba(255,255,255,.5)",fontSize:28}}>▶</span>
+              <div style={{width:80,height:110,borderRadius:8,overflow:"hidden",flexShrink:0,background:"linear-gradient("+grad+")",position:"relative",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <span style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,.5)",fontSize:28,pointerEvents:"none"}}>▶</span>
+                {c.cover && <img src={c.cover} alt="" onError={(e)=>{e.target.style.display='none'}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} />}
               </div>
               <div style={{flex:1,minWidth:0}}>
                 <div className="mono" style={{fontSize:15,fontWeight:700,marginBottom:4,color:C.text}}>{c.name || 'Campaign'}</div>
@@ -3096,16 +3388,16 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, 
 
   useEffect(() => {
     if (!isDemo) return;
-    // Don't overwrite demo creators when we already have them from initial demoData
     fetch('/api/demo-data').then(r => r.json()).then(d => {
-      if (d && (d.qualified?.length || d.filtered?.length)) {
-        const list = buildCreatorsFromScan(d);
-        if (list && list.length && setDemoData) {
-          setCreators(prev => (prev.length > 0 ? prev : list));
-          setCampaigns(prev => (prev.length > 0 ? prev : buildDemoCampaignsFromCreators(list, d.product?.title)));
-          setDemoData(prev => (prev?.creators?.length > 0 ? prev : { creators: list, campaigns: buildDemoCampaignsFromCreators(list, d.product?.title) }));
-        }
-      }
+      if (d?.hasCache === false || !d) return;
+      const all = [...(d.qualified || []), ...(d.filtered || [])];
+      if (all.length === 0) return;
+      const list = buildCreatorsFromQualified(all);
+      if (!list?.length) return;
+      const camps = buildDemoCampaignsFromCreators(list, d.product?.title);
+      setCreators(list);
+      setCampaigns(camps);
+      if (setDemoData) setDemoData(prev => ({ ...prev, creators: list, campaigns: camps, product: d.product || null }));
     }).catch(() => {});
   }, [isDemo, setDemoData]);
 
@@ -3127,7 +3419,9 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, 
   useEffect(() => { if (!isDemo) refreshCampaigns(); }, [refreshCampaigns, isDemo]);
 
   const logout = () => { if (isDemo && exitDemo) { exitDemo(); return; } localStorage.removeItem(BRAND_STORAGE); setBrand(null); window.location.href = '/brand'; };
-  const storeDisplay = stripAt(profile.storeName || brand.storeName);
+  const storeDisplay = isDemo && demoData?.product
+    ? (demoData.product.seller || (typeof demoData.product.title === 'string' && demoData.product.title.toLowerCase().includes('goli') ? 'goli' : null) || 'goli')
+    : stripAt(profile.storeName || brand.storeName);
 
   const tabs=[{id:"overview",l:"Overview",i:"🏠"},{id:"creators",l:"Creators",i:"👥"},{id:"campaigns",l:"Campaigns",i:"🚀"},{id:"settings",l:"Settings",i:"⚙️"}];
   const Sidebar = () => (
@@ -3287,6 +3581,11 @@ function CreatorPortalWrapper() {
   const [ready, setReady] = useState(false);
 
   const exitCreatorDemo = useCallback(() => { setIsCreatorDemo(false); }, []);
+  const creatorLogout = useCallback(() => {
+    localStorage.removeItem(CREATOR_STORAGE);
+    setCreator(null);
+    nav('/creator');
+  }, [nav]);
 
   useEffect(() => {
     if (isCreatorDemo) { setReady(true); setTtStatus({ connected: true }); return; }
@@ -3327,5 +3626,5 @@ function CreatorPortalWrapper() {
     </div>
   );
 
-  return <CreatorPortal nav={nav} isCreatorDemo={isCreatorDemo} exitCreatorDemo={exitCreatorDemo} />;
+  return <CreatorPortal nav={nav} isCreatorDemo={isCreatorDemo} exitCreatorDemo={exitCreatorDemo} onLogout={creatorLogout} />;
 }
