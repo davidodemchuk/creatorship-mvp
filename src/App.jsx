@@ -2128,13 +2128,17 @@ function CreatorAuthForm({ onSuccess, onDemo }) {
   CREATOR PORTAL
 ══════════════════════════════════════════════════════*/
 function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo, onLogout }) {
-  const[ttStatus,setTtStatus]=useState({connected:false,displayName:"",followers:0,videos:0});
+  const[ttStatus,setTtStatus]=useState({connected:false,displayName:"",followers:0,videos:0,agreedToTerms:false});
   const[tab,setTab]=useState("connect");
   const[toast,setToast]=useState(null);
   const[deals,setDeals]=useState(null);
   const[earnings,setEarnings]=useState(null);
+  const[payoutSettings,setPayoutSettings]=useState(null);
   const[loadingDeals,setLoadingDeals]=useState(false);
   const[loadingEarnings,setLoadingEarnings]=useState(false);
+  const[termsChecked,setTermsChecked]=useState(false);
+  const[agreeingTerms,setAgreeingTerms]=useState(false);
+  const[showPayoutSetup,setShowPayoutSetup]=useState(false);
   const fire=useCallback(m=>{setToast(m);setTimeout(()=>setToast(null),4000)},[]);
 
   if (isCreatorDemo) return <CreatorDemoOnboarding nav={nav} exitCreatorDemo={exitCreatorDemo} />;
@@ -2150,10 +2154,10 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo, onLogout }) {
 
   useEffect(()=>{
     fetch("/api/tiktok/status").then(r=>r.json()).then(d=>{
-      if(d&&d.connected){setTtStatus({connected:true,displayName:d.display_name||"",followers:d.follower_count||0,videos:d.video_count||0});setTab("deals")}
-      else setTtStatus({connected:false,displayName:"",followers:0,videos:0});
-    }).catch(()=>{ setTtStatus({connected:false,displayName:"",followers:0,videos:0}); });
-    if(window.location.search?.includes("connected=true")){setTtStatus(s=>({...s,connected:true}));setTab("deals");fire("TikTok connected!")}
+      if(d&&d.connected){setTtStatus({connected:true,displayName:d.display_name||"",followers:d.follower_count||0,videos:d.video_count||0,agreedToTerms:!!d.agreedToTerms});setTab(d.agreedToTerms?"deals":"connect")}
+      else setTtStatus({connected:false,displayName:"",followers:0,videos:0,agreedToTerms:false});
+    }).catch(()=>{ setTtStatus({connected:false,displayName:"",followers:0,videos:0,agreedToTerms:false}); });
+    if(window.location.search?.includes("connected=true")){setTtStatus(s=>({...s,connected:true}));setTab("connect");fire("TikTok connected!")}
   },[]);
 
   useEffect(()=>{
@@ -2166,6 +2170,16 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo, onLogout }) {
     if(!ttStatus.connected||tab!=="earnings")return;
     setLoadingEarnings(true);
     fetch("/api/creator/earnings").then(r=>r.json()).then(d=>{setEarnings(d||null);setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
+  },[ttStatus.connected,tab]);
+
+  useEffect(()=>{
+    if(!ttStatus.connected||tab!=="earnings")return;
+    fetch("/api/creator/payout-settings").then(r=>r.json()).then(d=>setPayoutSettings(d||null)).catch(()=>setPayoutSettings(null));
+  },[ttStatus.connected,tab]);
+
+  useEffect(()=>{
+    if(!ttStatus.connected||tab!=="earnings")return;
+    fetch("/api/creator/payout-settings").then(r=>r.json()).then(d=>setPayoutSettings(d||null)).catch(()=>setPayoutSettings(null));
   },[ttStatus.connected,tab]);
 
   const creatorTabs=[{id:"connect",l:"Connect TikTok",i:"🔗"},{id:"deals",l:"Deals",i:"💰"},{id:"earnings",l:"Earnings",i:"📈"}];
@@ -2188,7 +2202,16 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo, onLogout }) {
     <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:700}}>
 
     {tab==="connect"&&<div>
-      {ttStatus.connected?<div>
+      {ttStatus.connected&&!ttStatus.agreedToTerms?<div className="gl" style={{padding:32,maxWidth:480}}>
+        <h1 className="fu heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:8}}>Content Licensing Agreement</h1>
+        <p className="fu d1" style={{fontSize:14,color:C.sub,lineHeight:1.6,marginBottom:20}}>I agree to allow approved brands to use my TikTok content as paid advertisements, subject to my per-video approval.</p>
+        <label style={{display:"flex",alignItems:"flex-start",gap:12,cursor:"pointer",marginBottom:20}}>
+          <input type="checkbox" checked={termsChecked} onChange={e=>setTermsChecked(e.target.checked)} style={{marginTop:4}}/>
+          <span style={{fontSize:14,color:C.text}}>I agree to the content licensing terms above</span>
+        </label>
+        <button onClick={async()=>{if(!termsChecked)return;setAgreeingTerms(true);try{const r=await fetch("/api/creator/agree-terms",{method:"POST"});if(!r.ok)throw new Error();setTtStatus(s=>({...s,agreedToTerms:true}));setTab("deals");fire("Terms agreed!")}catch(e){fire("Failed to save")}finally{setAgreeingTerms(false)}}}
+          disabled={!termsChecked||agreeingTerms} style={{width:"100%",padding:14,background:termsChecked&&!agreeingTerms?C.teal:OB.textDim,color:termsChecked&&!agreeingTerms?C.bg:OB.textSecondary,border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:termsChecked&&!agreeingTerms?"pointer":"not-allowed",fontFamily:"inherit"}}>{agreeingTerms?"...":"Agree & Continue"}</button>
+      </div>:ttStatus.connected?<div>
         <h1 className="fu heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:4}}>TikTok Connected</h1>
         <p className="fu d1" style={{fontSize:13,color:C.sub,marginBottom:20}}>Your account is linked. Brands can discover your content.</p>
         <div className="gl fu d2 mobile-card" style={{padding:24,borderColor:C.green+"22"}}>
@@ -2320,25 +2343,29 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo, onLogout }) {
       {!ttStatus.connected?<div className="gl" style={{padding:36,textAlign:"center"}}><div style={{fontSize:28,marginBottom:10}}>🔗</div><div style={{fontSize:15,fontWeight:700,marginBottom:6}}>Connect TikTok first</div><div style={{fontSize:13,color:C.dim}}>Link your account to start receiving deals and earning commission.</div></div>:
       loadingEarnings?<div className="gl" style={{padding:48,textAlign:"center",color:C.sub}}><span style={{display:"inline-block",width:20,height:20,border:"2px solid rgba(255,255,255,.1)",borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",marginRight:10,verticalAlign:"middle"}}/>Loading earnings...</div>:
       <div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
-          {[{l:"Total Earned",v:"$"+(earnings?.totalEarned??0).toFixed(2),c:C.green},{l:"This Month",v:"$"+(earnings?.thisMonth??0).toFixed(2),c:C.teal},{l:"Next Payout",v:"$"+(earnings?.nextPayout??0).toFixed(2),c:C.gold}].map((s,i)=><div key={i} className="gl" style={{padding:18}}><div style={{fontSize:10,color:C.dim}}>{s.l}</div><div className="mono" style={{fontSize:26,fontWeight:700,color:s.c,marginTop:4}}>{s.v}</div></div>)}
+        <div className="gl" style={{padding:24,marginBottom:20,border:"1px solid "+C.border,borderRadius:12}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.dim,letterSpacing:".04em",marginBottom:4}}>AVAILABLE BALANCE</div>
+          <div className="mono" style={{fontSize:32,fontWeight:800,color:C.green,marginBottom:12}}>${(earnings?.availableBalance??earnings?.nextPayout??0).toFixed(2)}</div>
+          <div style={{fontSize:12,color:C.sub,marginBottom:4}}>Next payout: Weekly (Fridays)</div>
+          <div style={{fontSize:12,color:C.sub,marginBottom:16}}>Minimum payout: $25</div>
+          {(!payoutSettings?.method||payoutSettings?.method==="bank")?<button onClick={()=>setShowPayoutSetup(true)} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Set Up Payouts →</button>:<span style={{fontSize:12,color:C.green}}>✓ {payoutSettings?.method==="paypal"?"PayPal":payoutSettings?.method==="venmo"?"Venmo":"Bank"} configured</span>}
         </div>
         <div className="gl" style={{padding:0,overflow:"hidden"}}>
-          <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div style={{fontSize:12,fontWeight:700,color:C.dim,letterSpacing:".04em"}}>Payout History</div>
-            <span style={{fontSize:11,color:C.dim}}>Payouts deposited weekly via Stripe</span>
-          </div>
-          {(earnings?.payouts?.length??0)>0?<div style={{maxHeight:280,overflow:"auto"}}>
-            {earnings.payouts.map((p,i)=><div key={p.campaignId||i} style={{padding:"14px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-              <div>
-                <div style={{fontSize:14,fontWeight:700}}>{p.product||"Campaign"}</div>
-                <div style={{fontSize:11,color:C.dim,marginTop:2}}>{p.date} · {p.campaignId?.startsWith("demo")?"Demo":"Campaign"}</div>
-              </div>
-              <div className="mono" style={{fontSize:18,fontWeight:800,color:C.green}}>+${(p.amount||0).toFixed(2)}</div>
+          <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,fontSize:12,fontWeight:700,color:C.dim,letterSpacing:".04em"}}>Earnings History</div>
+          {(earnings?.earnings?.length??0)>0?<div style={{overflow:"auto"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:12,padding:"12px 20px",borderBottom:"1px solid "+C.border,fontSize:11,fontWeight:700,color:C.dim}}>
+              <span>Date</span><span>Brand</span><span>Video</span><span>Amount</span><span>Status</span>
+            </div>
+            {earnings.earnings.map((e,i)=><div key={i} style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr",gap:12,padding:"14px 20px",borderBottom:"1px solid "+C.border,alignItems:"center",fontSize:13}}>
+              <span>{e.date?new Date(e.date).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}):"—"}</span>
+              <span>{e.brand||"—"}</span>
+              <span>{e.video||"—"}</span>
+              <span className="mono" style={{fontWeight:700,color:C.green}}>${(e.amount||0).toFixed(2)}</span>
+              <span style={{fontSize:11,fontWeight:600,padding:"3px 8px",borderRadius:4,background:(e.status==="Paid"?C.green:e.status==="Processing"?C.blue:C.orange)+"20",color:e.status==="Paid"?C.green:e.status==="Processing"?C.blue:C.orange,width:"fit-content"}}>{e.status||"Pending"}</span>
             </div>)}
           </div>:<div style={{padding:"28px 20px",textAlign:"center"}}>
-            <div style={{fontSize:14,color:C.dim,marginBottom:6}}>No payouts yet</div>
-            <div style={{fontSize:12,color:C.dim}}>Earnings will appear here once a brand launches your content and sales are tracked.</div>
+            <div style={{fontSize:14,color:C.dim,marginBottom:6}}>No earnings yet</div>
+            <div style={{fontSize:12,color:C.dim}}>When brands use your content in ads and generate sales, your commission will appear here.</div>
           </div>}
         </div>
         <div className="gl" style={{padding:20,marginTop:12}}>
@@ -2350,6 +2377,29 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo, onLogout }) {
             </div>
           ))}
         </div>
+        {showPayoutSetup&&<div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,.6)"}} onClick={()=>setShowPayoutSetup(false)}>
+          <div className="gl" style={{padding:24,maxWidth:400,width:"100%",margin:20}} onClick={e=>e.stopPropagation()}>
+            <h2 style={{fontSize:18,fontWeight:700,marginBottom:16}}>Set Up Payouts</h2>
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:11,color:C.dim,marginBottom:6}}>Payment method</div>
+              <select value={payoutSettings?.method||""} onChange={e=>setPayoutSettings(p=>({...p,method:e.target.value}))} style={{width:"100%",padding:12,background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:14,fontFamily:"inherit"}}>
+                <option value="">Select...</option>
+                <option value="paypal">PayPal</option>
+                <option value="venmo">Venmo</option>
+                <option value="bank">Bank Transfer (ACH)</option>
+              </select>
+            </div>
+            {(payoutSettings?.method==="paypal"||payoutSettings?.method==="venmo")&&<div style={{marginBottom:12}}>
+              <div style={{fontSize:11,color:C.dim,marginBottom:6}}>Email or phone</div>
+              <input type="text" placeholder={payoutSettings?.method==="paypal"?"PayPal email":"Venmo phone"} value={payoutSettings?.payoutEmail||payoutSettings?.payoutPhone||""} onChange={e=>setPayoutSettings(p=>({...p,payoutEmail:e.target.value,payoutPhone:e.target.value}))} style={{width:"100%",padding:12,background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:14,fontFamily:"inherit"}}/>
+            </div>}
+            {payoutSettings?.method==="bank"&&<div style={{fontSize:13,color:C.sub,marginBottom:16}}>Contact us at payouts@creatorship.app to set up bank transfer.</div>}
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setShowPayoutSetup(false)} style={{padding:10,background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>Cancel</button>
+              <button onClick={async()=>{try{const r=await fetch("/api/creator/payout-settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({method:payoutSettings?.method,payoutEmail:payoutSettings?.payoutEmail,payoutPhone:payoutSettings?.payoutPhone})});if(r.ok){fire("Payout settings saved");setShowPayoutSetup(false)}}catch(e){fire("Failed to save")}}} style={{padding:10,background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Save</button>
+            </div>
+          </div>
+        </div>}
       </div>}
     </div>}
 
@@ -2497,6 +2547,7 @@ function BrandAuthForm({ onSuccess, onDemo, initialMode }) {
   const [mode, setMode] = useState(initialMode || 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [storeName, setStoreName] = useState('');
   const [brandName, setBrandName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -2505,15 +2556,17 @@ function BrandAuthForm({ onSuccess, onDemo, initialMode }) {
 
   const submit = async () => {
     setError(null);
-    if (mode === 'signup' && !brandName.trim()) {
-      fire('Brand name required');
-      return;
+    if (mode === 'signup') {
+      const store = (storeName || brandName || '').trim();
+      if (!store) { fire('Store name required'); return; }
+      if (password.length < 8) { fire('Password must be at least 8 characters'); return; }
+      if (password !== confirmPassword) { fire('Passwords do not match'); return; }
     }
     if (!email.trim() || !password) { fire('Email and password required'); return; }
     setLoading(true);
     try {
       const ep = mode === 'signup' ? '/api/brand/signup' : '/api/brand/login';
-      const body = mode === 'signup' ? { brandName, storeName, email, password } : { email, password };
+      const body = mode === 'signup' ? { brandName: (brandName || storeName || '').trim() || storeName, storeName: (storeName || brandName || '').trim(), email, password } : { email, password };
       const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const text = await r.text();
       let d;
@@ -2538,12 +2591,14 @@ function BrandAuthForm({ onSuccess, onDemo, initialMode }) {
     <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)}
       style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
     <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)}
-      style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:16,fontFamily:"inherit"}}/>
+      style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>
+    {mode==='signup'&&<input type="password" placeholder="Confirm Password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)}
+      style={{width:"100%",padding:"12px 16px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:10,color:C.text,fontSize:14,marginBottom:12,fontFamily:"inherit"}}/>}
     {error&&<div style={{color:C.coral,fontSize:13,marginBottom:12}}>{error}</div>}
-    <button onClick={submit} disabled={loading} style={{width:"100%",padding:"14px",background:C.teal,color:C.bg,border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer",fontFamily:"inherit"}}>{loading?'...':mode==='login'?'Sign In':'Sign Up'}</button>
+    <button onClick={submit} disabled={loading} style={{width:"100%",padding:"14px",background:C.teal,color:C.bg,border:"none",borderRadius:10,fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer",fontFamily:"inherit"}}>{loading?'...':mode==='login'?'Sign In':'Create Account'}</button>
     <div style={{marginTop:16,fontSize:13,color:C.sub,textAlign:"center"}}>
       {mode==='login'?'No account? ':'Already have an account? '}
-      <button onClick={()=>{setMode(m=>m==='login'?'signup':'login');setError(null)}} style={{background:"none",border:"none",color:C.teal,cursor:"pointer",fontWeight:600,fontFamily:"inherit",fontSize:13}}>{mode==='login'?'Sign up':'Log in'}</button>
+      <button onClick={()=>{setMode(m=>m==='login'?'signup':'login');setError(null);setConfirmPassword('')}} style={{background:"none",border:"none",color:C.teal,cursor:"pointer",fontWeight:600,fontFamily:"inherit",fontSize:13}}>{mode==='login'?'Sign up':'Sign in'}</button>
     </div>
     {onDemo&&<>
       <div style={{display:"flex",alignItems:"center",gap:12,marginTop:24,marginBottom:16}}>
@@ -2839,11 +2894,25 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
       const c = byHandle.get(key);
       c.videos.push(v);
       c.bestScore = Math.max(c.bestScore, v.ai_score || 0);
-      c.totalViews += v.views || 0;
+      c.totalViews += (c.totalViews || 0) + (v.views || 0);
     });
     return [...byHandle.values()].sort((a, b) => b.bestScore - a.bestScore);
   }, [allVideos]);
-  const creators = Array.isArray(demoCreators) ? demoCreators : (creatorsFromScan || []);
+  const rawCreators = Array.isArray(demoCreators) ? demoCreators : (creatorsFromScan || []);
+  const creators = useMemo(() => rawCreators.map((c, i) => ({
+    handle: c?.handle ?? '@creator' + (i + 1),
+    creator: c?.creator ?? (typeof c?.handle === 'string' ? c.handle.replace(/^@+/, '') : 'creator'),
+    videos: Array.isArray(c?.videos) ? c.videos : [],
+    bestScore: c?.bestScore ?? c?.aiScore ?? 0,
+    totalViews: c?.totalViews ?? 0,
+    estGmv: c?.estGmv ?? 0,
+    avatar: c?.avatar ?? null,
+    engagement_rate: c?.engagement_rate,
+    predicted_roas: c?.predicted_roas,
+    followers: c?.followers ?? 0,
+    videoCount: c?.videoCount ?? (Array.isArray(c?.videos) ? c.videos.length : 0),
+    status: c?.status,
+  })), [rawCreators]);
 
   const safeCreatorIndex = selectedCreator !== null && selectedCreator >= 0 && selectedCreator < creators.length ? selectedCreator : null;
   const currentCreator = safeCreatorIndex !== null ? creators[safeCreatorIndex] : null;

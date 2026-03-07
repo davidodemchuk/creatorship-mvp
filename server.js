@@ -167,7 +167,7 @@ app.get('/auth/tiktok/callback', (req, res) => {
 });
 
 app.get('/api/tiktok/status', (req, res) => {
-  if (ttTokens) res.json({ connected: true, display_name: ttTokens.display_name || '', open_id: ttTokens.open_id, follower_count: ttTokens.follower_count || 0, video_count: ttTokens.video_count || 0 });
+  if (ttTokens) res.json({ connected: true, display_name: ttTokens.display_name || '', open_id: ttTokens.open_id, follower_count: ttTokens.follower_count || 0, video_count: ttTokens.video_count || 0, agreedToTerms: !!ttTokens.agreedToTerms });
   else res.json({ connected: false });
 });
 
@@ -256,26 +256,43 @@ app.get('/api/creator/earnings', (req, res) => {
   const creatorKey = Object.keys(byCreator).find(k => creatorNameMatches(k, creator)) || creator;
   let data = byCreator[creatorKey] || { totalEarned: 0, thisMonth: 0, payouts: [] };
 
+  let earnings = data.earnings || [];
   if (creatorNameMatches('Sarah_BreatheBetter', creator)) {
     const demoPayout = 8553.36;
-    const now = new Date();
-    const thisMonth = now.getMonth();
     data = {
       totalEarned: demoPayout,
       thisMonth: demoPayout,
       nextPayout: 8553.36,
+      availableBalance: 42.30,
       payouts: [
         { date: new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10), amount: 3200.12, campaignId: 'demo_sarah_breathebetter', product: 'Nasal Strip Starter Kit' },
         { date: new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10), amount: 5353.24, campaignId: 'demo_sarah_breathebetter', product: 'Nasal Strip Starter Kit' },
       ],
+      earnings: [
+        { date: new Date(Date.now() - 1 * 86400000).toISOString().slice(0, 10), brand: 'GlowUp Skincare', video: 'Serum review #1', amount: 42.30, status: 'Pending' },
+        { date: new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10), brand: 'GlowUp Skincare', video: 'Night routine', amount: 28.50, status: 'Paid' },
+        { date: new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10), brand: 'PureVita Beauty', video: 'Moisturizer review', amount: 16.80, status: 'Paid' },
+      ],
     };
+    earnings = data.earnings;
+  } else {
+    earnings = (data.payouts || []).map(p => ({
+      date: p.date,
+      brand: p.brand || (p.product || '').split(' ')[0] || 'Brand',
+      video: p.video || p.product || 'Campaign',
+      amount: p.amount || 0,
+      status: p.status || 'Paid',
+    }));
   }
   const nextPayout = data.nextPayout ?? (data.payouts?.length ? data.payouts[0].amount : 0);
+  const availableBalance = data.availableBalance ?? 0;
   res.json({
     totalEarned: data.totalEarned ?? 0,
     thisMonth: data.thisMonth ?? 0,
     nextPayout,
+    availableBalance,
     payouts: data.payouts || [],
+    earnings,
   });
 });
 
@@ -284,6 +301,46 @@ app.post('/api/tiktok/disconnect', (req, res) => {
   const f = path.join(DATA_DIR, 'tt_tokens.json');
   if (fs.existsSync(f)) fs.unlinkSync(f);
   res.json({ ok: true });
+});
+
+app.post('/api/creator/agree-terms', (req, res) => {
+  if (!ttTokens) return res.status(401).json({ error: 'Not connected' });
+  ttTokens.agreedToTerms = true;
+  ttTokens.agreedAt = new Date().toISOString();
+  saveJson(path.join(DATA_DIR, 'tt_tokens.json'), ttTokens);
+  res.json({ success: true });
+});
+
+app.get('/api/creator/payout-settings', (req, res) => {
+  const connected = getConnectedCreators();
+  const creator = connected[0]?.display_name || connected[0]?.open_id;
+  if (!creator) return res.json({ method: null, payoutEmail: '', payoutPhone: '' });
+  const creatorsPath = path.join(DATA_DIR, 'creators.json');
+  let creators = [];
+  try { creators = loadJson(creatorsPath) || []; } catch (_) {}
+  const rec = creators.find(c => creatorNameMatches(c.display_name || c.open_id, creator));
+  res.json({ method: rec?.payoutMethod || null, payoutEmail: rec?.payoutEmail || '', payoutPhone: rec?.payoutPhone || '' });
+});
+
+app.post('/api/creator/payout-settings', (req, res) => {
+  const connected = getConnectedCreators();
+  const creator = connected[0]?.display_name || connected[0]?.open_id;
+  if (!creator) return res.status(401).json({ error: 'Not connected' });
+  const { method, payoutEmail, payoutPhone } = req.body;
+  const creatorsPath = path.join(DATA_DIR, 'creators.json');
+  let creators = [];
+  try { creators = loadJson(creatorsPath) || []; } catch (_) {}
+  let rec = creators.find(c => creatorNameMatches(c.display_name || c.open_id, creator));
+  if (!rec) {
+    rec = { display_name: creator, open_id: connected[0]?.open_id };
+    creators.push(rec);
+  }
+  if (method !== undefined) rec.payoutMethod = method;
+  if (payoutEmail !== undefined) rec.payoutEmail = payoutEmail || '';
+  if (payoutPhone !== undefined) rec.payoutPhone = payoutPhone || '';
+  ensureDir(DATA_DIR);
+  saveJson(creatorsPath, creators);
+  res.json({ success: true });
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -300,14 +357,15 @@ function saveBrands(b) {
 
 app.post('/api/brand/signup', async (req, res) => {
   const { brandName, storeName, email, password } = req.body;
-  if (!brandName || !email || !password) return res.json({ error: 'Missing required fields' });
+  const displayName = (brandName || storeName || '').trim();
+  if (!displayName || !email || !password) return res.json({ error: 'Missing required fields (store/brand name, email, password)' });
   const brands = loadBrands();
   if (brands.find(b => (b.email || '').toLowerCase() === (email || '').toLowerCase())) return res.json({ error: 'Email already registered' });
   const hashed = await bcrypt.hash(password, 10);
-  const brand = { id: Date.now().toString(), brandName, storeName: storeName || '', email: (email || '').toLowerCase(), password: hashed, createdAt: new Date().toISOString() };
+  const brand = { id: Date.now().toString(), brandName: displayName, storeName: (storeName || displayName || '').toString().replace(/^@/, ''), email: (email || '').toLowerCase(), password: hashed, createdAt: new Date().toISOString() };
   brands.push(brand);
   saveBrands(brands);
-  res.json({ success: true, brand: { id: brand.id, brandName, storeName: brand.storeName, email: brand.email, hasMetaToken: !!brand.metaToken, adAccount: brand.adAccount || '', pageId: brand.pageId || '' } });
+  res.json({ success: true, brand: { id: brand.id, brandName: brand.brandName, storeName: brand.storeName, email: brand.email, hasMetaToken: !!brand.metaToken, adAccount: brand.adAccount || '', pageId: brand.pageId || '' } });
 });
 
 app.post('/api/brand/login', async (req, res) => {
