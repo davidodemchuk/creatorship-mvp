@@ -758,8 +758,16 @@ app.post('/api/download', async (req, res) => {
 });
 
 app.post('/api/launch', async (req, res) => {
-  const { videoId, metaToken, adAccount, pageId, dailyBudget = 50, brandId } = req.body;
-  if (!metaToken || !adAccount) return res.status(400).json({ error: 'metaToken and adAccount required' });
+  let { videoId, metaToken, adAccount, pageId, dailyBudget = 50, brandId } = req.body;
+  if (brandId) {
+    const brand = loadBrands().find(b => b.id === brandId);
+    if (brand) {
+      if (!metaToken && brand.metaToken) metaToken = brand.metaToken;
+      if (!adAccount && brand.adAccount) adAccount = brand.adAccount;
+      if (!pageId && brand.pageId) pageId = brand.pageId;
+    }
+  }
+  if (!metaToken || !adAccount) return res.status(400).json({ error: 'metaToken and adAccount required — connect Meta API in Settings' });
   const scan = getScanForBrand(brandId);
   const deep = getDeepScanForBrand(brandId);
   const allVideos = [

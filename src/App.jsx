@@ -81,6 +81,10 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
 .onboarding-step-card.completed{border-color:rgba(52,211,153,.3)}
 .onboarding-step-card.locked{opacity:.7}
 .summary-row{flex-wrap:wrap!important;gap:12px!important}
+.pipeline-flow{display:flex!important;flex-direction:column!important;gap:0!important}
+.creators-discovery-layout{flex-direction:column!important}
+.creators-discovery-layout>div{flex-direction:column!important}
+.creators-discovery-layout>div>div:first-child{width:100%!important;max-width:none!important;max-height:200px!important;border-right:none!important;border-bottom:1px solid rgba(255,255,255,.06)!important}
 .bottom-nav{display:flex!important}
 }
 @media(max-width:480px){
@@ -337,58 +341,51 @@ function HeroSection({nav}){
 }
 
 /*══════════════════════════════════════════════════════
-  SECTION 2 — AI Pipeline Visual (compact, time-saved focus)
+  SECTION 2 — Full Pipeline (sequential flow, sales story)
 ══════════════════════════════════════════════════════*/
 function AutomationSection(){
   const steps=[
-    {old:"Manual research",new:"10 sec",icon:"🔍",color:C.teal,visual:[{l:"Creators",v:"47"},{l:"Videos",v:"183"}],desc:"Paste your TikTok Shop URL. AI scrapes every creator and video that features your product."},
-    {old:"Guessing who converts",new:"AI ranked",icon:"🧠",color:C.purple,visual:[{l:"AI Score",v:"92"},{l:"Est. GMV",v:"$14K"}],desc:"We rank creators by engagement, sales signals, and fit. No more gut decisions."},
-    {old:"3–7 days for video",new:"Instant",icon:"⬇",color:C.teal,visual:[{l:"Format",v:"MP4"},{l:"Quality",v:"1080p"}],desc:"Video downloads from TikTok's CDN in seconds. No DMing creators or waiting for files."},
-    {old:"2 hrs per campaign",new:"One click",icon:"🚀",color:C.coral,visual:[{l:"Campaign",v:"Built"},{l:"Targeting",v:"Set"}],desc:"Creatorship builds campaign, adset, creative, and targeting in Meta Ads Manager for you."},
-    {old:"Check daily",new:"24/7 AI",icon:"📊",color:C.green,visual:[{l:"ROAS",v:"3.8×"},{l:"Auto-scale",v:"On"}],desc:"We track spend, ROAS, and conversions. Pause losers, scale winners — automatically."},
-    {old:"Spreadsheet payouts",new:"Weekly auto",icon:"💰",color:C.gold,visual:[{l:"Creator",v:"10%"},{l:"You keep",v:"86%"}],desc:"Creator commission paid weekly. No invoicing, no chasing. You keep the rest minus 4% platform fee."},
+    {before:"Manual research",headline:"Paste your TikTok Shop URL",body:"Creatorship scrapes every creator and video already featuring your products. No outreach. No searching. They're already selling for you — you just didn't know.",stat:"47 creators · 183 videos found",color:C.teal},
+    {before:"Guessing who converts",headline:"AI ranks who actually converts",body:"We score every creator by engagement rate, sales signals, and brand fit. The top performers rise to the top — no guessing, no gut calls.",stat:"AI Score: 92 · Est. GMV: $14K",color:C.purple},
+    {before:"3–7 days for video",headline:"Pull the content instantly",body:"Top-ranked videos download direct from TikTok's CDN. No DMing creators for files. No waiting days for assets. Content is ready in seconds.",stat:"MP4 · 1080p",color:C.teal},
+    {before:"2 hrs per campaign",headline:"One click → live Meta ads",body:"Creatorship builds the campaign, ad set, creative, and targeting inside your Meta Ads Manager. What used to take your team 2 hours takes one click.",stat:"Campaign built · Targeting set",color:C.coral},
+    {before:"Check daily",headline:"AI monitors 24/7",body:"We track spend, ROAS, and conversions around the clock. Losers get paused. Winners get scaled. You sleep.",stat:"3.8× ROAS · Auto-scale on",color:C.green},
+    {before:"Spreadsheet payouts",headline:"Creators get paid automatically",body:"Commission is calculated and paid weekly. No invoicing. No chasing. Creators stay happy, you keep 86% after a 4% platform fee.",stat:"10% creator · 86% you keep",color:C.gold},
   ];
 
   return <section className="sec-pad-lg" style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
     <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
     <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
-    <div style={{maxWidth:960,width:'100%',margin:"0 auto",padding:'0 16px',boxSizing:'border-box'}}>
-      <div style={{textAlign:"center",marginBottom:32}}>
+    <div style={{maxWidth:720,width:'100%',margin:"0 auto",padding:'0 16px',boxSizing:'border-box'}}>
+      <div style={{textAlign:"center",marginBottom:40}}>
         <div className="fu mono" style={{fontSize:11,fontWeight:700,letterSpacing:".15em",color:C.teal,textTransform:"uppercase",marginBottom:8}}>The Full Pipeline</div>
         <h2 className="fu d1 heading-h2" style={{fontSize:36,fontWeight:900,letterSpacing:"-.03em"}}>Six steps. <span style={gT(C.teal,C.green)}>Fully automated.</span></h2>
-        <p className="fu d2" style={{fontSize:14,color:C.sub,marginTop:8}}>AI turns weeks of work into minutes.</p>
-        <p className="fu d3" style={{fontSize:14,color:C.sub,lineHeight:1.65,maxWidth:640,margin:"16px auto 0"}}>
-          From your product URL to a live Meta ad — Creatorship handles discovery, scoring, download, campaign setup, and payouts. You paste a link and click launch. Everything else runs on autopilot.
-        </p>
+        <p className="fu d2" style={{fontSize:16,color:C.sub,marginTop:12}}>Paste a link. Get live ads. That's it.</p>
       </div>
 
-      {/* Compact visual pipeline — old way → AI way */}
-      <div className="auto-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
+      {/* Sequential pipeline flow — vertical timeline */}
+      <div className="pipeline-flow auto-grid" style={{display:"flex",flexDirection:"column",gap:0}}>
         {steps.map((s,i)=>(
-          <div key={i} className="gl fu" style={{padding:20,display:"flex",flexDirection:"column",gap:12,animationDelay:(i*0.05)+"s"}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <div style={{width:40,height:40,borderRadius:12,background:s.color+"15",border:"1px solid "+s.color+"30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{s.icon}</div>
-              <div>
-                <div style={{fontSize:10,color:C.dim,textDecoration:"line-through"}}>{s.old}</div>
-                <div className="mono" style={{fontSize:15,fontWeight:800,color:C.green}}>→ {s.new}</div>
+          <div key={i} style={{display:"flex",flexDirection:"column"}}>
+            <div className="gl fu" style={{padding:20,display:"flex",flexDirection:"column",gap:10,animationDelay:(i*0.05)+"s"}}>
+              <div style={{display:"flex",alignItems:"flex-start",gap:14}}>
+                <div style={{width:36,height:36,borderRadius:10,background:s.color+"15",border:"1px solid "+s.color+"30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:s.color,flexShrink:0}}>{i+1}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:10,color:C.dim,textDecoration:"line-through",marginBottom:4}}>{s.before}</div>
+                  <div style={{fontSize:17,fontWeight:800,color:C.text,letterSpacing:"-.02em",marginBottom:6}}>{s.headline}</div>
+                  <p style={{fontSize:13,color:C.sub,lineHeight:1.6,margin:0,marginBottom:10}}>{s.body}</p>
+                  <div className="mono" style={{fontSize:13,fontWeight:700,color:s.color}}>{s.stat}</div>
+                </div>
               </div>
             </div>
-            {s.desc&&<p style={{fontSize:12,color:C.sub,lineHeight:1.5,margin:0}}>{s.desc}</p>}
-            <div style={{display:"flex",gap:16,marginTop:4}}>
-              {s.visual.map((v,vi)=>(
-                <div key={vi}>
-                  <div style={{fontSize:9,color:C.dim,textTransform:"uppercase"}}>{v.l}</div>
-                  <div className="mono" style={{fontSize:16,fontWeight:800,color:s.color}}>{v.v}</div>
-                </div>
-              ))}
-            </div>
+            {i<steps.length-1&&<div style={{display:"flex",justifyContent:"center",padding:"4px 0"}}><div style={{width:2,height:20,background:C.border,borderRadius:1}}/></div>}
           </div>
         ))}
       </div>
 
-      {/* Bottom summary */}
-      <div className="fu d5" style={{marginTop:36,textAlign:"center"}}>
-        <div className="gl summary-row" style={{display:"inline-flex",gap:32,padding:"18px 36px",alignItems:"center"}}>
+      {/* Bottom summary — more prominent */}
+      <div className="fu d5" style={{marginTop:44,textAlign:"center"}}>
+        <div className="gl summary-row" style={{display:"inline-flex",gap:40,padding:"24px 48px",alignItems:"center",background:C.card,border:"1px solid "+C.border,borderRadius:16}}>
           {[
             {v:"6 steps",l:"fully automated",c:C.teal},
             {v:"< 2 min",l:"URL → live campaign",c:C.green},
@@ -396,8 +393,8 @@ function AutomationSection(){
             {v:"24/7",l:"AI monitoring",c:C.teal},
           ].map((s,i)=>(
             <div key={i} style={{textAlign:"center"}}>
-              <div className="mono" style={{fontSize:18,fontWeight:800,color:s.c}}>{s.v}</div>
-              <div style={{fontSize:10,color:C.dim,marginTop:2}}>{s.l}</div>
+              <div className="mono" style={{fontSize:22,fontWeight:800,color:s.c}}>{s.v}</div>
+              <div style={{fontSize:11,color:C.dim,marginTop:4}}>{s.l}</div>
             </div>
           ))}
         </div>
@@ -2021,6 +2018,239 @@ function BrandOverviewOnboarding({ profile, storeDisplay, creatorsCount, campaig
   );
 }
 
+/*══════════════════════════════════════════════════════
+  CREATOR DISCOVERY — Browse creators, video grid, launch flow
+══════════════════════════════════════════════════════*/
+function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
+  const OB = { bgCard: '#111827', bgCardHover: '#1a2236', borderDim: 'rgba(255,255,255,0.06)', accent: '#00e0b4', orange: '#ff9f43', textPrimary: '#f0f2f5', textSecondary: '#8b95a8', textDim: '#5a6478', success: '#34d399' };
+
+  const [scan, setScan] = useState(null);
+  const [loadingScan, setLoadingScan] = useState(true);
+  const [scanError, setScanError] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [productUrl, setProductUrl] = useState('');
+  const [selectedCreator, setSelectedCreator] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [playingVideo, setPlayingVideo] = useState(null);
+  const [launchOpen, setLaunchOpen] = useState(false);
+  const [launchStep, setLaunchStep] = useState(1);
+  const [launchForm, setLaunchForm] = useState({ adCopy: '', objective: 'CONVERSIONS', dailyBudget: 50, audience: 'US, 18-65, Broad', duration: '7', productTitle: '' });
+  const [launching, setLaunching] = useState(false);
+  const [launchResult, setLaunchResult] = useState(null);
+
+  const hasMeta = !!(profile && profile.hasMetaToken);
+
+  const fetchScan = useCallback(() => {
+    if (!brand?.id) return;
+    setLoadingScan(true);
+    setScanError(null);
+    fetch('/api/status?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => {
+      setScan(d.hasScan ? d : null);
+      setLoadingScan(false);
+    }).catch(() => { setLoadingScan(false); setScanError('Failed to load'); });
+  }, [brand?.id]);
+
+  useEffect(() => { fetchScan(); }, [fetchScan]);
+
+  const runScan = async () => {
+    if (!productUrl.trim()) return;
+    setScanning(true);
+    setScanError(null);
+    try {
+      const r = await fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scrapeKey: KEYS.scrape, productUrl: productUrl.trim(), brandId: brand.id }) });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      setScan(d);
+      setProductUrl('');
+    } catch (e) { setScanError(e.message); }
+    setScanning(false);
+  };
+
+  const allVideos = [...(scan?.qualified || []), ...(scan?.filtered || [])];
+  const creators = useMemo(() => {
+    const byHandle = new Map();
+    allVideos.forEach(v => {
+      const key = (v.handle || v.creator || 'unknown').toLowerCase();
+      if (!byHandle.has(key)) byHandle.set(key, { handle: v.handle || '@' + (v.creator || 'creator'), creator: v.creator, videos: [], bestScore: 0, totalViews: 0 });
+      const c = byHandle.get(key);
+      c.videos.push(v);
+      c.bestScore = Math.max(c.bestScore, v.ai_score || 0);
+      c.totalViews += v.views || 0;
+    });
+    return [...byHandle.values()].sort((a, b) => b.bestScore - a.bestScore);
+  }, [allVideos]);
+
+  const currentCreator = selectedCreator !== null ? creators[selectedCreator] : null;
+  const videos = currentCreator ? currentCreator.videos : [];
+  useEffect(() => { if (creators.length && selectedCreator === null) setSelectedCreator(0); }, [creators.length, selectedCreator]);
+  useEffect(() => { setSelectedVideo(null); setPlayingVideo(null); }, [selectedCreator]);
+
+  const openLaunch = (video) => {
+    setSelectedVideo(video);
+    const title = scan?.product?.title || 'Product';
+    setLaunchForm(f => ({ ...f, adCopy: title + ' — limited time offer.', productTitle: title }));
+    setLaunchOpen(true);
+    setLaunchStep(1);
+    setLaunchResult(null);
+  };
+
+  const doLaunch = async () => {
+    if (!selectedVideo || !brand?.id) return;
+    setLaunching(true);
+    setLaunchResult(null);
+    try {
+      const r = await fetch('/api/launch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ videoId: selectedVideo.id, dailyBudget: launchForm.dailyBudget, brandId: brand.id }) });
+      const d = await r.json();
+      setLaunchResult(d.success ? { success: true, ...d } : { success: false, error: d.error });
+      if (d.success) { fetchScan(); }
+    } catch (e) { setLaunchResult({ success: false, error: e.message }); }
+    setLaunching(false);
+  };
+
+  const closeLaunch = () => { setLaunchOpen(false); setSelectedVideo(null); setLaunchStep(1); setLaunchResult(null); };
+
+  if (loadingScan) {
+    return <div className="fu" style={{padding:40,textAlign:"center"}}><div style={{fontSize:14,color:C.sub}}>Loading creators...</div><div style={{marginTop:16,width:32,height:32,border:"2px solid "+C.border,borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",margin:"0 auto"}}/></div>;
+  }
+
+  if (!scan || creators.length === 0) {
+    if (scan && creators.length === 0) {
+      return <div className="fu">
+        <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creator Discovery</h1>
+        <div className="gl mobile-card" style={{padding:40,textAlign:"center"}}>
+          <div style={{fontSize:32,marginBottom:12}}>🔍</div>
+          <div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No creators found for this product</div>
+          <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Try a different TikTok Shop product URL.</div>
+          <button onClick={()=>setScan(null)} style={{...btnStyle,background:C.teal,color:C.bg}}>Run new scan</button>
+        </div>
+      </div>;
+    }
+    return <div className="fu">
+      <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creator Discovery</h1>
+      <div className="gl mobile-card" style={{padding:32,maxWidth:480}}>
+        <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Discover creators for your products</div>
+        <div style={{fontSize:13,color:C.sub,lineHeight:1.5,marginBottom:20}}>Paste your TikTok Shop product URL to scan for creators and videos featuring your product.</div>
+        <input placeholder="https://www.tiktok.com/shop/product/..." value={productUrl} onChange={e=>setProductUrl(e.target.value)} style={{...inputStyle,marginBottom:12}} />
+        <button onClick={runScan} disabled={scanning} style={{...btnStyle,background:C.teal,color:C.bg,opacity:scanning?0.7:1}}>{scanning?'Scanning...':'Scan for Creators'}</button>
+        {scanError&&<div style={{color:C.coral,fontSize:13,marginTop:12}}>{scanError}</div>}
+      </div>
+    </div>;
+  }
+
+  return <div className="fu" style={{display:"flex",flexDirection:"column",height:"100%",minHeight:500}}>
+    <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:20}}>Creator Discovery</h1>
+
+    <div style={{display:"flex",flex:1,minHeight:0,gap:0,flexDirection:"column"}} className="creators-discovery-layout">
+      <div style={{display:"flex",flex:1,minHeight:0,gap:0}}>
+        {/* Left — Creator list (35%) */}
+        <div style={{width:"35%",minWidth:180,maxWidth:280,borderRight:"1px solid "+C.border,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{padding:"12px 14px",fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",borderBottom:"1px solid "+C.border}}>Creators</div>
+          <div style={{flex:1,overflowY:"auto"}}>
+            {creators.map((c,i)=>(
+              <div key={i} onClick={()=>setSelectedCreator(i)} style={{padding:"12px 14px",cursor:"pointer",borderLeft:selectedCreator===i?"3px solid "+OB.accent:"3px solid transparent",background:selectedCreator===i?OB.bgCardHover:"transparent",borderBottom:"1px solid "+OB.borderDim}}>
+                <div style={{fontSize:14,fontWeight:700,color:OB.textPrimary}}>{c.handle}</div>
+                <div style={{fontSize:11,color:OB.textDim,marginTop:2}}>{c.videos.length} videos · {fN(c.totalViews)} views</div>
+                {c.bestScore>0&&<span style={{display:"inline-block",marginTop:4,fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:4,background:(c.bestScore>=85?OB.success:c.bestScore>=70?OB.orange:C.coral)+"20",color:c.bestScore>=85?OB.success:c.bestScore>=70?OB.orange:C.coral}}>Score {c.bestScore}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right — Creator detail + video grid (65%) */}
+        <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflow:"hidden"}}>
+          {!currentCreator?<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:C.dim,fontSize:14}}>Select a creator</div>:
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+            <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
+              <div>
+                <div style={{fontSize:20,fontWeight:800,color:OB.textPrimary}}>{currentCreator.handle}</div>
+                <div style={{fontSize:12,color:OB.textDim,marginTop:4}}>{currentCreator.videos.length} videos · {fN(currentCreator.totalViews)} views</div>
+              </div>
+              {currentCreator.handle&&<a href={"https://www.tiktok.com/"+String(currentCreator.handle).replace(/^@/,"")} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:OB.accent,fontWeight:600}}>TikTok profile ↗</a>}
+            </div>
+
+            <div style={{flex:1,overflowY:"auto",padding:20}}>
+              {videos.length===0?<div style={{color:C.dim,fontSize:14}}>Videos processing...</div>:
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:16}}>
+                {videos.map((v,i)=>(
+                  <div key={v.id} className="gl" style={{borderRadius:8,overflow:"hidden",background:OB.bgCard,border:"1px solid "+OB.borderDim}}>
+                    <div style={{aspectRatio:"16/9",background:C.bg2,position:"relative",cursor:"pointer"}} onClick={()=>setPlayingVideo(playingVideo===v.id?null:v.id)}>
+                      {v.cover?<img src={v.cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:C.dim}}>▶</div>}
+                      <div style={{position:"absolute",bottom:6,right:6,fontSize:10,fontWeight:700,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{v.duration?Math.floor(v.duration/1000)+"s":"—"}</div>
+                      <div style={{position:"absolute",bottom:6,left:6,fontSize:10,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{fN(v.views||0)} views</div>
+                    </div>
+                    {playingVideo===v.id&&(
+                      <div style={{padding:12,borderTop:"1px solid "+OB.borderDim}}>
+                        <video src={v.content_url} controls autoPlay muted playsInline style={{width:"100%",maxHeight:200,borderRadius:6}} />
+                        <button onClick={()=>openLaunch(v)} style={{width:"100%",marginTop:10,padding:"12px",background:OB.accent,color:"#0b0f1a",border:"none",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Launch as Ad →</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>}
+            </div>
+          </div>}
+        </div>
+      </div>
+    </div>
+
+    {/* Launch slide-over */}
+    {launchOpen&&<div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",justifyContent:"flex-end"}}>
+      <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.6)"}} onClick={closeLaunch}/>
+      <div className="fu" style={{width:480,maxWidth:"100%",background:C.bg2,borderLeft:"1px solid "+C.border,overflowY:"auto",boxShadow:"-8px 0 32px rgba(0,0,0,.4)"}}>
+        <div style={{padding:24,borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{fontSize:16,fontWeight:800}}>Launch Campaign</div>
+          <button onClick={closeLaunch} style={{background:"none",border:"none",color:C.sub,fontSize:18,cursor:"pointer"}}>×</button>
+        </div>
+        <div style={{padding:24}}>
+          <div style={{fontSize:12,color:C.dim,marginBottom:16}}>Step {launchStep} of 3</div>
+          {launchResult?(
+            <div>
+              {launchResult.success?<div><div style={{fontSize:18,fontWeight:700,color:OB.success,marginBottom:8}}>✓ Campaign launched</div><div style={{fontSize:13,color:C.sub,marginBottom:16}}>Campaign ID: {launchResult.ids?.campaign}</div><button onClick={()=>{setBrandTab("campaigns");closeLaunch()}} style={{...btnStyle,background:OB.accent,color:"#0b0f1a"}}>View in Campaigns →</button></div>:
+              <div><div style={{fontSize:16,fontWeight:700,color:C.coral,marginBottom:8}}>Launch failed</div><div style={{fontSize:13,color:C.sub,marginBottom:16}}>{launchResult.error}</div><button onClick={()=>{setLaunchResult(null);doLaunch()}} style={{...btnStyle,background:C.coral,color:C.bg}}>Retry</button></div>}
+            </div>
+          ):launchStep===1?(
+            <div>
+              {selectedVideo&&<div style={{display:"flex",gap:16,marginBottom:16}}><div style={{width:80,height:110,borderRadius:8,overflow:"hidden",background:C.bg}}>{selectedVideo.cover?<img src={selectedVideo.cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}>▶</div>}</div><div><div style={{fontWeight:700}}>{selectedVideo.handle||selectedVideo.creator}</div><div style={{fontSize:12,color:C.dim}}>{fN(selectedVideo.views)} views</div></div></div>}
+              <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:6}}>Ad copy</label>
+              <textarea value={launchForm.adCopy} onChange={e=>setLaunchForm(f=>({...f,adCopy:e.target.value}))} rows={3} style={{...inputStyle,marginBottom:16}} placeholder="Ad headline and description" />
+              <button onClick={()=>setLaunchStep(2)} style={{...btnStyle,background:OB.accent,color:"#0b0f1a"}}>Next →</button>
+            </div>
+          ):launchStep===2?(
+            <div>
+              <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:6}}>Objective</label>
+              <select value={launchForm.objective} onChange={e=>setLaunchForm(f=>({...f,objective:e.target.value}))} style={{...inputStyle,marginBottom:12}}><option value="CONVERSIONS">Conversions</option><option value="TRAFFIC">Traffic</option><option value="ENGAGEMENT">Engagement</option></select>
+              <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:6}}>Daily budget ($)</label>
+              <input type="number" value={launchForm.dailyBudget} onChange={e=>setLaunchForm(f=>({...f,dailyBudget:+e.target.value||50}))} min={10} style={{...inputStyle,marginBottom:12}} />
+              <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:6}}>Audience</label>
+              <div style={{fontSize:13,color:C.sub,marginBottom:12}}>{launchForm.audience} <span style={{color:C.dim}}>— defaults</span></div>
+              <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:6}}>Duration</label>
+              <select value={launchForm.duration} onChange={e=>setLaunchForm(f=>({...f,duration:e.target.value}))} style={{...inputStyle,marginBottom:16}}><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="ongoing">Ongoing</option></select>
+              <button onClick={()=>setLaunchStep(3)} style={{...btnStyle,background:OB.accent,color:"#0b0f1a"}}>Review & Launch →</button>
+            </div>
+          ):!hasMeta?(
+            <div>
+              <div style={{padding:20,background:C.coral+"12",border:"1px solid "+C.coral+"30",borderRadius:12,marginBottom:16}}>
+                <div style={{fontSize:15,fontWeight:700,color:C.coral,marginBottom:8}}>Connect Meta API first</div>
+                <div style={{fontSize:13,color:C.sub,marginBottom:16}}>Add your Meta Ads credentials in Settings to launch campaigns.</div>
+                <button onClick={()=>{closeLaunch();setBrandTab("settings")}} style={{...btnStyle,background:C.teal,color:C.bg}}>Go to Settings →</button>
+              </div>
+            </div>
+          ):(
+            <div>
+              <div className="gl" style={{padding:16,marginBottom:16}}>
+                <div style={{display:"flex",gap:12,marginBottom:12}}><div style={{width:60,height:80,borderRadius:6,overflow:"hidden"}}>{selectedVideo?.cover?<img src={selectedVideo.cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:null}</div><div><div style={{fontWeight:700}}>{selectedVideo?.handle||selectedVideo?.creator}</div><div style={{fontSize:12,color:C.dim}}>{launchForm.productTitle}</div></div></div>
+                <div style={{fontSize:12,color:C.dim}}>Budget: ${launchForm.dailyBudget}/day · {(launchForm.duration==="ongoing"?"Ongoing":launchForm.duration+" days")}</div>
+                <div style={{fontSize:14,fontWeight:700,color:OB.orange,marginTop:8}}>Est. spend: ${launchForm.dailyBudget*(launchForm.duration==="ongoing"?30:+launchForm.duration)}</div>
+              </div>
+              <button onClick={doLaunch} disabled={launching} style={{...btnStyle,width:"100%",background:OB.accent,color:"#0b0f1a",padding:14}}>{launching?"Launching...":"Launch Campaign"}</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>}
+  </div>;
+}
+
 function BrandDashboardView({ brand, setBrand, nav }) {
   const [brandTab, setBrandTab] = useState('overview');
   const [profile, setProfile] = useState(brand);
@@ -2102,21 +2332,11 @@ function BrandDashboardView({ brand, setBrand, nav }) {
   return <div className="bottom-gap" style={{display:"flex",minHeight:"100vh",background:C.bg}}>
     <Sidebar/>
     <BottomNav/>
-    <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:800}}>
+    <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:brandTab==="creators"?undefined:800,display:"flex",flexDirection:"column",minHeight:0}}>
 
       {brandTab==="overview"&&<BrandOverviewOnboarding profile={profile} storeDisplay={storeDisplay} creatorsCount={creators.length} campaignsCount={campaigns.length} setBrandTab={setBrandTab} />}
 
-      {brandTab==="creators"&&<div>
-        <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creators</h1>
-        {loadingCreators?<div style={{color:C.sub}}>Loading...</div>:
-        creators.length===0?<div className="gl" style={{padding:40,textAlign:"center"}}><div style={{fontSize:32,marginBottom:12}}>👥</div><div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No creators in your pipeline yet</div><div style={{fontSize:13,color:C.dim}}>Your admin is building your creator list.</div></div>:
-        <div className="creators-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12}}>
-          {creators.map((c,i)=><div key={i} className="gl mobile-card" style={{padding:16}}>
-            <div style={{fontSize:14,fontWeight:700}}>@{c.display_name||c.open_id||'creator'}</div>
-            <div style={{fontSize:11,color:C.dim,marginTop:8}}>{fN(c.follower_count||0)} followers · {c.video_count||0} videos</div>
-          </div>)}
-        </div>}
-      </div>}
+      {brandTab==="creators"&&<CreatorDiscoveryView brand={brand} profile={profile} setBrandTab={setBrandTab} />}
 
       {brandTab==="campaigns"&&<div>
         <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Campaigns</h1>
