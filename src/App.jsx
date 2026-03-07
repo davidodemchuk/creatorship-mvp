@@ -1777,6 +1777,130 @@ function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo }) {
   const[loadingEarnings,setLoadingEarnings]=useState(false);
   const fire=useCallback(m=>{setToast(m);setTimeout(()=>setToast(null),4000)},[]);
 
+  if (isCreatorDemo) {
+    const profile = DEMO_CREATOR_PROFILE;
+    const videos = DEMO_CREATOR_VIDEOS;
+    const dealsList = DEMO_CREATOR_DEALS;
+    const totalEarnings = profile.totalEarnings || 23770;
+    const tiktokTotal = videos.reduce((s, v) => s + (v.tiktok?.shopRevenue || 0), 0);
+    const csTotal = videos.reduce((s, v) => s + (v.creatorship?.creatorEarnings || 0), 0);
+    const tiktokPct = totalEarnings > 0 ? Math.round((tiktokTotal / totalEarnings) * 100) : 0;
+    const csPct = totalEarnings > 0 ? Math.round((csTotal / totalEarnings) * 100) : 0;
+    const demoGate = (msg) => (
+      <div style={{ padding: 12, background: C.teal + '15', borderRadius: 8, border: '1px solid ' + C.teal + '30', marginTop: 12 }}>
+        <div style={{ fontSize: 13, color: C.sub, marginBottom: 8 }}>{msg}</div>
+        <button onClick={() => exitCreatorDemo && exitCreatorDemo()} style={{ ...btnStyle, background: C.teal, color: C.bg, fontSize: 12 }}>Join Creatorship →</button>
+      </div>
+    );
+    return (
+      <div className="bottom-gap" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: C.bg }}>
+        <div style={{ width: '100%', background: C.teal + '26', borderLeft: '4px solid ' + C.teal, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <span style={{ fontSize: 13, color: C.text }}>You're viewing a demo creator account with sample data.</span>
+          <button onClick={() => exitCreatorDemo && exitCreatorDemo()} style={{ ...btnStyle, background: C.teal, color: C.bg, padding: '8px 16px', fontSize: 12 }}>Join Creatorship →</button>
+        </div>
+        <div style={{ display: 'flex', flex: 1 }}>
+          <div className="sidebar-wrap" style={{ width: 200, background: C.bg2, borderRight: '1px solid ' + C.border, padding: '16px 0', flexShrink: 0, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <div style={{ padding: '0 16px 20px', cursor: 'pointer' }} onClick={() => nav('/') }><span style={{ fontSize: 17, fontWeight: 900, ...gT(C.coral, C.gold) }}>Creator</span><span style={{ fontSize: 17, fontWeight: 900, ...gT(C.blue, C.teal) }}>ship</span><div style={{ fontSize: 10, color: C.dim, marginTop: 1 }}>Creator Portal</div></div>
+            <div style={{ flex: 1 }} />
+            <div style={{ padding: '8px 16px', fontSize: 11, color: C.sub }}>@{profile.handle}</div>
+          </div>
+          <div className="content-pad" style={{ flex: 1, padding: '28px 36px', maxWidth: 800 }}>
+            <h1 className="fu heading-h3" style={{ fontSize: 24, fontWeight: 800, marginBottom: 24 }}>Creator Dashboard</h1>
+            <div className="gl" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>Total Earnings</div><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: C.text, marginTop: 4 }}>${totalEarnings.toLocaleString()}</div></div>
+              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>TikTok Shop</div><div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.orange, marginTop: 4 }}>${tiktokTotal.toLocaleString()}</div></div>
+              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>Creatorship</div><div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.teal, marginTop: 4 }}>${csTotal.toLocaleString()}</div></div>
+              <div style={{ padding: 20 }}><div style={{ fontSize: 11, color: C.dim, textTransform: 'uppercase' }}>Active Deals</div><div className="mono" style={{ fontSize: 22, fontWeight: 800, color: C.text, marginTop: 4 }}>{dealsList.filter(d => d.status === 'active').length}</div></div>
+            </div>
+            <div style={{ marginBottom: 28, height: 8, borderRadius: 4, overflow: 'hidden', background: C.border, display: 'flex' }}>
+              <div style={{ width: tiktokPct + '%', background: C.orange }} />
+              <div style={{ width: csPct + '%', background: C.teal }} />
+            </div>
+
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Video performance</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
+              {videos.map((v) => {
+                const tk = v.tiktok || {};
+                const cs = v.creatorship || {};
+                const hasCS = (cs.creatorEarnings || 0) > 0;
+                const total = v.totalEarnings || 0;
+                const tkPct = total > 0 ? Math.round(((tk.shopRevenue || 0) / total) * 100) : 0;
+                const csVPct = total > 0 ? Math.round(((cs.creatorEarnings || 0) / total) * 100) : 0;
+                return (
+                  <div key={v.id} className="gl" style={{ padding: 20, border: '1px solid ' + C.border, borderRadius: 12 }}>
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+                      <div style={{ width: 120, aspectRatio: '16/9', borderRadius: 8, background: 'linear-gradient(135deg, ' + C.teal + ', ' + C.green + ')', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(0,0,0,.5)', fontSize: 24 }}>▶</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, color: C.text, marginBottom: 4 }}>{v.caption?.slice(0, 60)}{(v.caption?.length || 0) > 60 ? '…' : ''}</div>
+                        <div style={{ fontSize: 11, color: C.dim }}>{v.postDate} · {v.duration}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      <div style={{ padding: 14, background: C.orange + '12', borderRadius: 8, border: '1px solid ' + C.orange + '30' }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 8 }}>TikTok Shop</div>
+                        <div style={{ fontSize: 12, color: C.sub }}>{fN(tk.views || 0)} views</div>
+                        <div style={{ fontSize: 12, color: C.sub }}>{(tk.shopSales || 0)} sales</div>
+                        <div className="mono" style={{ fontSize: 16, fontWeight: 800, color: C.orange, marginTop: 4 }}>${(tk.shopRevenue || 0).toLocaleString()} earned</div>
+                      </div>
+                      <div style={{ padding: 14, background: hasCS ? (C.teal + '12') : 'rgba(255,255,255,.02)', borderRadius: 8, border: '1px solid ' + (hasCS ? C.teal + '30' : C.border) }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, marginBottom: 8 }}>Creatorship</div>
+                        {hasCS ? (
+                          <> <div style={{ fontSize: 12, color: C.sub }}>Used in {cs.campaignsUsedIn} ads</div><div style={{ fontSize: 12, color: C.sub }}>{fN(cs.adImpressions || 0)} impr.</div><div className="mono" style={{ fontSize: 16, fontWeight: 800, color: C.teal, marginTop: 4 }}>${(cs.creatorEarnings || 0).toLocaleString()} earned</div></>
+                        ) : (
+                          <div style={{ fontSize: 12, color: C.dim }}>Not yet used in campaigns — your content could be earning more here.</div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid ' + C.border }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}><span style={{ fontSize: 12, color: C.dim }}>Total</span><span className="mono" style={{ fontSize: 18, fontWeight: 800, color: C.green }}>${total.toLocaleString()}</span></div>
+                      <div style={{ height: 6, borderRadius: 3, overflow: 'hidden', background: C.border, display: 'flex' }}>
+                        <div style={{ width: tkPct + '%', background: C.orange }} />
+                        <div style={{ width: csVPct + '%', background: C.teal }} />
+                      </div>
+                      <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>TikTok {tkPct}% · Creatorship {csVPct}%</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Brand deals</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+              {dealsList.map((d, i) => (
+                <div key={i} className="gl" style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                  <div><div style={{ fontSize: 15, fontWeight: 700 }}>{d.brand}</div><div style={{ fontSize: 12, color: C.dim }}>{d.videosUsed} videos · {d.commissionRate} · ${d.totalEarned.toLocaleString()} earned</div></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: d.status === 'active' ? C.green + '20' : C.gold + '20', color: d.status === 'active' ? C.green : C.gold }}>{d.status === 'active' ? 'Active' : 'Pending'}</span>
+                    <button style={{ ...btnStyle, background: 'transparent', border: '1px solid ' + C.border }} onClick={() => {}}>View Details</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {demoGate('Like what you see? Sign up to start earning.')}
+
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Earnings</h2>
+            <div className="gl" style={{ padding: 20, marginBottom: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+                <div><div style={{ fontSize: 11, color: C.dim }}>This month</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.text }}>$4,574</div><div style={{ fontSize: 10, color: C.dim }}>$2,840 TikTok + $1,734 Creatorship</div></div>
+                <div><div style={{ fontSize: 11, color: C.dim }}>Last month</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.text }}>$6,892</div></div>
+                <div><div style={{ fontSize: 11, color: C.dim }}>All time</div><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: C.green }}>${totalEarnings.toLocaleString()}</div></div>
+              </div>
+              <div style={{ height: 80, background: 'rgba(255,255,255,.03)', borderRadius: 8, display: 'flex', alignItems: 'flex-end', gap: 4, padding: '8px 0' }}>
+                {[40, 55, 45, 70, 65, 80, 60].map((h, i) => (
+                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ height: (h * 0.6) + 'px', background: C.orange + '60', borderRadius: 4 }} />
+                    <div style={{ height: (h * 0.4) + 'px', background: C.teal + '60', borderRadius: 4 }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 10, color: C.dim, marginTop: 8 }}>Weekly earnings — orange: TikTok Shop, teal: Creatorship</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleDisconnect=async()=>{
     try{
       const r=await fetch("/api/tiktok/disconnect",{method:"POST",headers:{"Content-Type":"application/json"}});
@@ -2063,9 +2187,27 @@ const DEMO_CREATORS_FALLBACK = DEMO_CREATORS_RAW.map((c, i) => ({
 }));
 
 const DEMO_CAMPAIGNS_FALLBACK = [
-  { id: 'camp_001', name: 'skincarebyjess_serum_v1', creator: 'skincarebyjess', status: 'ACTIVE', created_time: '2026-03-01', launchedAt: '2026-03-01', spend: 342.50, impressions: 58400, clicks: 2104, roas: 3.8, dailyBudget: 50, objective: 'Conversions', insights: { spend: '342.50', impressions: '58400', clicks: '2104', purchase_roas: [{ value: '3.8' }] } },
-  { id: 'camp_002', name: 'thebeautyplug_moisturizer_v2', creator: 'thebeautyplug', status: 'ACTIVE', created_time: '2026-03-03', launchedAt: '2026-03-03', spend: 187.20, impressions: 31200, clicks: 1087, roas: 4.2, dailyBudget: 50, objective: 'Conversions', insights: { spend: '187.20', impressions: '31200', clicks: '1087', purchase_roas: [{ value: '4.2' }] } },
-  { id: 'camp_003', name: 'glowwithnat_cleanser_v1', creator: 'glowwithnat', status: 'PAUSED', created_time: '2026-02-25', launchedAt: '2026-02-25', spend: 410.00, impressions: 44800, clicks: 1560, roas: 1.4, dailyBudget: 75, objective: 'Traffic', insights: { spend: '410.00', impressions: '44800', clicks: '1560', purchase_roas: [{ value: '1.4' }] } },
+  { id: 'camp_001', name: 'skincarebyjess_serum_v1', creator: 'skincarebyjess', creatorHandle: 'skincarebyjess', status: 'ACTIVE', created_time: '2026-03-01', launchedAt: '2026-03-01', spend: 342.50, impressions: 58400, clicks: 2104, roas: 3.8, conversions: 156, dailyBudget: 50, objective: 'Conversions', insights: { spend: '342.50', impressions: '58400', clicks: '2104', purchase_roas: [{ value: '3.8' }] } },
+  { id: 'camp_002', name: 'thebeautyplug_moisturizer_v2', creator: 'thebeautyplug', creatorHandle: 'thebeautyplug', status: 'ACTIVE', created_time: '2026-03-03', launchedAt: '2026-03-03', spend: 187.20, impressions: 31200, clicks: 1087, roas: 4.2, conversions: 45, dailyBudget: 50, objective: 'Conversions', insights: { spend: '187.20', impressions: '31200', clicks: '1087', purchase_roas: [{ value: '4.2' }] } },
+  { id: 'camp_003', name: 'glowwithnat_cleanser_v1', creator: 'glowwithnat', creatorHandle: 'glowwithnat', status: 'PAUSED', created_time: '2026-02-25', launchedAt: '2026-02-25', spend: 410.00, impressions: 44800, clicks: 1560, roas: 1.4, conversions: 0, dailyBudget: 75, objective: 'Traffic', insights: { spend: '410.00', impressions: '44800', clicks: '1560', purchase_roas: [{ value: '1.4' }] } },
+  { id: 'camp_004', name: 'dermdaily_nightroutine_v1', creator: 'dermdaily', creatorHandle: 'dermdaily', status: 'ACTIVE', created_time: '2026-03-05', launchedAt: '2026-03-05', spend: 95.40, impressions: 22100, clicks: 890, roas: 4.6, conversions: 62, dailyBudget: 50, objective: 'Conversions', insights: { spend: '95.40', impressions: '22100', clicks: '890', purchase_roas: [{ value: '4.6' }] } },
+  { id: 'camp_005', name: 'cleanbeautykim_serum_v1', creator: 'cleanbeautykim', creatorHandle: 'cleanbeautykim', status: 'ACTIVE', created_time: '2026-03-06', launchedAt: '2026-03-06', spend: 28.60, impressions: 8400, clicks: 312, roas: 3.1, conversions: 18, dailyBudget: 50, objective: 'Conversions', insights: { spend: '28.60', impressions: '8400', clicks: '312', purchase_roas: [{ value: '3.1' }] } },
+];
+
+const DEMO_DAILY_PERFORMANCE = [
+  { day: 'Feb 22', spend: 45, revenue: 112 }, { day: 'Feb 23', spend: 52, revenue: 134 }, { day: 'Feb 24', spend: 48, revenue: 158 },
+  { day: 'Feb 25', spend: 61, revenue: 189 }, { day: 'Feb 26', spend: 55, revenue: 165 }, { day: 'Feb 27', spend: 72, revenue: 224 },
+  { day: 'Feb 28', spend: 68, revenue: 248 }, { day: 'Mar 1', spend: 85, revenue: 312 }, { day: 'Mar 2', spend: 92, revenue: 340 },
+  { day: 'Mar 3', spend: 78, revenue: 295 }, { day: 'Mar 4', spend: 105, revenue: 410 }, { day: 'Mar 5', spend: 118, revenue: 445 },
+  { day: 'Mar 6', spend: 125, revenue: 478 }, { day: 'Mar 7', spend: 138, revenue: 520 },
+];
+
+const DEMO_ACTIVITY = [
+  { time: '2 hours ago', text: 'Campaign skincarebyjess_serum_v1 auto-scaled budget to $75/day', type: 'scale' },
+  { time: '5 hours ago', text: 'New creator @cleanbeautykim matched to your store', type: 'creator' },
+  { time: '1 day ago', text: 'Campaign thebeautyplug_moisturizer_v2 hit 4.2× ROAS', type: 'performance' },
+  { time: '2 days ago', text: '3 new videos downloaded from @dermdaily', type: 'content' },
+  { time: '3 days ago', text: 'Campaign glowwithnat_cleanser_v1 paused — ROAS below threshold', type: 'pause' },
 ];
 
 function BrandAuthForm({ onSuccess, onDemo, initialMode }) {
@@ -2140,7 +2282,7 @@ const btnStyle = { padding: '10px 20px', border: 'none', borderRadius: 8, fontSi
 // Onboarding design tokens (from creatorship-onboarding spec)
 const OB = { bgDeep: '#0b0f1a', bgCard: '#111827', bgCardHover: '#1a2236', borderDim: 'rgba(255,255,255,0.06)', borderActive: 'rgba(0,224,180,0.4)', accent: '#00e0b4', accentGlow: 'rgba(0,224,180,0.15)', orange: '#ff9f43', textPrimary: '#f0f2f5', textSecondary: '#8b95a8', textDim: '#5a6478', success: '#34d399' };
 
-function BrandOverviewOnboarding({ profile, storeDisplay, creatorsCount, campaignsCount, setBrandTab }) {
+function BrandOverviewOnboarding({ profile, storeDisplay, creatorsCount, campaignsCount, setBrandTab, isDemo, creators, campaigns }) {
   const steps = [
     { id: 'account', title: 'Create your account', why: 'Your brand account is the hub for connecting Meta, TikTok Shop, and creators. We use it to persist settings and campaign data.', ctaLabel: null, ctaTab: null },
     { id: 'meta', title: 'Connect Meta Ads API', why: 'Meta Ads powers your creator campaigns. Connecting your Ad Account and Page ID lets Creatorship create and manage campaigns on your behalf.', ctaLabel: 'Go to Settings', ctaTab: 'settings' },
@@ -2166,10 +2308,142 @@ function BrandOverviewOnboarding({ profile, storeDisplay, creatorsCount, campaig
     return 'locked';
   };
 
+  const showRichDashboard = isDemo || allComplete;
+  const dailyPerf = isDemo ? DEMO_DAILY_PERFORMANCE : [];
+  const activity = isDemo ? DEMO_ACTIVITY : [];
+  const listCreators = Array.isArray(creators) ? creators : [];
+  const listCampaigns = Array.isArray(campaigns) ? campaigns : [];
+  const totalSpend = listCampaigns.reduce((s, c) => s + (Number(c.spend) || Number(c.insights?.spend) || 0), 0);
+  const activeCampaigns = listCampaigns.filter(c => (c.status || '').toUpperCase() === 'ACTIVE');
+  const avgRoas = listCampaigns.length ? listCampaigns.reduce((s, c) => s + (Number(c.roas) || parseFloat(c.insights?.purchase_roas?.[0]?.value) || 0), 0) / listCampaigns.length : 0;
+  const pendingCreators = isDemo ? 2 : 0;
+  const scalingAds = isDemo ? 3 : activeCampaigns.length;
+  const totalSpendDisplay = isDemo ? 1892 : Math.round(totalSpend);
+  const roasDisplay = isDemo ? 3.6 : avgRoas;
+  const spendTrend = isDemo ? '+24%' : null;
+  const roasTrend = isDemo ? 'up from 2.8× last week' : null;
+
+  if (showRichDashboard) {
+    const maxRev = Math.max(...(dailyPerf.map(d => d.revenue) || [1]));
+    const maxSpend = Math.max(...(dailyPerf.map(d => d.spend) || [1]));
+    const topCreators = listCreators
+      .slice()
+      .sort((a, b) => (Number(b?.estGmv) || Number(b?.totalViews) || 0) - (Number(a?.estGmv) || Number(a?.totalViews) || 0))
+      .slice(0, 3)
+      .map((c, i) => ({ ...c, rank: i + 1, roas: [4.2, 3.8, 3.4][i] || (c?.bestScore / 25) }));
+
+    return (
+      <div className="fu" style={{ animationDelay: '0.05s' }}>
+        <h1 className="heading-h3" style={{ fontSize: 24, fontWeight: 800, marginBottom: 24, color: OB.textPrimary }}>Overview</h1>
+        {/* Row 1: Key metrics — 4 cards */}
+        <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 24 }}>
+          <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+            <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Total Spend</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: OB.textPrimary, marginTop: 4 }}>${totalSpendDisplay.toLocaleString()}</div>
+            {spendTrend && <div style={{ fontSize: 12, color: OB.success, marginTop: 4 }}>↑ 24% vs last week</div>}
+          </div>
+          <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+            <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Total ROAS</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: OB.accent, marginTop: 4 }}>{typeof roasDisplay === 'number' ? roasDisplay.toFixed(1) : roasDisplay}×</div>
+            {roasTrend && <div style={{ fontSize: 12, color: OB.textSecondary, marginTop: 4 }}>up from 2.8× last week</div>}
+          </div>
+          <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+            <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Active Ads</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: OB.textPrimary, marginTop: 4 }}>{isDemo ? 8 : activeCampaigns.length}</div>
+            <div style={{ fontSize: 12, color: OB.accent, marginTop: 4 }}>{isDemo ? '3 scaling automatically' : (activeCampaigns.length + ' active')}</div>
+          </div>
+          <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+            <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Creators</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: OB.textPrimary, marginTop: 4 }}>{creatorsCount}</div>
+            <div style={{ fontSize: 12, color: OB.orange, marginTop: 4 }}>{isDemo ? '2 pending approval' : 'connected'}</div>
+          </div>
+        </div>
+
+        {/* Row 2: Performance chart — 14 days */}
+        {dailyPerf.length > 0 && (
+          <div className="gl mobile-card" style={{ padding: 20, marginBottom: 24, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: OB.textSecondary, marginBottom: 16 }}>Last 14 days</div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 140 }}>
+              {dailyPerf.map((d, i) => {
+                const revH = maxRev > 0 ? (d.revenue / maxRev) * 100 : 0;
+                const spendH = maxSpend > 0 ? (d.spend / maxSpend) * 100 : 0;
+                return (
+                  <div key={d.day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{ width: '100%', flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 2 }}>
+                      <div style={{ width: '45%', height: spendH + '%', minHeight: 2, background: 'rgba(255,255,255,.2)', borderRadius: '4px 4px 0 0' }} title={'Spend $' + d.spend} />
+                      <div style={{ width: '45%', height: revH + '%', minHeight: 2, background: OB.accent, borderRadius: '4px 4px 0 0' }} title={'Revenue $' + d.revenue} />
+                    </div>
+                    <div style={{ fontSize: 9, color: OB.textDim, whiteSpace: 'nowrap' }}>{d.day.replace(' ', '\n')}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 16, marginTop: 12, fontSize: 11, color: OB.textDim }}>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: 'rgba(255,255,255,.3)', marginRight: 6 }} /> Spend</span>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, background: OB.accent, marginRight: 6 }} /> Revenue</span>
+            </div>
+          </div>
+        )}
+
+        {/* Row 3: Top performing creators */}
+        {topCreators.length > 0 && (
+          <div className="gl mobile-card" style={{ padding: 20, marginBottom: 24, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: OB.textSecondary, marginBottom: 12 }}>Top Performing Creators</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {topCreators.map((c, i) => {
+                const handle = (c?.handle || c?.creator || '').replace(/^@/, '') || '—';
+                const medal = ['🥇', '🥈', '🥉'][i] || '';
+                const videoCount = Array.isArray(c?.videos) ? c.videos.length : (c?.videoCount || 0);
+                const gmv = c?.estGmv != null ? $(c.estGmv) : (c?.totalViews ? '$' + fN(c.totalViews) : '—');
+                const roas = c?.roas ?? 0;
+                const roasColor = roas >= 3 ? OB.success : roas >= 2 ? OB.orange : C.coral;
+                return (
+                  <div key={c?.handle ?? i} onClick={() => setBrandTab('creators')} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: OB.bgCardHover, borderRadius: 8, cursor: 'pointer', border: '1px solid ' + OB.borderDim }}>
+                    <span style={{ fontSize: 18 }}>{medal}</span>
+                    <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: OB.accent, minWidth: 140 }}>@{handle}</span>
+                    <span style={{ fontSize: 12, color: OB.textDim }}>{videoCount} videos</span>
+                    <span style={{ fontSize: 12, color: OB.textSecondary }}>{gmv} est. GMV</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: roasColor + '20', color: roasColor }}>{typeof roas === 'number' ? roas.toFixed(1) : roas}×</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Row 4: Recent activity */}
+        {activity.length > 0 && (
+          <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: OB.textSecondary, marginBottom: 12 }}>Recent Activity</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {activity.map((a, i) => {
+                const dotColor = a.type === 'scale' || a.type === 'performance' || a.type === 'content' ? OB.accent : a.type === 'creator' ? OB.orange : C.coral;
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor, flexShrink: 0, marginTop: 5 }} />
+                    <div>
+                      <div style={{ fontSize: 12, color: OB.textDim, marginBottom: 2 }}>{a.time}</div>
+                      <div style={{ fontSize: 13, color: OB.textPrimary }}>{a.text}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!isDemo && allComplete && (
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <button onClick={() => setBrandTab('campaigns')} style={{ padding: '12px 24px', background: OB.accent, color: '#0b0f1a', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Campaigns →</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="fu" style={{ animationDelay: '0.05s' }}>
       <h1 className="heading-h3" style={{ fontSize: 24, fontWeight: 800, marginBottom: 24, color: OB.textPrimary }}>Overview</h1>
-      {/* Stats row */}
       <div className="overview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 32 }}>
         <div className="gl mobile-card" style={{ padding: 20, background: OB.bgCard, border: '1px solid ' + OB.borderDim }}>
           <div style={{ fontSize: 11, color: OB.textDim, textTransform: 'uppercase' }}>Store</div>
@@ -2185,61 +2459,42 @@ function BrandOverviewOnboarding({ profile, storeDisplay, creatorsCount, campaig
         </div>
       </div>
 
-      {allComplete ? (
-        <div className="gl mobile-card fu" style={{ padding: 28, background: OB.bgCard, border: '1px solid ' + OB.borderActive, borderRadius: 16, textAlign: 'center', boxShadow: '0 0 0 1px ' + OB.accentGlow }}>
-          <div style={{ fontSize: 18, fontWeight: 700, color: OB.success, marginBottom: 8 }}>✓ You're all set!</div>
-          <div style={{ fontSize: 14, color: OB.textSecondary, marginBottom: 20 }}>You've completed onboarding. Head to Campaigns to launch and manage your creator ads.</div>
-          <button onClick={() => setBrandTab('campaigns')} style={{ padding: '12px 24px', background: OB.accent, color: '#0b0f1a', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Campaigns →</button>
-        </div>
-      ) : (
-        <>
-          {/* Progress bar */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ fontSize: 13, color: OB.textSecondary }}>{completedCount} of 5 complete</span>
-            </div>
-            <div className="onboarding-progress-track" style={{ background: OB.borderDim }}>
-              <div className="onboarding-progress-fill" style={{ width: (completedCount / 5) * 100 + '%' }} />
-            </div>
+      <>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontSize: 13, color: OB.textSecondary }}>{completedCount} of 5 complete</span>
           </div>
-          {/* Step cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {steps.map((step, i) => {
-              const state = getStepState(i);
-              const isCurrent = state === 'current';
-              return (
-                <div
-                  key={step.id}
-                  className={`onboarding-step-card gl mobile-card ${state}`}
-                  style={{
-                    padding: 20,
-                    background: isCurrent ? OB.bgCardHover : OB.bgCard,
-                    border: '1px solid ' + (isCurrent ? OB.borderActive : OB.borderDim),
-                    borderRadius: 12,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, background: state === 'completed' ? OB.success : state === 'current' ? OB.accentGlow : OB.borderDim, color: state === 'completed' ? '#0b0f1a' : state === 'current' ? OB.accent : OB.textDim, border: state === 'current' ? '1px solid ' + OB.borderActive : 'none' }}>
-                      {state === 'completed' ? '✓' : state === 'locked' ? '🔒' : i + 1}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: state === 'locked' ? OB.textDim : OB.textPrimary }}>{step.title}</div>
-                      {isCurrent && (
-                        <>
-                          <p style={{ fontSize: 13, color: OB.textSecondary, marginTop: 10, marginBottom: 14, lineHeight: 1.5 }}>{step.why}</p>
-                          {step.ctaLabel && step.ctaTab && (
-                            <button onClick={() => setBrandTab(step.ctaTab)} style={{ padding: '10px 18px', background: OB.accent, color: '#0b0f1a', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{step.ctaLabel} →</button>
-                          )}
-                        </>
-                      )}
-                    </div>
+          <div className="onboarding-progress-track" style={{ background: OB.borderDim }}>
+            <div className="onboarding-progress-fill" style={{ width: (completedCount / 5) * 100 + '%' }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {steps.map((step, i) => {
+            const state = getStepState(i);
+            const isCurrent = state === 'current';
+            return (
+              <div key={step.id} className={`onboarding-step-card gl mobile-card ${state}`} style={{ padding: 20, background: isCurrent ? OB.bgCardHover : OB.bgCard, border: '1px solid ' + (isCurrent ? OB.borderActive : OB.borderDim), borderRadius: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, background: state === 'completed' ? OB.success : state === 'current' ? OB.accentGlow : OB.borderDim, color: state === 'completed' ? '#0b0f1a' : state === 'current' ? OB.accent : OB.textDim, border: state === 'current' ? '1px solid ' + OB.borderActive : 'none' }}>
+                    {state === 'completed' ? '✓' : state === 'locked' ? '🔒' : i + 1}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: state === 'locked' ? OB.textDim : OB.textPrimary }}>{step.title}</div>
+                    {isCurrent && (
+                      <>
+                        <p style={{ fontSize: 13, color: OB.textSecondary, marginTop: 10, marginBottom: 14, lineHeight: 1.5 }}>{step.why}</p>
+                        {step.ctaLabel && step.ctaTab && (
+                          <button onClick={() => setBrandTab(step.ctaTab)} style={{ padding: '10px 18px', background: OB.accent, color: '#0b0f1a', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{step.ctaLabel} →</button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </>
-      )}
+              </div>
+            );
+          })}
+        </div>
+      </>
     </div>
   );
 }
@@ -2305,11 +2560,13 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
     });
     return [...byHandle.values()].sort((a, b) => b.bestScore - a.bestScore);
   }, [allVideos]);
-  const creators = demoCreators || creatorsFromScan;
+  const creators = Array.isArray(demoCreators) ? demoCreators : (creatorsFromScan || []);
 
-  const currentCreator = selectedCreator !== null ? creators[selectedCreator] : null;
-  const videos = currentCreator ? currentCreator.videos : [];
+  const safeCreatorIndex = selectedCreator !== null && selectedCreator >= 0 && selectedCreator < creators.length ? selectedCreator : null;
+  const currentCreator = safeCreatorIndex !== null ? creators[safeCreatorIndex] : null;
+  const videos = Array.isArray(currentCreator?.videos) ? currentCreator.videos : [];
   useEffect(() => { if (creators.length && selectedCreator === null) setSelectedCreator(0); }, [creators.length, selectedCreator]);
+  useEffect(() => { if (creators.length && (selectedCreator === null || selectedCreator >= creators.length)) setSelectedCreator(0); }, [creators.length]);
   useEffect(() => { setSelectedVideo(null); setPlayingVideo(null); }, [selectedCreator]);
 
   const openLaunch = (video) => {
@@ -2373,13 +2630,29 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
         <div style={{width:"35%",minWidth:180,maxWidth:280,borderRight:"1px solid "+C.border,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <div style={{padding:"12px 14px",fontSize:11,fontWeight:700,color:C.dim,textTransform:"uppercase",borderBottom:"1px solid "+C.border}}>Creators</div>
           <div style={{flex:1,overflowY:"auto"}}>
-            {creators.map((c,i)=>(
-              <div key={i} onClick={()=>setSelectedCreator(i)} style={{padding:"12px 14px",cursor:"pointer",borderLeft:selectedCreator===i?"3px solid "+OB.accent:"3px solid transparent",background:selectedCreator===i?OB.bgCardHover:"transparent",borderBottom:"1px solid "+OB.borderDim}}>
-                <div style={{fontSize:14,fontWeight:700,color:OB.textPrimary}}>{c.handle}</div>
-                <div style={{fontSize:11,color:OB.textDim,marginTop:2}}>{c.videos.length} videos · {fN(c.totalViews)} views</div>
-                {c.bestScore>0&&<span style={{display:"inline-block",marginTop:4,fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:4,background:(c.bestScore>=85?OB.success:c.bestScore>=70?OB.orange:C.coral)+"20",color:c.bestScore>=85?OB.success:c.bestScore>=70?OB.orange:C.coral}}>Score {c.bestScore}</span>}
+            {creators.map((c,i)=>{
+              const followers = Number(c?.followers) || 0;
+              const videoCount = Array.isArray(c?.videos) ? c.videos.length : (Number(c?.videoCount) || 0);
+              const score = c?.bestScore ?? c?.aiScore ?? 0;
+              const scoreColor = score >= 85 ? OB.success : score >= 70 ? OB.orange : C.coral;
+              const gmv = c?.estGmv != null ? $(c.estGmv) : (c?.totalViews ? '$' + fN(c.totalViews) : '—');
+              const status = c?.status ?? (i < 4 ? 'Active' : 'Pending');
+              const statusColor = status === 'Active' ? OB.success : OB.orange;
+              const barPct = score > 0 ? Math.min(100, score) : 0;
+              return (
+              <div key={c?.handle ?? i} onClick={()=>setSelectedCreator(i)} style={{padding:"12px 14px",cursor:"pointer",borderLeft:safeCreatorIndex===i?"3px solid "+OB.accent:"3px solid transparent",background:safeCreatorIndex===i?OB.bgCardHover:"transparent",borderBottom:"1px solid "+OB.borderDim}}>
+                <div className="mono" style={{fontSize:14,fontWeight:700,color:OB.textPrimary}}>{c?.handle ?? '—'}</div>
+                <div style={{fontSize:11,color:OB.textDim,marginTop:2}}>{followers >= 1000 ? (followers/1000).toFixed(1)+'K' : followers} followers · {videoCount} videos</div>
+                <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginTop:6}}>
+                  {score>0&&<span style={{fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:4,background:scoreColor+"20",color:scoreColor}}>AI {score}</span>}
+                  <span style={{fontSize:10,color:OB.textDim}}>{gmv} GMV</span>
+                  <span style={{fontSize:10,color:statusColor,fontWeight:600}}>{status}</span>
+                </div>
+                <div style={{marginTop:6,height:4,borderRadius:2,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+                  <div style={{width:barPct+"%",height:"100%",background:OB.accent,borderRadius:2}}/>
+                </div>
               </div>
-            ))}
+            );})}
           </div>
         </div>
 
@@ -2389,30 +2662,41 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
               <div>
-                <div style={{fontSize:20,fontWeight:800,color:OB.textPrimary}}>{currentCreator.handle}</div>
-                <div style={{fontSize:12,color:OB.textDim,marginTop:4}}>{currentCreator.videos.length} videos · {fN(currentCreator.totalViews)} views</div>
+                <div style={{fontSize:20,fontWeight:800,color:OB.textPrimary}}>{currentCreator?.handle ?? '—'}</div>
+                <div style={{fontSize:12,color:OB.textDim,marginTop:4}}>{(Array.isArray(currentCreator?.videos) ? currentCreator.videos.length : 0)} videos · {fN(Number(currentCreator?.totalViews) || 0)} views</div>
               </div>
-              {currentCreator.handle&&<a href={"https://www.tiktok.com/"+String(currentCreator.handle).replace(/^@/,"")} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:OB.accent,fontWeight:600}}>TikTok profile ↗</a>}
+              {currentCreator?.handle&&<a href={"https://www.tiktok.com/"+String(currentCreator.handle).replace(/^@/,"")} target="_blank" rel="noopener noreferrer" style={{fontSize:12,color:OB.accent,fontWeight:600}}>TikTok profile ↗</a>}
             </div>
 
             <div style={{flex:1,overflowY:"auto",padding:20}}>
               {videos.length===0?<div style={{color:C.dim,fontSize:14}}>Videos processing...</div>:
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:16}}>
-                {videos.map((v,i)=>(
-                  <div key={v.id} className="gl" style={{borderRadius:8,overflow:"hidden",background:OB.bgCard,border:"1px solid "+OB.borderDim}}>
-                    <div style={{aspectRatio:"16/9",background:v.cover?undefined:`linear-gradient(${135+i*20}deg, ${C.teal}, #2dd4a0)`,position:"relative",cursor:"pointer"}} onClick={()=>setPlayingVideo(playingVideo===v.id?null:v.id)}>
-                      {v.cover?<img src={v.cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(0,0,0,.6)",fontSize:32}}>▶</div>}
-                      <div style={{position:"absolute",bottom:6,right:6,fontSize:10,fontWeight:700,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{typeof v.duration==='number'?Math.floor(v.duration/1000)+'s':(v.duration||'—')}</div>
-                      <div style={{position:"absolute",bottom:6,left:6,fontSize:10,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{fN(v.views||0)} views</div>
+                {videos.map((v,i)=>{
+                  const cover = v?.cover ?? v?.thumbnail;
+                  const grads = ['135deg, #0891b2, #00e0b4','225deg, #6366f1, #0891b2','45deg, #00e0b4, #34d399','315deg, #f59e0b, #ef4444','180deg, #8b5cf6, #6366f1'];
+                  const bgGrad = cover ? undefined : `linear-gradient(${grads[i % grads.length]})`;
+                  const usedInCampaigns = v?.usedInCampaigns ?? (i === 0 ? 1 : 0);
+                  const usedColor = usedInCampaigns > 0 ? OB.accent : OB.textDim;
+                  return (
+                  <div key={v?.id ?? i} className="gl" style={{borderRadius:8,overflow:"hidden",background:OB.bgCard,border:"1px solid "+OB.borderDim}}>
+                    <div style={{aspectRatio:"16/9",background:bgGrad,position:"relative",cursor:"pointer"}} onClick={()=>setPlayingVideo(playingVideo===v?.id?null:v?.id)}>
+                      {cover?<img src={cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(255,255,255,.5)",fontSize:32}}>▶</div>}
+                      <div style={{position:"absolute",bottom:6,right:6,fontSize:10,fontWeight:700,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{typeof v?.duration==='number'?Math.floor(v.duration/1000)+'s':(v?.duration||'—')}</div>
+                      <div style={{position:"absolute",bottom:6,left:6,fontSize:10,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{fN(Number(v?.views)||0)} views</div>
                     </div>
-                    {playingVideo===v.id&&(
+                    <div style={{padding:10,borderTop:"1px solid "+OB.borderDim,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
+                      <span style={{fontSize:11,color:OB.textDim}}>{fN(Number(v?.likes)||0)} likes</span>
+                      <span style={{fontSize:10,fontWeight:600,color:usedColor}}>Used in {usedInCampaigns} campaign{usedInCampaigns!==1?'s':''}</span>
+                    </div>
+                    {playingVideo===(v?.id)&&(
                       <div style={{padding:12,borderTop:"1px solid "+OB.borderDim}}>
-                        {v.content_url?<video src={v.content_url} controls autoPlay muted playsInline style={{width:"100%",maxHeight:200,borderRadius:6}} />:<div style={{width:"100%",aspectRatio:"16/9",maxHeight:200,borderRadius:6,background:C.bg2,display:"flex",alignItems:"center",justifyContent:"center",color:C.dim}}>Demo video</div>}
+                        {v?.content_url?<video src={v.content_url} controls autoPlay muted playsInline style={{width:"100%",maxHeight:200,borderRadius:6}} />:<div style={{width:"100%",aspectRatio:"16/9",maxHeight:200,borderRadius:6,background:C.bg2,display:"flex",alignItems:"center",justifyContent:"center",color:C.dim}}>Demo video</div>}
                         <button onClick={()=>openLaunch(v)} style={{width:"100%",marginTop:10,padding:"12px",background:OB.accent,color:"#0b0f1a",border:"none",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Launch as Ad →</button>
+                        {isDemo&&<div style={{fontSize:11,color:OB.orange,marginTop:6,textAlign:"center"}}>Sign up to launch real campaigns</div>}
                       </div>
                     )}
                   </div>
-                ))}
+                );})}
               </div>}
             </div>
           </div>}
@@ -2531,55 +2815,81 @@ function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccou
     </div>;
   }
 
+  const countAll = campaigns.length;
+  const countActive = campaigns.filter(x => (x.status || '').toUpperCase() === 'ACTIVE').length;
+  const countPaused = campaigns.filter(x => (x.status || '').toUpperCase() === 'PAUSED').length;
+  const thumbGradients = ['135deg, #0891b2, #00e0b4', '225deg, #6366f1, #0891b2', '45deg, #00e0b4, #34d399', '315deg, #f59e0b, #ef4444', '180deg, #8b5cf6, #6366f1'];
+
   return <div className="fu">
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:16,marginBottom:24}}>
       <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,margin:0}}>Campaigns</h1>
       <button onClick={()=>setBrandTab("creators")} style={{...btnStyle,background:C.teal,color:C.bg,padding:"10px 20px",fontSize:14}}>New Campaign +</button>
     </div>
     <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
-      {['all','active','paused','completed'].map(f=>(
-        <button key={f} onClick={()=>setFilter(f)} style={{padding:"8px 16px",background:filter===f?C.teal+"20":'transparent',border:"1px solid "+(filter===f?C.teal:C.border),borderRadius:20,color:filter===f?C.teal:C.sub,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textTransform:"capitalize"}}>{f}</button>
+      {[
+        { id: 'all', label: 'All', count: countAll },
+        { id: 'active', label: 'Active', count: countActive },
+        { id: 'paused', label: 'Paused', count: countPaused },
+      ].map(f=>(
+        <button key={f.id} onClick={()=>setFilter(f.id)} style={{padding:"8px 16px",background:filter===f.id?C.teal+"20":'transparent',border:"1px solid "+(filter===f.id?C.teal:C.border),borderRadius:20,color:filter===f.id?C.teal:C.sub,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>{f.label} ({f.count})</button>
       ))}
     </div>
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       {filtered.map((c,i)=>{
-        const spend = c.insights?.spend != null ? parseFloat(c.insights.spend) : null;
-        const impressions = c.insights?.impressions != null ? parseInt(c.insights.impressions) : null;
-        const clicks = c.insights?.clicks != null ? parseInt(c.insights.clicks) : null;
-        const roasArr = c.insights?.purchase_roas;
-        const roasVal = roasArr?.[0]?.value ? parseFloat(roasArr[0].value) : null;
+        const spend = c.spend != null ? Number(c.spend) : (c.insights?.spend != null ? parseFloat(c.insights.spend) : null);
+        const impressions = c.insights?.impressions != null ? parseInt(c.insights.impressions) : (c.impressions != null ? parseInt(c.impressions) : null);
+        const clicks = c.insights?.clicks != null ? parseInt(c.insights.clicks) : (c.clicks != null ? parseInt(c.clicks) : null);
+        const conversions = c.conversions != null ? Number(c.conversions) : 0;
+        const roasVal = c.roas != null ? Number(c.roas) : (c.insights?.purchase_roas?.[0]?.value ? parseFloat(c.insights.purchase_roas[0].value) : null);
         const s = (c.status || '').toUpperCase();
-        const statusLabel = s === 'ACTIVE' ? 'Active' : s === 'PAUSED' ? 'Paused' : s === 'ARCHIVED' ? 'Completed' : s || '—';
+        const statusLabel = s === 'ACTIVE' ? 'Active' : s === 'PAUSED' ? 'Paused' : s || '—';
         const statusColor = s === 'ACTIVE' ? C.success : s === 'PAUSED' ? C.orange : C.dim;
         const roasColor = roasVal != null ? (roasVal >= 2 ? C.teal : roasVal >= 1 ? C.orange : C.error) : C.sub;
-        const trend = roasVal != null ? (roasVal >= 2 ? '↑' : roasVal >= 1 ? '→' : '↓') : '—';
-        const trendColor = trend === '↑' ? C.success : trend === '↓' ? C.error : C.dim;
+        const dailyBudget = Number(c.dailyBudget) || 50;
+        const budgetPct = dailyBudget > 0 && spend != null ? Math.min(100, (spend / dailyBudget) * 100) : 0;
+        const cpa = conversions > 0 && spend != null ? spend / conversions : null;
+        const handleStr = (c.creatorHandle || c.creator || '').replace(/^@/, '') || '—';
+        const grad = thumbGradients[i % thumbGradients.length];
         return (
-          <div key={c.id||i} className="gl mobile-card" style={{padding:20,display:"flex",flexWrap:"wrap",gap:16,alignItems:"center"}}>
-            <div style={{flex:1,minWidth:0}}>
-              <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>{c.name || c.creator || 'Campaign'}</div>
-              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                <span style={{fontSize:12,color:C.teal,fontWeight:600}}>{creatorHandle(c)}</span>
-                <span style={{fontSize:11,padding:"2px 8px",borderRadius:6,background:statusColor+"20",color:statusColor,display:"inline-flex",alignItems:"center",gap:4}}>
-                  {s==='ACTIVE'&&<span style={{width:6,height:6,borderRadius:"50%",background:statusColor}}/>}{statusLabel}
-                </span>
-                <span style={{fontSize:11,color:C.dim}}>Launched {fmtDate(c.created_time || c.launchedAt)}</span>
+          <div key={c.id||i} className="gl mobile-card" style={{padding:20,display:"flex",flexWrap:"wrap",gap:16,alignItems:"flex-start"}}>
+            <div style={{display:"flex",gap:16,flex:1,minWidth:0,flexWrap:"wrap"}}>
+              <div style={{width:80,height:110,borderRadius:8,overflow:"hidden",flexShrink:0,background:"linear-gradient("+grad+")",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <span style={{color:"rgba(255,255,255,.5)",fontSize:28}}>▶</span>
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div className="mono" style={{fontSize:15,fontWeight:700,marginBottom:4,color:C.text}}>{c.name || 'Campaign'}</div>
+                <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:6}}>
+                  <span className="mono" style={{fontSize:12,color:C.teal,fontWeight:600}}>@{handleStr}</span>
+                  <span style={{fontSize:11,color:C.dim}}>· Launched {fmtDate(c.created_time || c.launchedAt)}</span>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <span style={{width:8,height:8,borderRadius:"50%",background:statusColor,boxShadow:s==='ACTIVE'?'0 0 8px '+statusColor:undefined}}/>
+                  <span style={{fontSize:12,color:statusColor,fontWeight:600}}>{statusLabel}</span>
+                </div>
               </div>
             </div>
-            <div className="campaign-metrics-row" style={{display:"flex",gap:24,flexWrap:"wrap"}}>
-              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Spend</div><div className="mono" style={{fontSize:15,fontWeight:700,color:C.text}}>{spend != null ? '$' + parseFloat(spend).toFixed(2) : '—'}</div></div>
-              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Impressions</div><div className="mono" style={{fontSize:15,fontWeight:700,color:C.text}}>{impressions != null ? fN(impressions) : '—'}</div></div>
-              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Clicks</div><div className="mono" style={{fontSize:15,fontWeight:700,color:C.text}}>{clicks != null ? clicks.toLocaleString() : '—'}</div></div>
-              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>ROAS</div><div className="mono" style={{fontSize:15,fontWeight:700,color:roasColor}}>{roasVal != null ? roasVal.toFixed(1) + '×' : '—'}</div></div>
-              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Trend</div><div style={{fontSize:15,fontWeight:700,color:trendColor}}>{trend}</div></div>
+            <div className="campaign-metrics-row" style={{display:"flex",gap:20,flexWrap:"wrap",width:"100%"}}>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Spend</div><div className="mono" style={{fontSize:14,fontWeight:700,color:C.text}}>{spend != null ? '$' + spend.toFixed(2) : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Impressions</div><div className="mono" style={{fontSize:14,fontWeight:700,color:C.text}}>{impressions != null ? fN(impressions) : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Clicks</div><div className="mono" style={{fontSize:14,fontWeight:700,color:C.text}}>{clicks != null ? clicks.toLocaleString() : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>ROAS</div><div className="mono" style={{fontSize:14,fontWeight:700,color:roasColor}}>{roasVal != null ? roasVal.toFixed(1) + '×' : '—'}</div></div>
+              <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>CPA</div><div className="mono" style={{fontSize:14,fontWeight:700,color:C.text}}>{cpa != null ? '$' + cpa.toFixed(2) : '—'}</div></div>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button onClick={()=>isDemo&&togglePause(c)} style={{...btnStyle,background:"transparent",border:"1px solid "+C.border,color:C.text,padding:"8px 14px",fontSize:12}}>{s==='ACTIVE'?'Pause':'Resume'}</button>
-              <div style={{position:"relative"}}>
-                <button onClick={e=>{e.stopPropagation();setMenuOpen(menuOpen===c.id?null:c.id)}} style={{...btnStyle,background:"transparent",border:"none",padding:"6px 10px",color:C.sub,fontSize:16}}>⋮</button>
-                {menuOpen===c.id&&<div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:32,zIndex:50,minWidth:200,background:C.bg2,border:"1px solid "+C.border,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,.4)",padding:8}}>
-                  {isDemo?<div style={{padding:10}}><div style={{fontSize:12,color:C.dim,marginBottom:8}}>Demo — sign up to manage real campaigns.</div><button onClick={()=>{setMenuOpen(null);exitDemo&&exitDemo({ openSignUp: true })}} style={{...btnStyle,width:"100%",background:C.teal,color:C.bg,fontSize:12,padding:"8px 12px"}}>Sign Up for Free →</button></div>:<><a href={metaAdsUrl()} target="_blank" rel="noopener noreferrer" style={{display:"block",padding:"10px 12px",fontSize:13,color:C.text,textDecoration:"none",borderRadius:6}}>View in Meta Ads Manager ↗</a><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.text,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>Duplicate</button><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.error,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>End Campaign</button></>}
-                </div>}
+            <div style={{width:"100%",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:120,maxWidth:320}}>
+                <div style={{height:8,borderRadius:4,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+                  <div style={{width:Math.min(100,budgetPct)+"%",height:"100%",background:C.teal,borderRadius:4,transition:"width .3s"}}/>
+                </div>
+                <div style={{fontSize:10,color:C.dim,marginTop:4}}>{typeof budgetPct=== 'number' ? Math.round(budgetPct) : 0}% budget</div>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <button onClick={()=>isDemo&&togglePause(c)} style={{...btnStyle,background:"transparent",border:"1px solid "+C.border,color:C.text,padding:"8px 14px",fontSize:12}}>{s==='ACTIVE'?'Pause':'Resume'}</button>
+                <div style={{position:"relative"}}>
+                  <button onClick={e=>{e.stopPropagation();setMenuOpen(menuOpen===c.id?null:c.id)}} style={{...btnStyle,background:"transparent",border:"none",padding:"6px 10px",color:C.sub,fontSize:16}}>⋮</button>
+                  {menuOpen===c.id&&<div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:32,zIndex:50,minWidth:200,background:C.bg2,border:"1px solid "+C.border,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,.4)",padding:8}}>
+                    {isDemo?<div style={{padding:10}}><div style={{fontSize:12,color:C.dim,marginBottom:8}}>Demo — sign up to manage real campaigns.</div><button onClick={()=>{setMenuOpen(null);exitDemo&&exitDemo({ openSignUp: true })}} style={{...btnStyle,width:"100%",background:C.teal,color:C.bg,fontSize:12,padding:"8px 12px"}}>Sign Up for Free →</button></div>:<><a href={metaAdsUrl()} target="_blank" rel="noopener noreferrer" style={{display:"block",padding:"10px 12px",fontSize:13,color:C.text,textDecoration:"none",borderRadius:6}}>View in Meta Ads Manager ↗</a><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.text,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>Duplicate</button><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.error,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>End Campaign</button></>}
+                  </div>}
+                </div>
               </div>
             </div>
           </div>
@@ -2654,9 +2964,16 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
         </>
       ) : (
         <div>
-          <div className="mono" style={{fontSize:14,color:C.teal,marginBottom:8}}>@{storeDisplay}</div>
-          <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>Connected</span>
-          <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last synced: —</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:12}}>
+            <div style={{width:40,height:40,borderRadius:'50%',background:'rgba(0,0,0,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>🎵</div>
+            <div>
+              <div style={{fontSize:11,color:C.dim,textTransform:'uppercase',marginBottom:2}}>Store</div>
+              <div className="mono" style={{fontSize:15,fontWeight:700,color:C.text}}>@{storeDisplay}</div>
+            </div>
+          </div>
+          <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>✅ Connected</span>
+          {isDemo && <><div style={{fontSize:12,color:C.dim,marginTop:12}}>Last synced: 2 minutes ago</div><div style={{fontSize:12,color:C.dim,marginTop:4}}>Products synced: 24 products</div></>}
+          {!isDemo && <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last synced: —</div>}
           {isDemo ? demoGate : <button onClick={handleTiktokDisconnect} style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>}
         </div>
       )}
@@ -2666,7 +2983,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     {/* Section 2: Meta Ads */}
     <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
-        <div style={{width:40,height:40,borderRadius:10,background:'rgba(0,0,0,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📊</div>
+        <div style={{width:40,height:40,borderRadius:10,background:'rgba(0,0,0,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📘</div>
         <h3 style={{color:C.text,margin:0,fontSize:17}}>Meta Ads Connection</h3>
       </div>
       {!hasMeta ? (
@@ -2684,9 +3001,17 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
         </>
       ) : (
         <div>
-          <div className="mono" style={{fontSize:13,color:C.sub,marginBottom:8}}>{(brandSettings.adAccount||profile.adAccount||brand?.adAccount||'').replace(/(.{4}).*(.{4})/,'$1•••$2')}</div>
-          <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>Connected</span>
-          <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last verified: —</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:12}}>
+            <div style={{width:40,height:40,borderRadius:'50%',background:'rgba(0,0,0,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>📘</div>
+            <div>
+              <div style={{fontSize:11,color:C.dim,textTransform:'uppercase',marginBottom:2}}>Ad Account</div>
+              <div className="mono" style={{fontSize:14,fontWeight:700,color:C.text}}>{isDemo ? 'act_••••7842' : ((brandSettings.adAccount||profile.adAccount||brand?.adAccount||'').replace(/(.{4}).*(.{4})/,'$1••••$2')||'—')}</div>
+              {isDemo && <div style={{fontSize:12,color:C.dim,marginTop:4}}>Page: GlowUp Skincare</div>}
+            </div>
+          </div>
+          <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>✅ Connected</span>
+          {isDemo && <div style={{fontSize:12,color:C.dim,marginTop:12}}>Campaigns running: 4 active</div>}
+          {!isDemo && <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last verified: —</div>}
           {isDemo ? demoGate : <button style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>}
         </div>
       )}
@@ -2696,11 +3021,28 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     {/* Section 3: Brand Profile */}
     <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
       <h3 style={{color:C.text,margin:0,marginBottom:16,fontSize:17}}>Brand Profile</h3>
-      <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Store display name</label>
-      <input placeholder="Your brand or store name" value={brandSettings.brandName||''} onChange={e=>!isDemo&&setBrandSettings(p=>({...p,brandName:e.target.value}))} readOnly={isDemo} style={{...inputStyle,marginBottom:12}} />
-      <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Contact email</label>
-      <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
-      {isDemo ? demoGate : <><button onClick={handleProfileSave} style={{...btnStyle,background:C.teal,color:C.bg}}>Save Changes</button>{profileMsg&&<div style={{marginTop:12,fontSize:13,color:profileMsg.ok?C.success:C.error}}>{profileMsg.text}</div>}</>}
+      {isDemo ? (
+        <div>
+          <div style={{fontSize:11,color:C.dim,textTransform:'uppercase',marginBottom:4}}>Store name</div>
+          <div style={{fontSize:16,fontWeight:700,color:C.text,marginBottom:12}}>GlowUp Skincare</div>
+          <div style={{fontSize:11,color:C.dim,textTransform:'uppercase',marginBottom:4}}>Contact</div>
+          <div className="mono" style={{fontSize:14,color:C.sub,marginBottom:12}}>demo@glowupskincare.com</div>
+          <div style={{fontSize:11,color:C.dim,textTransform:'uppercase',marginBottom:4}}>Plan</div>
+          <div style={{fontSize:14,color:C.text,marginBottom:12}}>Starter — 4% of managed ad spend</div>
+          <div style={{fontSize:11,color:C.dim,textTransform:'uppercase',marginBottom:4}}>Member since</div>
+          <div style={{fontSize:14,color:C.sub,marginBottom:16}}>February 2026</div>
+          {demoGate}
+        </div>
+      ) : (
+        <>
+          <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Store display name</label>
+          <input placeholder="Your brand or store name" value={brandSettings.brandName||''} onChange={e=>setBrandSettings(p=>({...p,brandName:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Contact email</label>
+          <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
+          <button onClick={handleProfileSave} style={{...btnStyle,background:C.teal,color:C.bg}}>Save Changes</button>
+          {profileMsg&&<div style={{marginTop:12,fontSize:13,color:profileMsg.ok?C.success:C.error}}>{profileMsg.text}</div>}
+        </>
+      )}
     </div>
 
     {/* Section 4: Billing placeholder */}
@@ -2754,14 +3096,14 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, 
 
   useEffect(() => {
     if (!isDemo) return;
+    // Don't overwrite demo creators when we already have them from initial demoData
     fetch('/api/demo-data').then(r => r.json()).then(d => {
       if (d && (d.qualified?.length || d.filtered?.length)) {
         const list = buildCreatorsFromScan(d);
-        if (list && list.length) {
-          const camps = buildDemoCampaignsFromCreators(list, d.product?.title);
-          setCreators(list);
-          setCampaigns(camps);
-          if (setDemoData) setDemoData({ creators: list, campaigns: camps });
+        if (list && list.length && setDemoData) {
+          setCreators(prev => (prev.length > 0 ? prev : list));
+          setCampaigns(prev => (prev.length > 0 ? prev : buildDemoCampaignsFromCreators(list, d.product?.title)));
+          setDemoData(prev => (prev?.creators?.length > 0 ? prev : { creators: list, campaigns: buildDemoCampaignsFromCreators(list, d.product?.title) }));
         }
       }
     }).catch(() => {});
@@ -2830,7 +3172,7 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, 
       <BottomNav/>
       <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:brandTab==="creators"?undefined:800,display:"flex",flexDirection:"column",minHeight:0}}>
 
-        {brandTab==="overview"&&<BrandOverviewOnboarding profile={profile} storeDisplay={storeDisplay} creatorsCount={creators.length} campaignsCount={campaigns.length} setBrandTab={setBrandTab} />}
+        {brandTab==="overview"&&<BrandOverviewOnboarding profile={profile} storeDisplay={storeDisplay} creatorsCount={creators.length} campaignsCount={campaigns.length} setBrandTab={setBrandTab} isDemo={isDemo} creators={creators} campaigns={campaigns} />}
 
         {brandTab==="creators"&&<ErrorBoundary><CreatorDiscoveryView brand={brand} profile={profile} setBrandTab={setBrandTab} isDemo={isDemo} exitDemo={exitDemo} demoCreators={isDemo?creators:null} /></ErrorBoundary>}
 
@@ -2843,9 +3185,12 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, 
 }
 
 function DemoBanner({ onSignUp }) {
-  return <div style={{width:'100%',background:C.orange+'26',borderLeft:'4px solid '+C.orange,padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
-    <span style={{fontSize:13,color:C.text}}>You're viewing a demo account with sample data.</span>
-    <button onClick={onSignUp} style={{...btnStyle,background:C.teal,color:C.bg,padding:'8px 16px',fontSize:12}}>Sign Up for Free →</button>
+  return <div className="demo-banner-sticky" style={{position:'sticky',top:0,zIndex:50,width:'100%',background:C.bg2,borderLeft:'4px solid '+C.orange,boxShadow:'0 1px 0 '+C.border,padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+    <span style={{fontSize:13,color:C.text,display:'flex',alignItems:'center',gap:8}}>
+      <span style={{width:8,height:8,borderRadius:'50%',background:C.orange,flexShrink:0}} />
+      <span>Demo Mode — You're viewing sample data for <strong style={{color:C.text}}>GlowUp Skincare</strong>. Ready to see your own data?</span>
+    </span>
+    <button onClick={onSignUp} style={{...btnStyle,background:C.teal,color:C.bg,padding:'8px 16px',fontSize:12}}>Sign Up Free →</button>
   </div>;
 }
 
@@ -2934,16 +3279,21 @@ function LandingPage() {
 function CreatorPortalWrapper() {
   const navigate = useNavigate();
   const nav = (p) => navigate(navPath(p));
+  const [creator, setCreator] = useState(() => {
+    try { const j = localStorage.getItem(CREATOR_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
+  });
+  const [isCreatorDemo, setIsCreatorDemo] = useState(false);
   const [ttStatus, setTtStatus] = useState(null);
   const [ready, setReady] = useState(false);
 
+  const exitCreatorDemo = useCallback(() => { setIsCreatorDemo(false); }, []);
+
   useEffect(() => {
+    if (isCreatorDemo) { setReady(true); setTtStatus({ connected: true }); return; }
+    if (!creator) { setReady(true); setTtStatus({ connected: false }); return; }
     let cancelled = false;
     const timeout = setTimeout(() => {
-      if (!cancelled) {
-        setTtStatus(s => s !== null ? s : { connected: false });
-        setReady(true);
-      }
+      if (!cancelled) { setTtStatus(s => s !== null ? s : { connected: false }); setReady(true); }
     }, 3000);
     fetch('/api/tiktok/status')
       .then(r => (r.ok ? r.json() : {}))
@@ -2953,23 +3303,29 @@ function CreatorPortalWrapper() {
         setTtStatus(typeof d === 'object' && d !== null ? { ...d, connected } : { connected: false });
         setReady(true);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setTtStatus({ connected: false });
-          setReady(true);
-        }
-      });
+      .catch(() => { if (!cancelled) { setTtStatus({ connected: false }); setReady(true); } });
     return () => { cancelled = true; clearTimeout(timeout); };
-  }, []);
+  }, [creator, isCreatorDemo]);
 
-  if (!ready || ttStatus === null) return (
-    <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{textAlign:"center",color:C.sub}}>
-        <div style={{width:32,height:32,border:"2px solid rgba(255,255,255,.1)",borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",margin:"0 auto 16px"}}/>
+  if (!creator && !isCreatorDemo) {
+    return (
+      <div style={{ minHeight: '100vh', background: C.bg }}>
+        <nav style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', background: 'rgba(3,7,17,.9)', borderBottom: '1px solid ' + C.border }}>
+          <Link to="/" style={{ fontSize: 18, fontWeight: 900, textDecoration: 'none', color: 'inherit' }}><span style={gT(C.coral, C.gold)}>Creator</span><span style={gT(C.blue, C.teal)}>ship</span></Link>
+        </nav>
+        <CreatorAuthForm onSuccess={(c) => setCreator(c)} onDemo={() => { setCreator(null); setIsCreatorDemo(true); }} />
+      </div>
+    );
+  }
+
+  if (!ready) return (
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ textAlign: 'center', color: C.sub }}>
+        <div style={{ width: 32, height: 32, border: '2px solid rgba(255,255,255,.1)', borderTopColor: C.teal, borderRadius: '50%', animation: 'pulse 1s infinite', margin: '0 auto 16px' }} />
         <div>Loading...</div>
       </div>
     </div>
   );
 
-  return <CreatorPortal nav={nav} />;
+  return <CreatorPortal nav={nav} isCreatorDemo={isCreatorDemo} exitCreatorDemo={exitCreatorDemo} />;
 }
