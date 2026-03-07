@@ -554,9 +554,13 @@ function EarnSection({nav}){
 ══════════════════════════════════════════════════════*/
 function CTASection(){
   return <section className="sec-pad" style={{padding:"40px 40px 16px"}}>
-    <footer className="footer-flex" style={{borderTop:"1px solid "+C.border,padding:"32px 16px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1100,width:'100%',margin:"0 auto",boxSizing:'border-box'}}>
+    <footer className="footer-flex" style={{borderTop:"1px solid "+C.border,padding:"32px 16px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:16,maxWidth:1100,width:'100%',margin:"0 auto",boxSizing:'border-box'}}>
       <div style={{fontSize:18,fontWeight:900}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></div>
-      <div style={{fontSize:12,color:C.dim}}>TikTok creators × Meta ads × AI</div>
+      <div style={{display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
+        <a href="/terms" style={{fontSize:12,color:C.sub,textDecoration:"none"}}>Terms</a>
+        <a href="/privacy" style={{fontSize:12,color:C.sub,textDecoration:"none"}}>Privacy</a>
+        <span style={{fontSize:12,color:C.dim}}>TikTok creators × Meta ads × AI</span>
+      </div>
     </footer>
   </section>;
 }
