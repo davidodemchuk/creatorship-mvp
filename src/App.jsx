@@ -44,7 +44,7 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
 .hero-visual .hero-side:first-child .hero-icons{justify-content:center!important}
 .hero-visual .hero-mid{margin:0!important;flex-direction:column!important}
 .hero-visual .hero-mid svg{transform:rotate(90deg)}
-.hero-headline{font-size:32px!important;line-height:1.2!important}
+.hero-headline{font-size:clamp(28px,6vw,72px)!important;line-height:1.2!important}
 .hero-sub{font-size:15px!important}
 .hero-btns{flex-direction:column!important;width:100%;max-width:280px;margin:0 auto}
 .hero-btns a,.hero-btns button{width:100%;text-align:center;padding:14px 24px!important}
@@ -62,10 +62,15 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
 .sec-pad-lg{padding:80px 20px 60px!important}
 .footer-flex{flex-direction:column!important;gap:16px!important;text-align:center}
 .nav-pad{padding:12px 16px!important}
+.nav-hide-mobile{display:none!important}
 .nav-btns a,.nav-btns button{padding:8px 14px!important;font-size:12px!important}
 .bottom-gap{padding-bottom:80px!important}
 .sidebar-wrap{display:none!important}
 .content-pad{padding:20px 16px!important;max-width:100%!important}
+.mobile-card{padding:16px!important}
+.settings-meta-grid{grid-template-columns:1fr!important}
+.heading-h2{font-size:clamp(22px,4vw,36px)!important}
+.heading-h3{font-size:clamp(18px,3vw,24px)!important}
 .touch-target{min-height:44px;min-width:44px}
 .overview-grid{grid-template-columns:1fr!important}
 .creators-grid{grid-template-columns:1fr!important}
@@ -80,6 +85,16 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
 `;
 
 const navPath=(p)=>(p||'/').replace(/^#/,'')||'/';
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+}
 
 /*══════════════════════════════════════════════════════
   ROI CALCULATOR
@@ -148,7 +163,7 @@ function ROICalculator({nav}){
     </div>
   );
 
-  return <div className="fu d4" style={{marginTop:56,maxWidth:860,margin:"56px auto 0"}}>
+  return <div className="fu d4" style={{marginTop:56,maxWidth:860,width:'100%',padding:'0 16px',margin:"56px auto 0",boxSizing:'border-box'}}>
     <div style={{textAlign:"center",marginBottom:20}}>
       <div className="mono" style={{fontSize:11,fontWeight:700,letterSpacing:".15em",color:C.teal,textTransform:"uppercase",marginBottom:6}}>ROI Calculator</div>
       <div style={{fontSize:22,fontWeight:800,letterSpacing:"-.02em"}}>See what you keep with <span style={gT(C.teal,C.green)}>Creatorship</span></div>
@@ -331,10 +346,10 @@ function AutomationSection(){
   return <section className="sec-pad-lg" style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
     <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
     <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
-    <div style={{maxWidth:960,margin:"0 auto"}}>
+    <div style={{maxWidth:960,width:'100%',margin:"0 auto",padding:'0 16px',boxSizing:'border-box'}}>
       <div style={{textAlign:"center",marginBottom:32}}>
         <div className="fu mono" style={{fontSize:11,fontWeight:700,letterSpacing:".15em",color:C.teal,textTransform:"uppercase",marginBottom:8}}>The Full Pipeline</div>
-        <h2 className="fu d1" style={{fontSize:36,fontWeight:900,letterSpacing:"-.03em"}}>Six steps. <span style={gT(C.teal,C.green)}>Fully automated.</span></h2>
+        <h2 className="fu d1 heading-h2" style={{fontSize:36,fontWeight:900,letterSpacing:"-.03em"}}>Six steps. <span style={gT(C.teal,C.green)}>Fully automated.</span></h2>
         <p className="fu d2" style={{fontSize:14,color:C.sub,marginTop:8}}>AI turns weeks of work into minutes.</p>
         <p className="fu d3" style={{fontSize:14,color:C.sub,lineHeight:1.65,maxWidth:640,margin:"16px auto 0"}}>
           From your product URL to a live Meta ad — Creatorship handles discovery, scoring, download, campaign setup, and payouts. You paste a link and click launch. Everything else runs on autopilot.
@@ -390,7 +405,7 @@ function AutomationSection(){
 ══════════════════════════════════════════════════════*/
 function EarnSection({nav}){
   return <section className="sec-pad" style={{padding:"100px 40px",position:"relative"}}>
-    <div style={{maxWidth:1000,margin:"0 auto"}}>
+    <div style={{maxWidth:1000,width:'100%',margin:"0 auto",padding:'0 16px',boxSizing:'border-box'}}>
 
       {/* ─── CREATOR SECTION ─── */}
       <div className="gl fu" style={{padding:0,overflow:"hidden",position:"relative",marginBottom:40}}>
@@ -402,7 +417,7 @@ function EarnSection({nav}){
               <div style={{width:36,height:36,borderRadius:10,background:C.coral+"12",border:"1px solid "+C.coral+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🎬</div>
               <div style={{fontSize:12,fontWeight:700,color:C.coral,letterSpacing:".08em",textTransform:"uppercase"}}>For Creators</div>
             </div>
-            <h3 style={{fontSize:30,fontWeight:900,letterSpacing:"-.02em",lineHeight:1.15,marginBottom:16}}>
+            <h3 className="heading-h3" style={{fontSize:30,fontWeight:900,letterSpacing:"-.02em",lineHeight:1.15,marginBottom:16}}>
               You already made the video.<br/><span style={gT(C.coral,C.pink)}>Now get paid for it again.</span>
             </h3>
             <p style={{fontSize:15,color:"#8a92a8",lineHeight:1.7,marginBottom:20}}>
@@ -467,7 +482,7 @@ function EarnSection({nav}){
               <div style={{width:36,height:36,borderRadius:10,background:C.teal+"12",border:"1px solid "+C.teal+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📊</div>
               <div style={{fontSize:12,fontWeight:700,color:C.teal,letterSpacing:".08em",textTransform:"uppercase"}}>For Brands</div>
             </div>
-            <h3 style={{fontSize:30,fontWeight:900,letterSpacing:"-.02em",lineHeight:1.15,marginBottom:16}}>
+            <h3 className="heading-h3" style={{fontSize:30,fontWeight:900,letterSpacing:"-.02em",lineHeight:1.15,marginBottom:16}}>
               Stop losing weeks on<br/><span style={gT(C.teal,C.green)}>one creator video.</span>
             </h3>
             <p style={{fontSize:15,color:"#8a92a8",lineHeight:1.7,marginBottom:12}}>
@@ -539,7 +554,7 @@ function EarnSection({nav}){
 ══════════════════════════════════════════════════════*/
 function CTASection(){
   return <section className="sec-pad" style={{padding:"40px 40px 16px"}}>
-    <footer className="footer-flex" style={{borderTop:"1px solid "+C.border,padding:"32px 0 16px",display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1100,margin:"0 auto"}}>
+    <footer className="footer-flex" style={{borderTop:"1px solid "+C.border,padding:"32px 16px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1100,width:'100%',margin:"0 auto",boxSizing:'border-box'}}>
       <div style={{fontSize:18,fontWeight:900}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></div>
       <div style={{fontSize:12,color:C.dim}}>TikTok creators × Meta ads × AI</div>
     </footer>
@@ -547,12 +562,13 @@ function CTASection(){
 }
 
 function Homepage({nav}){
+  const isMobile = useIsMobile();
   return <div>
-    <nav className="nav-pad" style={{position:"fixed",top:0,left:0,right:0,zIndex:100,padding:"14px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(3,7,17,.85)",backdropFilter:"blur(20px)",borderBottom:"1px solid "+C.border}}>
-      <Link to="/" style={{fontSize:20,fontWeight:900,cursor:"pointer",textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
+    <nav className="nav-pad" style={{position:"fixed",top:0,left:0,right:0,zIndex:100,padding:isMobile?"12px 16px":"14px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(3,7,17,.85)",backdropFilter:"blur(20px)",borderBottom:"1px solid "+C.border}}>
+      <Link to="/" style={{fontSize:isMobile?18:20,fontWeight:900,cursor:"pointer",textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
       <div className="nav-btns" style={{display:"flex",gap:8}}>
-        <Link to="/brand" style={{padding:"8px 20px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Brands</Link>
-        <a href="/auth/tiktok" style={{padding:"8px 20px",background:C.teal,border:"none",borderRadius:8,color:C.bg,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Creators</a>
+        {!isMobile&&<Link to="/brand" style={{padding:"8px 20px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Brands</Link>}
+        <a href="/auth/tiktok" style={{padding:isMobile?"8px 14px":"8px 20px",background:C.teal,border:"none",borderRadius:8,color:C.bg,fontSize:isMobile?12:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Creators</a>
       </div>
     </nav>
     <HeroSection nav={nav}/>
@@ -1656,19 +1672,19 @@ function CreatorPortal({nav}){
 
     {tab==="connect"&&<div>
       {ttStatus.connected?<div>
-        <h1 className="fu" style={{fontSize:24,fontWeight:800,marginBottom:4}}>TikTok Connected</h1>
+        <h1 className="fu heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:4}}>TikTok Connected</h1>
         <p className="fu d1" style={{fontSize:13,color:C.sub,marginBottom:20}}>Your account is linked. Brands can discover your content.</p>
-        <div className="gl fu d2" style={{padding:24,borderColor:C.green+"22"}}>
-          <div style={{display:"flex",alignItems:"center",gap:16}}>
+        <div className="gl fu d2 mobile-card" style={{padding:24,borderColor:C.green+"22"}}>
+          <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:16}}>
             <div style={{width:56,height:56,borderRadius:14,background:C.green+"12",border:"2px solid "+C.green+"30",display:"flex",alignItems:"center",justifyContent:"center",fontSize:28}}>✓</div>
-            <div style={{flex:1}}>
+            <div style={{flex:1,minWidth:120}}>
               <div style={{fontSize:18,fontWeight:800,color:C.green}}>{ttStatus.displayName||"Creator"}</div>
               <div style={{fontSize:13,color:C.sub,marginTop:2}}>{fN(ttStatus.followers||0)} followers · {ttStatus.videos||0} videos</div>
             </div>
             <button onClick={handleDisconnect} style={{padding:"8px 16px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Disconnect</button>
           </div>
         </div>
-        <div className="gl fu d3" style={{padding:20,marginTop:12}}>
+        <div className="gl fu d3 mobile-card" style={{padding:20,marginTop:12}}>
           <div style={{fontSize:12,fontWeight:700,color:C.dim,letterSpacing:".04em",marginBottom:10}}>What happens next</div>
           {["Brands scanning TikTok Shop products will see your videos","If your content qualifies, you'll get a deal offer in the Deals tab","When a brand runs your video as a Meta ad, you earn commission on every sale","Payouts are deposited weekly — no invoicing needed"].map((s,i)=>(
             <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start",marginBottom:8}}>
@@ -1678,7 +1694,7 @@ function CreatorPortal({nav}){
           ))}
         </div>
       </div>:<div>
-        <h1 className="fu" style={{fontSize:24,fontWeight:800,marginBottom:4}}>Get Paid for Content You Already Made</h1>
+        <h1 className="fu heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:4}}>Get Paid for Content You Already Made</h1>
         <p className="fu d1" style={{fontSize:13,color:"#8a92a8",marginBottom:24}}>Connect your TikTok once. That's the only setup. Everything else is automatic.</p>
 
         {/* The sell */}
@@ -1972,13 +1988,13 @@ function BrandDashboardView({ brand, setBrand, nav }) {
     <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:800}}>
 
       {brandTab==="overview"&&<div>
-        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Overview</h1>
+        <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Overview</h1>
         <div className="overview-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:32}}>
-          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Store</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.teal,marginTop:4}}>{storeDisplay ? '@'+storeDisplay : '—'}</div></div>
-          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Connected Creators</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.green,marginTop:4}}>{creators.length}</div></div>
-          <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Active Campaigns</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.gold,marginTop:4}}>{campaigns.length}</div></div>
+          <div className="gl mobile-card" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Store</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.teal,marginTop:4}}>{storeDisplay ? '@'+storeDisplay : '—'}</div></div>
+          <div className="gl mobile-card" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Connected Creators</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.green,marginTop:4}}>{creators.length}</div></div>
+          <div className="gl mobile-card" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Active Campaigns</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.gold,marginTop:4}}>{campaigns.length}</div></div>
         </div>
-        <div className="gl" style={{padding:24}}>
+        <div className="gl mobile-card" style={{padding:24}}>
           <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Getting Started</div>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}><span style={{color:C.green}}>✓</span><span>Account created</span></div>
@@ -2001,11 +2017,11 @@ function BrandDashboardView({ brand, setBrand, nav }) {
       </div>}
 
       {brandTab==="creators"&&<div>
-        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creators</h1>
+        <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creators</h1>
         {loadingCreators?<div style={{color:C.sub}}>Loading...</div>:
         creators.length===0?<div className="gl" style={{padding:40,textAlign:"center"}}><div style={{fontSize:32,marginBottom:12}}>👥</div><div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No creators in your pipeline yet</div><div style={{fontSize:13,color:C.dim}}>Your admin is building your creator list.</div></div>:
         <div className="creators-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12}}>
-          {creators.map((c,i)=><div key={i} className="gl" style={{padding:16}}>
+          {creators.map((c,i)=><div key={i} className="gl mobile-card" style={{padding:16}}>
             <div style={{fontSize:14,fontWeight:700}}>@{c.display_name||c.open_id||'creator'}</div>
             <div style={{fontSize:11,color:C.dim,marginTop:8}}>{fN(c.follower_count||0)} followers · {c.video_count||0} videos</div>
           </div>)}
@@ -2022,7 +2038,7 @@ function BrandDashboardView({ brand, setBrand, nav }) {
           <button onClick={()=>setBrandTab("settings")} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Connect Meta API →</button>
         </div>:
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
-          {campaigns.map((c,i)=><div key={i} className="gl" style={{padding:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          {campaigns.map((c,i)=><div key={i} className="gl mobile-card" style={{padding:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><div style={{fontWeight:700}}>{c.name||c.creator}</div><div style={{fontSize:12,color:C.sub}}>{c.productTitle||''} · {c.status||'—'}</div></div>
             <span style={{fontSize:12,color:C.dim}}>{c.created_time?.slice(0,10)}</span>
           </div>)}
@@ -2031,29 +2047,29 @@ function BrandDashboardView({ brand, setBrand, nav }) {
       </div>}
 
       {brandTab==="settings"&&<div>
-        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Settings</h1>
+        <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Settings</h1>
         {/* Section 1 — Meta API */}
-        <div style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+        <div className="mobile-card" style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
             <h3 style={{color:C.text,margin:0}}>Meta API Credentials</h3>
             {(profile.hasMetaToken||brandSettings.metaToken)?<span style={{color:C.teal,fontSize:13}}>✓ Connected</span>:<span style={{color:C.dim,fontSize:13}}>Not connected</span>}
           </div>
           <input placeholder="Meta Access Token" type="password" value={brandSettings.metaToken||''} onChange={e=>setBrandSettings(p=>({...p,metaToken:e.target.value}))} style={{...inputStyle,marginBottom:12,width:'100%'}} />
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+          <div className="settings-meta-grid" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
             <input placeholder="Ad Account ID (act_XXXXXXXXX)" value={brandSettings.adAccount||''} onChange={e=>setBrandSettings(p=>({...p,adAccount:e.target.value}))} style={inputStyle} />
             <input placeholder="Page ID" value={brandSettings.pageId||''} onChange={e=>setBrandSettings(p=>({...p,pageId:e.target.value}))} style={inputStyle} />
           </div>
           <button onClick={saveBrandSettings} style={{...btnStyle,background:C.teal,color:'#000'}}>Save Meta Credentials</button>
         </div>
         {/* Section 2 — Store Info */}
-        <div style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+        <div className="mobile-card" style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
           <h3 style={{color:C.text,margin:0,marginBottom:16}}>Store Info</h3>
           <input placeholder="Brand Name" value={brandSettings.brandName||''} onChange={e=>setBrandSettings(p=>({...p,brandName:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
           <input placeholder="Store Name (no @)" value={brandSettings.storeName||''} onChange={e=>setBrandSettings(p=>({...p,storeName:stripAt(e.target.value)}))} style={{...inputStyle,marginBottom:12}} />
           <button onClick={saveStoreSettings} style={{...btnStyle,background:C.teal,color:'#000'}}>Save Store Info</button>
         </div>
         {/* Section 3 — Account */}
-        <div style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24}}>
+        <div className="mobile-card" style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24}}>
           <h3 style={{color:C.text,margin:0,marginBottom:16}}>Account</h3>
           <div style={{fontSize:11,color:C.dim,marginBottom:4}}>Email</div>
           <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
