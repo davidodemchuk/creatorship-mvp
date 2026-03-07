@@ -1056,7 +1056,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // ═══ START ═══
-app.listen(process.env.PORT || 3001, () => {
+app.listen(process.env.PORT || 3001, '0.0.0.0', () => {
   console.log('');
   console.log('  Creatorship API: http://localhost:3001');
   console.log('  Tunnel URL:      ' + TUNNEL_URL);

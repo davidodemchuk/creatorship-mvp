@@ -4,123 +4,139 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terms of Service — Creatorship</title>
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Outfit', system-ui;
+      font-family: 'Outfit', system-ui, -apple-system, sans-serif;
       -webkit-font-smoothing: antialiased;
       background: #030711;
       color: #eaeff7;
       overflow-x: hidden;
-      line-height: 1.65;
+      line-height: 1.6;
     }
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.05); border-radius: 2px; }
-    a { color: #00e4b8; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      padding: 14px 40px;
+    nav {
+      padding: 14px 32px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      background: rgba(3,7,17,.85);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(3, 7, 17, 0.9);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .logo { font-size: 20px; font-weight: 900; cursor: pointer; }
-    .logo .cr { background: linear-gradient(135deg, #ff5252, #ffb400); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .logo .sh { background: linear-gradient(135deg, #2da1ff, #00e4b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .card {
-      background: rgba(255,255,255,.025);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,.06);
-      border-radius: 16px;
-      transition: border-color .2s;
+    nav a {
+      font-size: 18px;
+      font-weight: 900;
+      text-decoration: none;
+      color: #eaeff7;
     }
-    .card:hover { border-color: rgba(255,255,255,.14); }
+    nav a .logo-creator {
+      background: linear-gradient(135deg, #ff5252, #ffb400);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: #ff5252;
+    }
+    nav a .logo-ship {
+      background: linear-gradient(135deg, #2da1ff, #00e4b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: #00e4b8;
+    }
     main {
       max-width: 720px;
       margin: 0 auto;
-      padding: 100px 40px 60px;
+      padding: 48px 24px 80px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.025);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
     }
     h1 {
       font-size: 32px;
       font-weight: 900;
-      letter-spacing: -.02em;
-      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
     }
-    h1 span { color: #7d8aaa; font-weight: 600; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; }
+    .meta {
+      font-size: 13px;
+      color: #7d8aaa;
+      margin-bottom: 32px;
+    }
     h2 {
       font-size: 18px;
       font-weight: 800;
-      margin-top: 32px;
+      color: #00e4b8;
+      margin-top: 28px;
       margin-bottom: 12px;
-      color: #eaeff7;
     }
+    h2:first-of-type { margin-top: 0; }
     p, li {
-      font-size: 15px;
+      font-size: 14px;
       color: #7d8aaa;
       margin-bottom: 12px;
     }
-    ul { margin: 12px 0 12px 24px; }
+    ol {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+    ol li { margin-bottom: 8px; }
     .contact {
-      margin-top: 40px;
-      padding: 20px;
-      background: rgba(0,228,184,.05);
-      border: 1px solid rgba(0,228,184,.12);
-      border-radius: 12px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
       font-size: 14px;
       color: #7d8aaa;
     }
-    .contact strong { color: #00e4b8; }
+    .contact a { color: #00e4b8; text-decoration: none; }
+    .contact a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <nav class="nav">
-    <a href="/" class="logo"><span class="cr">Creator</span><span class="sh">ship</span></a>
+  <nav>
+    <a href="/"><span class="logo-creator">Creator</span><span class="logo-ship">ship</span></a>
   </nav>
-
   <main>
-    <div class="card" style="padding: 36px 40px; margin-bottom: 24px;">
-      <p style="font-size: 11px; font-weight: 700; letter-spacing: .15em; color: #00e4b8; text-transform: uppercase; margin-bottom: 8px;">Legal</p>
+    <div class="card">
       <h1>Terms of Service</h1>
-      <p style="color: #7d8aaa; font-size: 14px;">Last updated: March 2025</p>
-    </div>
+      <p class="meta">Last updated: March 6, 2026</p>
 
-    <div class="card" style="padding: 32px 40px;">
       <h2>1. What Creatorship Does</h2>
-      <p>Creatorship is a platform that connects TikTok Shop creators with brands. We use AI to surface creator content to brands, enable licensing of videos for Meta (Facebook/Instagram) advertising, and facilitate commission-based payments. Creators earn when their licensed content drives sales; brands pay a 4% platform fee plus creator commission.</p>
+      <p>Creatorship is a platform that connects TikTok creators with brands. We help brands discover creator content, license it for use in Meta (Facebook/Instagram) ads, and automate payouts to creators. Creators authenticate via TikTok OAuth; brands use email-based accounts and may connect Meta API credentials.</p>
 
       <h2>2. Creator Terms</h2>
-      <p><strong style="color: #eaeff7;">TikTok Access.</strong> By connecting your TikTok account, you grant Creatorship read-only access to your public profile (display name, avatar, follower count, video count) and your public video list. We never post, comment, or take any action on your behalf on TikTok.</p>
-      <p><strong style="color: #eaeff7;">Deal Approval.</strong> When a brand wishes to license your content for Meta ads, you will receive a deal offer. You must approve each deal before your video is used. No content is licensed without your consent.</p>
-      <p><strong style="color: #eaeff7;">Payouts.</strong> Creator commissions are paid weekly via Stripe. You must provide valid payment details to receive payouts. Payout timing and thresholds are set by Stripe and Creatorship.</p>
+      <p>By connecting your TikTok account, you grant Creatorship permission to access your public profile data (display name, avatar, follower count, video count) and to surface your content to brands for licensing. You must be at least 18 years old and have the right to license the content you post. You are responsible for the accuracy of your account and for complying with TikTok’s terms.</p>
 
       <h2>3. Brand Terms</h2>
-      <p><strong style="color: #eaeff7;">Platform Fee.</strong> Creatorship charges a 4% fee on revenue generated from ads running licensed creator content. This is in addition to creator commission rates agreed per deal.</p>
-      <p><strong style="color: #eaeff7;">Meta Ad Usage Only.</strong> Licensed content may only be used to run ads on Meta platforms (Facebook, Instagram). Use on other channels requires separate agreement with the creator.</p>
+      <p>Brands must provide accurate store and contact information. You are responsible for your Meta ad account, campaigns, and compliance with Meta’s advertising policies. You agree to pay creator commissions and platform fees as described in your campaign or deal terms.</p>
 
       <h2>4. Content Licensing</h2>
-      <p>When you approve a deal, you grant the brand a non-exclusive, worldwide license to use the specified video(s) for Meta advertising during the term of the campaign. You retain ownership of your content. The brand may not edit your content in a materially misleading way without your consent.</p>
+      <p>When a brand accepts a deal for your video, you grant the brand a license to use that video in Meta ads for the agreed scope and duration. Creatorship facilitates the technical transfer (e.g., download and upload to Meta) but does not own your content.</p>
 
       <h2>5. Payments</h2>
-      <p>All payments are processed through Stripe. Creatorship is not responsible for delays or failures caused by payment processors. Disputes regarding payouts should be directed to Creatorship support.</p>
+      <p>Creator payouts are processed according to our payout schedule (e.g., weekly). Brands are responsible for funding campaigns and for any taxes or fees. We may use third-party payment processors (e.g., Stripe). Failure to pay may result in suspension of your account.</p>
 
       <h2>6. Prohibited Uses</h2>
-      <p>You may not use Creatorship to: violate any law or third-party rights; upload content you do not own or have rights to; impersonate others; distribute malware; or engage in fraud, harassment, or abuse. We may suspend or terminate accounts that violate these terms.</p>
+      <p>You may not use Creatorship to violate any law, infringe intellectual property, harass others, distribute malware, or misrepresent your identity or affiliation. We may suspend or terminate accounts that violate these terms.</p>
 
-      <h2>7. Limitation of Liability</h2>
-      <p>Creatorship is provided "as is." To the maximum extent permitted by law, Creatorship and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including loss of profits, data, or goodwill. Our total liability shall not exceed the greater of the fees you paid to Creatorship in the twelve months prior to the claim or $100.</p>
+      <h2>7. Account Termination</h2>
+      <p>We may suspend or terminate your account at any time for breach of these terms or for operational reasons. You may disconnect your TikTok account or delete your brand account at any time via the app. Some data may be retained as required by law or for legitimate business purposes.</p>
 
-      <h2>8. Governing Law</h2>
+      <h2>8. Limitation of Liability</h2>
+      <p>Creatorship is provided “as is.” To the fullest extent permitted by law, we disclaim warranties and limit liability for indirect, incidental, or consequential damages. Our total liability shall not exceed the amount you paid us in the twelve months preceding the claim.</p>
+
+      <h2>9. Changes to Terms</h2>
+      <p>We may update these terms from time to time. We will post the updated date at the top of this page. Continued use of Creatorship after changes constitutes acceptance.</p>
+
+      <h2>10. Governing Law</h2>
       <p>These terms are governed by the laws of the State of South Carolina, without regard to conflict of law principles. Any disputes shall be resolved in the courts of South Carolina.</p>
 
-      <div class="contact">
-        <strong>Contact:</strong> For legal inquiries, email <a href="mailto:legal@creatorship.app">legal@creatorship.app</a>
-      </div>
+      <p class="contact"><strong>Contact:</strong> For legal inquiries, email <a href="mailto:legal@creatorship.app">legal@creatorship.app</a></p>
     </div>
   </main>
 </body>
