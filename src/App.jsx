@@ -37,6 +37,46 @@ input[type=range]::-webkit-slider-thumb:active{transform:scale(1.25);cursor:grab
 input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:rgba(255,255,255,.08)}
 input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;border:2px solid currentColor;background:${C.bg};box-shadow:0 0 8px rgba(0,0,0,.4);cursor:grab}
 input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:90;background:rgba(8,13,28,.95);backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));justify-content:space-around;align-items:center}
+@media(max-width:768px){
+.hero-stack{flex-direction:column!important;gap:20px!important}
+.hero-visual .hero-side{min-width:auto!important;text-align:center!important}
+.hero-visual .hero-side:first-child .hero-icons{justify-content:center!important}
+.hero-visual .hero-mid{margin:0!important;flex-direction:column!important}
+.hero-visual .hero-mid svg{transform:rotate(90deg)}
+.hero-headline{font-size:32px!important;line-height:1.2!important}
+.hero-sub{font-size:15px!important}
+.hero-btns{flex-direction:column!important;width:100%;max-width:280px;margin:0 auto}
+.hero-btns a,.hero-btns button{width:100%;text-align:center;padding:14px 24px!important}
+.hero-pad{padding:80px 20px 40px!important}
+.roi-grid{grid-template-columns:1fr!important}
+.roi-left{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.06)!important;padding:20px 20px 20px!important}
+.roi-right{padding:20px 20px 24px!important}
+.roi-bar{flex-direction:column!important;gap:12px!important;text-align:center}
+.roi-bar-tags{flex-wrap:wrap;justify-content:center;gap:8px}
+.auto-grid{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}
+.earn-grid{grid-template-columns:1fr!important}
+.earn-col{border-right:none!important;border-bottom:1px solid rgba(255,255,255,.06)!important}
+.earn-pad{padding:24px 20px!important}
+.sec-pad{padding:60px 20px!important}
+.sec-pad-lg{padding:80px 20px 60px!important}
+.footer-flex{flex-direction:column!important;gap:16px!important;text-align:center}
+.nav-pad{padding:12px 16px!important}
+.nav-btns a,.nav-btns button{padding:8px 14px!important;font-size:12px!important}
+.bottom-gap{padding-bottom:80px!important}
+.sidebar-wrap{display:none!important}
+.content-pad{padding:20px 16px!important;max-width:100%!important}
+.touch-target{min-height:44px;min-width:44px}
+.overview-grid{grid-template-columns:1fr!important}
+.creators-grid{grid-template-columns:1fr!important}
+.summary-row{flex-wrap:wrap!important;gap:12px!important}
+.bottom-nav{display:flex!important}
+}
+@media(max-width:480px){
+.auto-grid{grid-template-columns:1fr!important}
+.hero-headline{font-size:26px!important}
+.hero-visual .hero-side{display:block}
+}
 `;
 
 const navPath=(p)=>(p||'/').replace(/^#/,'')||'/';
@@ -114,9 +154,9 @@ function ROICalculator({nav}){
       <div style={{fontSize:22,fontWeight:800,letterSpacing:"-.02em"}}>See what you keep with <span style={gT(C.teal,C.green)}>Creatorship</span></div>
     </div>
     <div className="gl" style={{padding:0,overflow:"hidden"}}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+      <div className="roi-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
         {/* Left — Inputs */}
-        <div style={{padding:"28px 28px 24px",borderRight:"1px solid "+C.border}}>
+        <div className="roi-left" style={{padding:"28px 28px 24px",borderRight:"1px solid "+C.border}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:".1em",color:C.dim,textTransform:"uppercase",marginBottom:18}}>Your Numbers</div>
 
           {/* Ad Spend — logarithmic */}
@@ -147,7 +187,7 @@ function ROICalculator({nav}){
         </div>
 
         {/* Right — Breakdown + Comparison */}
-        <div style={{padding:"28px 28px 24px",display:"flex",flexDirection:"column"}}>
+        <div className="roi-right" style={{padding:"28px 28px 24px",display:"flex",flexDirection:"column"}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:".1em",color:C.dim,textTransform:"uppercase",marginBottom:14}}>With Creatorship</div>
           <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:14}}>
             <Row label="Ad spend" amount={"−"+fmt(adSpend)} color={C.blue} sub="Meta ads budget"/>
@@ -199,8 +239,8 @@ function ROICalculator({nav}){
       </div>
 
       {/* Bottom bar */}
-      <div style={{padding:"16px 28px",borderTop:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,.01)"}}>
-        <div style={{display:"flex",gap:16}}>
+      <div className="roi-bar" style={{padding:"16px 28px",borderTop:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,.01)"}}>
+        <div className="roi-bar-tags" style={{display:"flex",gap:16}}>
           {["No subscriptions","No setup fees","No minimums","Cancel anytime"].map((t,i)=>(
             <div key={i} style={{fontSize:11,color:C.sub,display:"flex",alignItems:"center",gap:4}}>
               <span style={{color:C.teal,fontSize:12}}>✓</span>{t}
@@ -223,12 +263,12 @@ function HeroSection({nav}){
     <div style={{position:"absolute",top:"10%",left:"15%",width:500,height:500,borderRadius:"50%",background:C.coral,filter:"blur(200px)",opacity:.04,animation:"glow 8s ease infinite"}}/>
     <div style={{position:"absolute",bottom:"10%",right:"15%",width:500,height:500,borderRadius:"50%",background:C.teal,filter:"blur(200px)",opacity:.04,animation:"glow 8s ease infinite 4s"}}/>
 
-    <div style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:1100,padding:"100px 40px 60px"}}>
+    <div className="hero-pad" style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:1100,padding:"100px 40px 60px"}}>
       {/* The connection visual */}
-      <div className="fu" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:0,marginBottom:48}}>
+      <div className="fu hero-stack hero-visual" style={{display:"flex",alignItems:"center",justifyContent:"center",gap:0,marginBottom:48}}>
         {/* Creators side */}
-        <div style={{textAlign:"right",minWidth:200}}>
-          <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginBottom:10}}>
+        <div className="hero-side" style={{textAlign:"right",minWidth:200}}>
+          <div className="hero-icons" style={{display:"flex",justifyContent:"flex-end",gap:8,marginBottom:10}}>
             {["🎬","📱","🎥"].map((e,i)=><div key={i} style={{width:44,height:44,borderRadius:12,background:C.coral+"12",border:"1px solid "+C.coral+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,animation:`float 3s ease infinite ${i*.4}s`}}>{e}</div>)}
           </div>
           <div style={{fontSize:28,fontWeight:800,letterSpacing:"-.02em",...gT(C.coral,C.pink)}}>Creators</div>
@@ -236,7 +276,7 @@ function HeroSection({nav}){
         </div>
 
         {/* Connection line → Creatorship → Connection line */}
-        <div style={{display:"flex",alignItems:"center",gap:0,margin:"0 20px"}}>
+        <div className="hero-mid" style={{display:"flex",alignItems:"center",gap:0,margin:"0 20px"}}>
           <svg width="80" height="4" style={{opacity:.3}}><line x1="0" y1="2" x2="80" y2="2" stroke={C.coral} strokeWidth="2" strokeDasharray="6 4"/></svg>
           <div style={{padding:"14px 28px",background:g(C.coral+"15",C.teal+"15"),border:"1px solid rgba(255,255,255,.1)",borderRadius:14,position:"relative"}}>
             <div style={{position:"absolute",inset:-1,borderRadius:14,background:g(C.coral+"30",C.teal+"30"),filter:"blur(20px)",opacity:.5,zIndex:-1}}/>
@@ -247,8 +287,8 @@ function HeroSection({nav}){
         </div>
 
         {/* Brands side */}
-        <div style={{textAlign:"left",minWidth:200}}>
-          <div style={{display:"flex",gap:8,marginBottom:10}}>
+        <div className="hero-side" style={{textAlign:"left",minWidth:200}}>
+          <div className="hero-icons" style={{display:"flex",gap:8,marginBottom:10}}>
             {["📊","💰","🚀"].map((e,i)=><div key={i} style={{width:44,height:44,borderRadius:12,background:C.teal+"12",border:"1px solid "+C.teal+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,animation:`float 3s ease infinite ${i*.4+.2}s`}}>{e}</div>)}
           </div>
           <div style={{fontSize:28,fontWeight:800,letterSpacing:"-.02em",...gT(C.blue,C.teal)}}>Brands</div>
@@ -257,15 +297,15 @@ function HeroSection({nav}){
       </div>
 
       {/* Headline */}
-      <h1 className="fu d1" style={{fontSize:52,fontWeight:900,lineHeight:1.08,letterSpacing:"-.04em",marginBottom:20,maxWidth:800,margin:"0 auto 20px"}}>
+      <h1 className="fu d1 hero-headline" style={{fontSize:52,fontWeight:900,lineHeight:1.08,letterSpacing:"-.04em",marginBottom:20,maxWidth:800,margin:"0 auto 20px"}}>
         Creatorship AI turns <span style={gT(C.coral,C.pink)}>TikTok Shop videos</span><br/>into <span style={gT(C.teal,C.blue)}>winning Meta ads</span>
       </h1>
 
-      <p className="fu d2" style={{fontSize:18,color:C.sub,lineHeight:1.65,maxWidth:640,margin:"0 auto 36px"}}>
+      <p className="fu d2 hero-sub" style={{fontSize:18,color:C.sub,lineHeight:1.65,maxWidth:640,margin:"0 auto 36px"}}>
         Creatorship finds your top-performing TikTok creators, downloads the video, and launches it as a Meta ad — automatically. You only pay when products sell. Get the most out of videos that are already working: turn what’s driving organic sales on TikTok into scaled, high-ROAS Meta campaigns.
       </p>
 
-      <div className="fu d3" style={{display:"flex",gap:12,justifyContent:"center"}}>
+      <div className="fu d3 hero-btns" style={{display:"flex",gap:12,justifyContent:"center"}}>
         <Link to="/brand" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>I'm a Brand →</Link>
         <a href="/auth/tiktok" style={{padding:"15px 36px",background:C.teal,color:C.bg,fontSize:15,fontWeight:700,border:"none",borderRadius:12,cursor:"pointer",fontFamily:"inherit",letterSpacing:"-.01em",textDecoration:"none"}}>I'm a Creator</a>
       </div>
@@ -280,26 +320,29 @@ function HeroSection({nav}){
 ══════════════════════════════════════════════════════*/
 function AutomationSection(){
   const steps=[
-    {old:"Manual research",new:"10 sec",icon:"🔍",color:C.teal,visual:[{l:"Creators",v:"47"},{l:"Videos",v:"183"}]},
-    {old:"Guessing who converts",new:"AI ranked",icon:"🧠",color:C.purple,visual:[{l:"AI Score",v:"92"},{l:"Est. GMV",v:"$14K"}]},
-    {old:"3–7 days for video",new:"Instant",icon:"⬇",color:C.teal,visual:[{l:"Format",v:"MP4"},{l:"Quality",v:"1080p"}]},
-    {old:"2 hrs per campaign",new:"One click",icon:"🚀",color:C.coral,visual:[{l:"Campaign",v:"Built"},{l:"Targeting",v:"Set"}]},
-    {old:"Check daily",new:"24/7 AI",icon:"📊",color:C.green,visual:[{l:"ROAS",v:"3.8×"},{l:"Auto-scale",v:"On"}]},
-    {old:"Spreadsheet payouts",new:"Weekly auto",icon:"💰",color:C.gold,visual:[{l:"Creator",v:"10%"},{l:"You keep",v:"86%"}]},
+    {old:"Manual research",new:"10 sec",icon:"🔍",color:C.teal,visual:[{l:"Creators",v:"47"},{l:"Videos",v:"183"}],desc:"Paste your TikTok Shop URL. AI scrapes every creator and video that features your product."},
+    {old:"Guessing who converts",new:"AI ranked",icon:"🧠",color:C.purple,visual:[{l:"AI Score",v:"92"},{l:"Est. GMV",v:"$14K"}],desc:"We rank creators by engagement, sales signals, and fit. No more gut decisions."},
+    {old:"3–7 days for video",new:"Instant",icon:"⬇",color:C.teal,visual:[{l:"Format",v:"MP4"},{l:"Quality",v:"1080p"}],desc:"Video downloads from TikTok's CDN in seconds. No DMing creators or waiting for files."},
+    {old:"2 hrs per campaign",new:"One click",icon:"🚀",color:C.coral,visual:[{l:"Campaign",v:"Built"},{l:"Targeting",v:"Set"}],desc:"Creatorship builds campaign, adset, creative, and targeting in Meta Ads Manager for you."},
+    {old:"Check daily",new:"24/7 AI",icon:"📊",color:C.green,visual:[{l:"ROAS",v:"3.8×"},{l:"Auto-scale",v:"On"}],desc:"We track spend, ROAS, and conversions. Pause losers, scale winners — automatically."},
+    {old:"Spreadsheet payouts",new:"Weekly auto",icon:"💰",color:C.gold,visual:[{l:"Creator",v:"10%"},{l:"You keep",v:"86%"}],desc:"Creator commission paid weekly. No invoicing, no chasing. You keep the rest minus 4% platform fee."},
   ];
 
-  return <section style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
+  return <section className="sec-pad-lg" style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
     <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
     <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
     <div style={{maxWidth:960,margin:"0 auto"}}>
-      <div style={{textAlign:"center",marginBottom:48}}>
+      <div style={{textAlign:"center",marginBottom:32}}>
         <div className="fu mono" style={{fontSize:11,fontWeight:700,letterSpacing:".15em",color:C.teal,textTransform:"uppercase",marginBottom:8}}>The Full Pipeline</div>
         <h2 className="fu d1" style={{fontSize:36,fontWeight:900,letterSpacing:"-.03em"}}>Six steps. <span style={gT(C.teal,C.green)}>Fully automated.</span></h2>
         <p className="fu d2" style={{fontSize:14,color:C.sub,marginTop:8}}>AI turns weeks of work into minutes.</p>
+        <p className="fu d3" style={{fontSize:14,color:C.sub,lineHeight:1.65,maxWidth:640,margin:"16px auto 0"}}>
+          From your product URL to a live Meta ad — Creatorship handles discovery, scoring, download, campaign setup, and payouts. You paste a link and click launch. Everything else runs on autopilot.
+        </p>
       </div>
 
       {/* Compact visual pipeline — old way → AI way */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
+      <div className="auto-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
         {steps.map((s,i)=>(
           <div key={i} className="gl fu" style={{padding:20,display:"flex",flexDirection:"column",gap:12,animationDelay:(i*0.05)+"s"}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -309,6 +352,7 @@ function AutomationSection(){
                 <div className="mono" style={{fontSize:15,fontWeight:800,color:C.green}}>→ {s.new}</div>
               </div>
             </div>
+            {s.desc&&<p style={{fontSize:12,color:C.sub,lineHeight:1.5,margin:0}}>{s.desc}</p>}
             <div style={{display:"flex",gap:16,marginTop:4}}>
               {s.visual.map((v,vi)=>(
                 <div key={vi}>
@@ -323,7 +367,7 @@ function AutomationSection(){
 
       {/* Bottom summary */}
       <div className="fu d5" style={{marginTop:36,textAlign:"center"}}>
-        <div className="gl" style={{display:"inline-flex",gap:32,padding:"18px 36px",alignItems:"center"}}>
+        <div className="gl summary-row" style={{display:"inline-flex",gap:32,padding:"18px 36px",alignItems:"center"}}>
           {[
             {v:"6 steps",l:"fully automated",c:C.teal},
             {v:"< 2 min",l:"URL → live campaign",c:C.green},
@@ -345,15 +389,15 @@ function AutomationSection(){
   SECTION 3 — Creator + Brand Deep Sell
 ══════════════════════════════════════════════════════*/
 function EarnSection({nav}){
-  return <section style={{padding:"100px 40px",position:"relative"}}>
+  return <section className="sec-pad" style={{padding:"100px 40px",position:"relative"}}>
     <div style={{maxWidth:1000,margin:"0 auto"}}>
 
       {/* ─── CREATOR SECTION ─── */}
       <div className="gl fu" style={{padding:0,overflow:"hidden",position:"relative",marginBottom:40}}>
         <div style={{position:"absolute",top:-40,left:-40,width:180,height:180,borderRadius:"50%",background:C.coral,filter:"blur(80px)",opacity:.05}}/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+        <div className="earn-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
           {/* Left — The sell */}
-          <div style={{padding:"36px 36px 32px",borderRight:"1px solid "+C.border}}>
+          <div className="earn-col earn-pad" style={{padding:"36px 36px 32px",borderRight:"1px solid "+C.border}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
               <div style={{width:36,height:36,borderRadius:10,background:C.coral+"12",border:"1px solid "+C.coral+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>🎬</div>
               <div style={{fontSize:12,fontWeight:700,color:C.coral,letterSpacing:".08em",textTransform:"uppercase"}}>For Creators</div>
@@ -384,7 +428,7 @@ function EarnSection({nav}){
           </div>
 
           {/* Right — Visual mock */}
-          <div style={{padding:"36px 32px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+          <div className="earn-pad" style={{padding:"36px 32px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
             <div style={{padding:"18px 20px",background:"rgba(255,255,255,.015)",borderRadius:12,border:"1px solid "+C.border,marginBottom:16}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                 <span style={{fontSize:11,fontWeight:700,color:C.dim,letterSpacing:".06em",textTransform:"uppercase"}}>Your Earnings</span>
@@ -416,9 +460,9 @@ function EarnSection({nav}){
       {/* ─── BRAND SECTION ─── */}
       <div className="gl fu d2" style={{padding:0,overflow:"hidden",position:"relative"}}>
         <div style={{position:"absolute",top:-40,right:-40,width:180,height:180,borderRadius:"50%",background:C.teal,filter:"blur(80px)",opacity:.05}}/>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
+        <div className="earn-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr"}}>
           {/* Left — The pain */}
-          <div style={{padding:"36px 36px 32px",borderRight:"1px solid "+C.border}}>
+          <div className="earn-col earn-pad" style={{padding:"36px 36px 32px",borderRight:"1px solid "+C.border}}>
             <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
               <div style={{width:36,height:36,borderRadius:10,background:C.teal+"12",border:"1px solid "+C.teal+"20",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>📊</div>
               <div style={{fontSize:12,fontWeight:700,color:C.teal,letterSpacing:".08em",textTransform:"uppercase"}}>For Brands</div>
@@ -438,7 +482,7 @@ function EarnSection({nav}){
           </div>
 
           {/* Right — The old way vs new way visual */}
-          <div style={{padding:"36px 32px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
+          <div className="earn-pad" style={{padding:"36px 32px",display:"flex",flexDirection:"column",justifyContent:"center"}}>
             {/* Old way */}
             <div style={{padding:"16px 18px",background:"rgba(255,82,82,.02)",borderRadius:10,border:"1px solid rgba(255,82,82,.08)",marginBottom:16}}>
               <div style={{fontSize:11,fontWeight:700,color:C.coral,letterSpacing:".06em",textTransform:"uppercase",marginBottom:12}}>The old way — per creator</div>
@@ -494,8 +538,8 @@ function EarnSection({nav}){
   SECTION 4 — CTA + Footer
 ══════════════════════════════════════════════════════*/
 function CTASection(){
-  return <section style={{padding:"40px 40px 16px"}}>
-    <footer style={{borderTop:"1px solid "+C.border,padding:"32px 0 16px",display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1100,margin:"0 auto"}}>
+  return <section className="sec-pad" style={{padding:"40px 40px 16px"}}>
+    <footer className="footer-flex" style={{borderTop:"1px solid "+C.border,padding:"32px 0 16px",display:"flex",justifyContent:"space-between",alignItems:"center",maxWidth:1100,margin:"0 auto"}}>
       <div style={{fontSize:18,fontWeight:900}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></div>
       <div style={{fontSize:12,color:C.dim}}>TikTok creators × Meta ads × AI</div>
     </footer>
@@ -504,9 +548,9 @@ function CTASection(){
 
 function Homepage({nav}){
   return <div>
-    <nav style={{position:"fixed",top:0,left:0,right:0,zIndex:100,padding:"14px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(3,7,17,.85)",backdropFilter:"blur(20px)",borderBottom:"1px solid "+C.border}}>
+    <nav className="nav-pad" style={{position:"fixed",top:0,left:0,right:0,zIndex:100,padding:"14px 40px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(3,7,17,.85)",backdropFilter:"blur(20px)",borderBottom:"1px solid "+C.border}}>
       <Link to="/" style={{fontSize:20,fontWeight:900,cursor:"pointer",textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
-      <div style={{display:"flex",gap:8}}>
+      <div className="nav-btns" style={{display:"flex",gap:8}}>
         <Link to="/brand" style={{padding:"8px 20px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Brands</Link>
         <a href="/auth/tiktok" style={{padding:"8px 20px",background:C.teal,border:"none",borderRadius:8,color:C.bg,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit",textDecoration:"none"}}>Creators</a>
       </div>
@@ -1591,18 +1635,24 @@ function CreatorPortal({nav}){
     fetch("/api/creator/earnings").then(r=>r.json()).then(d=>{setEarnings(d);setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
   },[ttStatus.connected,tab]);
 
-  const Sidebar=()=><div style={{width:200,background:C.bg2,borderRight:"1px solid "+C.border,padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
+  const creatorTabs=[{id:"connect",l:"Connect TikTok",i:"🔗"},{id:"deals",l:"Deals",i:"💰"},{id:"earnings",l:"Earnings",i:"📈"}];
+  const Sidebar=()=><div className="sidebar-wrap" style={{width:200,background:C.bg2,borderRight:"1px solid "+C.border,padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
     <div style={{padding:"0 16px 20px",cursor:"pointer"}} onClick={()=>nav("/")}><span style={{fontSize:17,fontWeight:900,...gT(C.coral,C.gold)}}>Creator</span><span style={{fontSize:17,fontWeight:900,...gT(C.blue,C.teal)}}>ship</span><div style={{fontSize:10,color:C.dim,marginTop:1}}>Creator Portal</div></div>
-    {[{id:"connect",l:"Connect TikTok",i:"🔗"},{id:"deals",l:"Deals",i:"💰"},{id:"earnings",l:"Earnings",i:"📈"}].map(t=><div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"9px 16px",cursor:"pointer",fontSize:13,fontWeight:tab===t.id?600:400,color:tab===t.id?C.teal:C.sub,background:tab===t.id?C.teal+"06":"transparent",borderRight:tab===t.id?"2px solid "+C.teal:"2px solid transparent"}}>{t.i} {t.l}</div>)}
+    {creatorTabs.map(t=><div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"9px 16px",cursor:"pointer",fontSize:13,fontWeight:tab===t.id?600:400,color:tab===t.id?C.teal:C.sub,background:tab===t.id?C.teal+"06":"transparent",borderRight:tab===t.id?"2px solid "+C.teal:"2px solid transparent"}}>{t.i} {t.l}</div>)}
     <div style={{flex:1}}/>
     <div style={{padding:"10px 16px",borderTop:"1px solid "+C.border,fontSize:11,color:C.dim,cursor:"pointer"}} onClick={()=>nav("/brand")}>Brand Dashboard →</div>
     {ttStatus.connected&&<div style={{padding:"8px 16px",fontSize:11,color:C.sub}}>{ttStatus.displayName}</div>}
     {ttStatus.connected&&<div style={{padding:"8px 16px",fontSize:11,color:C.coral,cursor:"pointer"}} onClick={handleDisconnect}>Disconnect TikTok</div>}
   </div>;
 
-  return <div style={{display:"flex"}}>
+  const CreatorBottomNav=()=>(<div className="bottom-nav">
+    {creatorTabs.map(t=><div key={t.id} onClick={()=>setTab(t.id)} style={{flex:1,textAlign:"center",padding:"8px 4px",cursor:"pointer",fontSize:11,fontWeight:tab===t.id?600:400,color:tab===t.id?C.teal:C.sub}}>{t.i}<br/>{t.l}</div>)}
+  </div>);
+
+  return <div className="bottom-gap" style={{display:"flex"}}>
     <Sidebar/>
-    <div style={{flex:1,padding:"28px 36px",maxWidth:700}}>
+    <CreatorBottomNav/>
+    <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:700}}>
 
     {tab==="connect"&&<div>
       {ttStatus.connected?<div>
@@ -1835,9 +1885,13 @@ function BrandAuthForm({ onSuccess }) {
 
 const stripAt = s => (s || '').toString().replace(/^@+/, '') || '';
 
+const inputStyle = { padding: '10px 14px', background: 'rgba(255,255,255,.04)', border: '1px solid '+C.border, borderRadius: 8, color: C.text, fontSize: 13, fontFamily: 'inherit', width: '100%' };
+const btnStyle = { padding: '10px 20px', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' };
+
 function BrandDashboardView({ brand, setBrand, nav }) {
-  const [tab, setTab] = useState('overview');
+  const [brandTab, setBrandTab] = useState('overview');
   const [profile, setProfile] = useState(brand);
+  const [brandSettings, setBrandSettings] = useState({ metaToken: '', adAccount: '', pageId: '', brandName: '', storeName: '' });
   const [creators, setCreators] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [campError, setCampError] = useState(null);
@@ -1850,6 +1904,7 @@ function BrandDashboardView({ brand, setBrand, nav }) {
     fetch('/api/brand/me?email=' + encodeURIComponent(brand.email)).then(r => r.json()).then(d => {
       if (d.error) return;
       setProfile(d);
+      setBrandSettings(p => ({ ...p, adAccount: d.adAccount || '', pageId: d.pageId || '', brandName: d.brandName || '', storeName: stripAt(d.storeName || '') }));
       const updated = { ...brand, ...d };
       localStorage.setItem(BRAND_STORAGE, JSON.stringify(updated));
       setBrand(updated);
@@ -1875,14 +1930,15 @@ function BrandDashboardView({ brand, setBrand, nav }) {
   const logout = () => { localStorage.removeItem(BRAND_STORAGE); setBrand(null); window.location.href = '/brand'; };
   const storeDisplay = stripAt(profile.storeName || brand.storeName);
 
+  const tabs=[{id:"overview",l:"Overview",i:"🏠"},{id:"creators",l:"Creators",i:"👥"},{id:"campaigns",l:"Campaigns",i:"🚀"},{id:"settings",l:"Settings",i:"⚙️"}];
   const Sidebar = () => (
-    <div style={{width:200,background:C.bg2,borderRight:"1px solid "+C.border,padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
+    <div className="sidebar-wrap" style={{width:200,background:C.bg2,borderRight:"1px solid "+C.border,padding:"16px 0",flexShrink:0,display:"flex",flexDirection:"column",minHeight:"100vh"}}>
       <div style={{padding:"0 16px 20px",cursor:"pointer"}} onClick={()=>nav("/")}>
         <span style={{fontSize:17,fontWeight:900,...gT(C.coral,C.gold)}}>Creator</span><span style={{fontSize:17,fontWeight:900,...gT(C.blue,C.teal)}}>ship</span>
         <div style={{fontSize:10,color:C.dim,marginTop:1}}>Brand Portal</div>
       </div>
-      {[{id:"overview",l:"Overview",i:"🏠"},{id:"creators",l:"Creators",i:"👥"},{id:"campaigns",l:"Campaigns",i:"🚀"},{id:"settings",l:"Settings",i:"⚙️"}].map(t=>
-        <div key={t.id} onClick={()=>setTab(t.id)} style={{padding:"10px 16px",cursor:"pointer",fontSize:13,fontWeight:tab===t.id?600:400,color:tab===t.id?C.teal:C.sub,background:tab===t.id?C.teal+"06":"transparent",borderRight:tab===t.id?"2px solid "+C.teal:"2px solid transparent"}}>{t.i} {t.l}</div>
+      {tabs.map(t=>
+        <div key={t.id} onClick={()=>setBrandTab(t.id)} style={{padding:"10px 16px",cursor:"pointer",fontSize:13,fontWeight:brandTab===t.id?600:400,color:brandTab===t.id?C.teal:C.sub,background:brandTab===t.id?C.teal+"06":"transparent",borderRight:brandTab===t.id?"2px solid "+C.teal:"2px solid transparent"}}>{t.i} {t.l}</div>
       )}
       <div style={{flex:1}}/>
       <div style={{padding:"10px 16px",fontSize:11,color:C.dim}}>{storeDisplay ? '@'+storeDisplay : '—'}</div>
@@ -1890,13 +1946,34 @@ function BrandDashboardView({ brand, setBrand, nav }) {
     </div>
   );
 
-  return <div style={{display:"flex",minHeight:"100vh",background:C.bg}}>
-    <Sidebar/>
-    <div style={{flex:1,padding:"28px 36px",maxWidth:800}}>
+  const BottomNav = () => (
+    <div className="bottom-nav">
+      {tabs.map(t=><div key={t.id} onClick={()=>setBrandTab(t.id)} style={{flex:1,textAlign:"center",padding:"8px 4px",cursor:"pointer",fontSize:11,fontWeight:brandTab===t.id?600:400,color:brandTab===t.id?C.teal:C.sub}}>{t.i}<br/>{t.l}</div>)}
+    </div>
+  );
 
-      {tab==="overview"&&<div>
+  const saveBrandSettings = async () => {
+    const res = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, metaToken: brandSettings.metaToken || undefined, adAccount: brandSettings.adAccount || undefined, pageId: brandSettings.pageId || undefined }) });
+    const data = await res.json();
+    if (data.success) { setProfile(data.brand); setBrand(prev => prev ? { ...prev, ...data.brand } : null); localStorage.setItem(BRAND_STORAGE, JSON.stringify(data.brand)); setBrandSettings(p => ({ ...p, metaToken: '' })); alert('Settings saved!'); }
+    else alert(data.error || 'Failed to save');
+  };
+
+  const saveStoreSettings = async () => {
+    const res = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, brandName: brandSettings.brandName, storeName: brandSettings.storeName }) });
+    const data = await res.json();
+    if (data.success) { setProfile(data.brand); setBrand(prev => prev ? { ...prev, ...data.brand } : null); localStorage.setItem(BRAND_STORAGE, JSON.stringify(data.brand)); refreshProfile(); alert('Store info saved!'); }
+    else alert(data.error || 'Failed to save');
+  };
+
+  return <div className="bottom-gap" style={{display:"flex",minHeight:"100vh",background:C.bg}}>
+    <Sidebar/>
+    <BottomNav/>
+    <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:800}}>
+
+      {brandTab==="overview"&&<div>
         <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Overview</h1>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:32}}>
+        <div className="overview-grid" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:32}}>
           <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Store</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.teal,marginTop:4}}>{storeDisplay ? '@'+storeDisplay : '—'}</div></div>
           <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Connected Creators</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.green,marginTop:4}}>{creators.length}</div></div>
           <div className="gl" style={{padding:20}}><div style={{fontSize:11,color:C.dim,textTransform:"uppercase"}}>Active Campaigns</div><div className="mono" style={{fontSize:20,fontWeight:800,color:C.gold,marginTop:4}}>{campaigns.length}</div></div>
@@ -1908,12 +1985,12 @@ function BrandDashboardView({ brand, setBrand, nav }) {
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <span style={{color:profile.hasMetaToken?C.green:C.dim}}>{profile.hasMetaToken?'✓':'☐'}</span>
               <span>Connect Meta API</span>
-              {!profile.hasMetaToken&&<button onClick={()=>setTab("settings")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Settings</button>}
+              {!profile.hasMetaToken&&<button onClick={()=>setBrandTab("settings")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Settings</button>}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <span style={{color:creators.length>0?C.green:C.dim}}>{creators.length>0?'✓':'☐'}</span>
               <span>Creators in pipeline</span>
-              {creators.length===0&&<button onClick={()=>setTab("creators")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Creators</button>}
+              {creators.length===0&&<button onClick={()=>setBrandTab("creators")} style={{marginLeft:8,padding:"4px 10px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,color:C.teal,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>→ Creators</button>}
             </div>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <span style={{color:campaigns.length>0?C.green:C.dim}}>{campaigns.length>0?'✓':'☐'}</span>
@@ -1923,11 +2000,11 @@ function BrandDashboardView({ brand, setBrand, nav }) {
         </div>
       </div>}
 
-      {tab==="creators"&&<div>
+      {brandTab==="creators"&&<div>
         <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creators</h1>
         {loadingCreators?<div style={{color:C.sub}}>Loading...</div>:
         creators.length===0?<div className="gl" style={{padding:40,textAlign:"center"}}><div style={{fontSize:32,marginBottom:12}}>👥</div><div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No creators in your pipeline yet</div><div style={{fontSize:13,color:C.dim}}>Your admin is building your creator list.</div></div>:
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12}}>
+        <div className="creators-grid" style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12}}>
           {creators.map((c,i)=><div key={i} className="gl" style={{padding:16}}>
             <div style={{fontSize:14,fontWeight:700}}>@{c.display_name||c.open_id||'creator'}</div>
             <div style={{fontSize:11,color:C.dim,marginTop:8}}>{fN(c.follower_count||0)} followers · {c.video_count||0} videos</div>
@@ -1935,14 +2012,14 @@ function BrandDashboardView({ brand, setBrand, nav }) {
         </div>}
       </div>}
 
-      {tab==="campaigns"&&<div>
+      {brandTab==="campaigns"&&<div>
         <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Campaigns</h1>
         {loadingCampaigns?<div style={{color:C.sub}}>Loading...</div>:
         campaigns.length===0?<div className="gl" style={{padding:40,textAlign:"center"}}>
           <div style={{fontSize:32,marginBottom:12}}>🚀</div>
           <div style={{fontSize:15,fontWeight:600,marginBottom:6}}>No campaigns yet</div>
           <div style={{fontSize:13,color:C.dim,marginBottom:20}}>Your account manager will launch your first campaign once your Meta API is connected.</div>
-          <button onClick={()=>setTab("settings")} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Connect Meta API →</button>
+          <button onClick={()=>setBrandTab("settings")} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Connect Meta API →</button>
         </div>:
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           {campaigns.map((c,i)=><div key={i} className="gl" style={{padding:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1953,99 +2030,37 @@ function BrandDashboardView({ brand, setBrand, nav }) {
         {campError&&!loadingCampaigns&&<div style={{color:C.coral,fontSize:13,marginTop:12}}>{campError}</div>}
       </div>}
 
-      {tab==="settings"&&<BrandSettingsTab brand={brand} profile={profile} setProfile={setProfile} setBrand={setBrand} refreshProfile={refreshProfile} loading={loadingProfile} />}
-    </div>
-  </div>;
-}
-
-function BrandSettingsTab({ brand, profile, setProfile, setBrand, refreshProfile, loading }) {
-  const [metaToken, setMetaToken] = useState('');
-  const [showToken, setShowToken] = useState(false);
-  const [adAccount, setAdAccount] = useState(profile.adAccount || '');
-  const [pageId, setPageId] = useState(profile.pageId || '');
-  const [brandName, setBrandName] = useState(profile.brandName || '');
-  const [storeName, setStoreName] = useState('');
-  useEffect(() => { setAdAccount(profile.adAccount || ''); setPageId(profile.pageId || ''); setBrandName(profile.brandName || ''); setStoreName(stripAt(profile.storeName || '')); }, [profile]);
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-
-  const saveMeta = async () => {
-    setSaving(true);
-    try {
-      const r = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, metaToken: metaToken||undefined, adAccount: adAccount||undefined, pageId: pageId||undefined }) });
-      const d = await r.json();
-      if (d.error) throw new Error(d.error);
-      setProfile(d.brand); setBrand(prev=>prev?{...prev,...d.brand}:null); localStorage.setItem(BRAND_STORAGE, JSON.stringify(d.brand));
-      setMetaToken(''); setToast('Meta credentials saved'); setTimeout(()=>setToast(null),3000);
-    } catch (e) { setToast(e.message); setTimeout(()=>setToast(null),3000); }
-    setSaving(false);
-  };
-
-  const saveStore = async () => {
-    setSaving(true);
-    try {
-      const r = await fetch('/api/brand/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: brand.email, brandName, storeName }) });
-      const d = await r.json();
-      if (d.error) throw new Error(d.error);
-      setProfile(d.brand); setBrand(prev=>prev?{...prev,...d.brand}:null); localStorage.setItem(BRAND_STORAGE, JSON.stringify(d.brand));
-      setToast('Store info saved'); setTimeout(()=>setToast(null),3000); refreshProfile();
-    } catch (e) { setToast(e.message); setTimeout(()=>setToast(null),3000); }
-    setSaving(false);
-  };
-
-  return <div>
-    <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Settings</h1>
-
-    <div className="gl" style={{padding:24,marginBottom:24}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Meta API Credentials</div>
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-        {profile.hasMetaToken?<span style={{padding:"4px 10px",background:C.green+"15",color:C.green,borderRadius:6,fontSize:12,fontWeight:600}}>✓ Connected</span>:<span style={{padding:"4px 10px",background:C.dim+"20",color:C.dim,borderRadius:6,fontSize:12}}>Not connected</span>}
-      </div>
-      <div style={{marginBottom:12}}>
-        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>META ACCESS TOKEN</label>
-        <div style={{display:"flex",gap:8}}>
-          <input type={showToken?"text":"password"} value={metaToken} onChange={e=>setMetaToken(e.target.value)} placeholder="Token"
-            style={{flex:1,padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
-          <button onClick={()=>setShowToken(!showToken)} style={{padding:"8px 12px",background:"transparent",border:"1px solid "+C.border,borderRadius:8,color:C.sub,fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>{showToken?"Hide":"Show"}</button>
+      {brandTab==="settings"&&<div>
+        <h1 style={{fontSize:24,fontWeight:800,marginBottom:24}}>Settings</h1>
+        {/* Section 1 — Meta API */}
+        <div style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+            <h3 style={{color:C.text,margin:0}}>Meta API Credentials</h3>
+            {(profile.hasMetaToken||brandSettings.metaToken)?<span style={{color:C.teal,fontSize:13}}>✓ Connected</span>:<span style={{color:C.dim,fontSize:13}}>Not connected</span>}
+          </div>
+          <input placeholder="Meta Access Token" type="password" value={brandSettings.metaToken||''} onChange={e=>setBrandSettings(p=>({...p,metaToken:e.target.value}))} style={{...inputStyle,marginBottom:12,width:'100%'}} />
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:12}}>
+            <input placeholder="Ad Account ID (act_XXXXXXXXX)" value={brandSettings.adAccount||''} onChange={e=>setBrandSettings(p=>({...p,adAccount:e.target.value}))} style={inputStyle} />
+            <input placeholder="Page ID" value={brandSettings.pageId||''} onChange={e=>setBrandSettings(p=>({...p,pageId:e.target.value}))} style={inputStyle} />
+          </div>
+          <button onClick={saveBrandSettings} style={{...btnStyle,background:C.teal,color:'#000'}}>Save Meta Credentials</button>
         </div>
-      </div>
-      <div style={{marginBottom:12}}>
-        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>AD ACCOUNT ID</label>
-        <input type="text" value={adAccount} onChange={e=>setAdAccount(e.target.value)} placeholder="act_XXXXXXXXX"
-          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
-      </div>
-      <div style={{marginBottom:16}}>
-        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>PAGE ID</label>
-        <input type="text" value={pageId} onChange={e=>setPageId(e.target.value)} placeholder="XXXXXXXXXXXXXXXXX"
-          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
-      </div>
-      <button onClick={saveMeta} disabled={saving} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",fontFamily:"inherit"}}>Save</button>
+        {/* Section 2 — Store Info */}
+        <div style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
+          <h3 style={{color:C.text,margin:0,marginBottom:16}}>Store Info</h3>
+          <input placeholder="Brand Name" value={brandSettings.brandName||''} onChange={e=>setBrandSettings(p=>({...p,brandName:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <input placeholder="Store Name (no @)" value={brandSettings.storeName||''} onChange={e=>setBrandSettings(p=>({...p,storeName:stripAt(e.target.value)}))} style={{...inputStyle,marginBottom:12}} />
+          <button onClick={saveStoreSettings} style={{...btnStyle,background:C.teal,color:'#000'}}>Save Store Info</button>
+        </div>
+        {/* Section 3 — Account */}
+        <div style={{background:C.card,border:'1px solid '+C.border,borderRadius:16,padding:24}}>
+          <h3 style={{color:C.text,margin:0,marginBottom:16}}>Account</h3>
+          <div style={{fontSize:11,color:C.dim,marginBottom:4}}>Email</div>
+          <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
+          <button onClick={logout} style={{...btnStyle,background:C.coral,color:C.bg}}>Logout</button>
+        </div>
+      </div>}
     </div>
-
-    <div className="gl" style={{padding:24,marginBottom:24}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Store Info</div>
-      <div style={{marginBottom:12}}>
-        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>Brand Name</label>
-        <input type="text" value={brandName} onChange={e=>setBrandName(e.target.value)}
-          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
-      </div>
-      <div style={{marginBottom:16}}>
-        <label style={{fontSize:11,color:C.dim,display:"block",marginBottom:4}}>TikTok Shop Store Name</label>
-        <input type="text" value={storeName} onChange={e=>setStoreName(stripAt(e.target.value))} placeholder="Store handle (no @)"
-          style={{width:"100%",padding:"10px 14px",background:"rgba(255,255,255,.04)",border:"1px solid "+C.border,borderRadius:8,color:C.text,fontSize:13,fontFamily:"inherit"}}/>
-      </div>
-      <button onClick={saveStore} disabled={saving} style={{padding:"10px 20px",background:C.teal,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:saving?"not-allowed":"pointer",fontFamily:"inherit"}}>Save</button>
-    </div>
-
-    <div className="gl" style={{padding:24}}>
-      <div style={{fontSize:12,fontWeight:700,color:C.dim,textTransform:"uppercase",marginBottom:16}}>Account</div>
-      <div style={{marginBottom:16}}><label style={{fontSize:11,color:C.dim}}>Email</label><div style={{fontSize:14,marginTop:4}}>{brand.email}</div></div>
-      {!deleteConfirm?<button onClick={()=>setDeleteConfirm(true)} style={{padding:"10px 20px",background:C.coral,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Delete Account</button>:
-      <div><span style={{fontSize:13,color:C.sub,marginRight:12}}>Are you sure?</span><button onClick={()=>setDeleteConfirm(false)} style={{padding:"6px 12px",background:"transparent",border:"1px solid "+C.border,borderRadius:6,fontSize:12,cursor:"pointer",fontFamily:"inherit",color:C.sub,marginRight:8}}>Cancel</button><button onClick={async()=>{try{const r=await fetch('/api/brand/account',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:brand.email})});const d=await r.json();if(d.success){localStorage.removeItem(BRAND_STORAGE);setBrand(null);window.location.href='/brand';}else setToast(d.error||'Failed');}catch(e){setToast(e.message);}setDeleteConfirm(false);}} style={{padding:"6px 12px",background:C.coral,color:C.bg,border:"none",borderRadius:6,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>Yes, delete</button></div>}
-    </div>
-
-    {toast&&<div style={{position:"fixed",bottom:20,right:20,padding:"11px 18px",borderRadius:11,fontSize:13,fontWeight:600,zIndex:999,background:"rgba(8,13,28,.95)",border:"1px solid "+C.border}}>{toast}</div>}
   </div>;
 }
 
@@ -2056,8 +2071,8 @@ function BrandPortal() {
     try { const j = localStorage.getItem(BRAND_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
   });
   if (brand) return <BrandDashboardView brand={brand} setBrand={setBrand} nav={nav} />;
-  return <div style={{minHeight:"100vh",background:C.bg}}>
-    <nav style={{padding:"14px 32px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
+  return <div className="nav-pad" style={{minHeight:"100vh",background:C.bg}}>
+    <nav style={{padding:"14px 20px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
       <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
     </nav>
     <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} />
@@ -2133,7 +2148,7 @@ function CreatorPortalWrapper() {
     }).catch(() => window.location.href = '/auth/tiktok');
   }, []);
 
-  if (ttStatus === null) return <div style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+  if (ttStatus === null) return <div className="content-pad" style={{minHeight:"100vh",background:C.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
     <div style={{textAlign:"center",color:C.sub}}>
       <div style={{width:32,height:32,border:"2px solid rgba(255,255,255,.1)",borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",margin:"0 auto 16px"}}/>
       <div>Redirecting to connect TikTok...</div>
