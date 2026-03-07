@@ -1919,8 +1919,8 @@ const DEMO_CAMPAIGNS = [
   { id: 'camp_003', name: 'glowwithnat_cleanser_v1', creator: 'glowwithnat', status: 'PAUSED', created_time: '2026-02-25', launchedAt: '2026-02-25', spend: 410.00, impressions: 44800, clicks: 1560, roas: 1.4, dailyBudget: 75, objective: 'Traffic', insights: { spend: '410.00', impressions: '44800', clicks: '1560', purchase_roas: [{ value: '1.4' }] } },
 ];
 
-function BrandAuthForm({ onSuccess, onDemo }) {
-  const [mode, setMode] = useState('login');
+function BrandAuthForm({ onSuccess, onDemo, initialMode }) {
+  const [mode, setMode] = useState(initialMode || 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [storeName, setStoreName] = useState('');
@@ -2316,7 +2316,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
               <div style={{padding:20,background:C.orange+"15",border:"1px solid "+C.orange+"40",borderRadius:12,marginBottom:16}}>
                 <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:8}}>This is a demo</div>
                 <div style={{fontSize:13,color:C.sub,marginBottom:16}}>Like what you see? Sign up to launch real campaigns.</div>
-                <button onClick={()=>{closeLaunch();exitDemo&&exitDemo()}} style={{...btnStyle,width:"100%",background:C.teal,color:"#0b0f1a",padding:12}}>Sign Up →</button>
+                <button onClick={()=>{closeLaunch();exitDemo&&exitDemo({ openSignUp: true })}} style={{...btnStyle,width:"100%",background:C.teal,color:"#0b0f1a",padding:12}}>Sign Up →</button>
               </div>
             </div>
           ):(
@@ -2427,7 +2427,7 @@ function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccou
               <div style={{position:"relative"}}>
                 <button onClick={e=>{e.stopPropagation();setMenuOpen(menuOpen===c.id?null:c.id)}} style={{...btnStyle,background:"transparent",border:"none",padding:"6px 10px",color:C.sub,fontSize:16}}>⋮</button>
                 {menuOpen===c.id&&<div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:32,zIndex:50,minWidth:200,background:C.bg2,border:"1px solid "+C.border,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,.4)",padding:8}}>
-                  {isDemo?<div style={{padding:"10px 12px",fontSize:12,color:C.dim}}>Demo — sign up to manage real campaigns.</div>:<><a href={metaAdsUrl()} target="_blank" rel="noopener noreferrer" style={{display:"block",padding:"10px 12px",fontSize:13,color:C.text,textDecoration:"none",borderRadius:6}}>View in Meta Ads Manager ↗</a><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.text,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>Duplicate</button><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.error,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>End Campaign</button></>}
+                  {isDemo?<div style={{padding:10}}><div style={{fontSize:12,color:C.dim,marginBottom:8}}>Demo — sign up to manage real campaigns.</div><button onClick={()=>{setMenuOpen(null);exitDemo&&exitDemo({ openSignUp: true })}} style={{...btnStyle,width:"100%",background:C.teal,color:C.bg,fontSize:12,padding:"8px 12px"}}>Sign Up for Free →</button></div>:<><a href={metaAdsUrl()} target="_blank" rel="noopener noreferrer" style={{display:"block",padding:"10px 12px",fontSize:13,color:C.text,textDecoration:"none",borderRadius:6}}>View in Meta Ads Manager ↗</a><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.text,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>Duplicate</button><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.error,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>End Campaign</button></>}
                 </div>}
               </div>
             </div>
@@ -2446,7 +2446,7 @@ function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccou
 function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile, isDemo, exitDemo }) {
   const [metaMsg, setMetaMsg] = useState(null);
   const [tiktokMsg, setTiktokMsg] = useState(null);
-  const demoGate = isDemo && <div style={{marginTop:12,padding:12,background:C.orange+"15",borderRadius:8,border:"1px solid "+C.orange+"30"}}><div style={{fontSize:13,color:C.sub,marginBottom:8}}>Like what you see? Sign up to connect your own accounts.</div><button onClick={()=>exitDemo&&exitDemo()} style={{...btnStyle,background:C.teal,color:C.bg,fontSize:12}}>Sign Up for Free →</button></div>;
+  const demoGate = isDemo && <div style={{marginTop:12,padding:12,background:C.orange+"15",borderRadius:8,border:"1px solid "+C.orange+"30"}}><div style={{fontSize:13,color:C.sub,marginBottom:8}}>Like what you see? Sign up to connect your own accounts.</div><button onClick={()=>exitDemo&&exitDemo({ openSignUp: true })} style={{...btnStyle,background:C.teal,color:C.bg,fontSize:12}}>Sign Up for Free →</button></div>;
   const [profileMsg, setProfileMsg] = useState(null);
 
   const handleMetaConnect = async () => {
@@ -2652,7 +2652,7 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo }) {
   };
 
   return <div className="bottom-gap" style={{display:"flex",flexDirection:"column",minHeight:"100vh",background:C.bg}}>
-    {isDemo&&<DemoBanner onSignUp={()=>{ exitDemo(); }} />}
+    {isDemo&&<DemoBanner onSignUp={()=>exitDemo({ openSignUp: true })} />}
     <div style={{display:"flex",flex:1,minHeight:0}}>
       <Sidebar/>
       <BottomNav/>
@@ -2684,13 +2684,15 @@ function BrandPortal() {
     try { const j = localStorage.getItem(BRAND_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
   });
   const [isDemo, setIsDemo] = useState(false);
-  const exitDemo = useCallback(() => { setBrand(null); setIsDemo(false); }, []);
+  const [openSignUpAfterDemo, setOpenSignUpAfterDemo] = useState(false);
+  const exitDemo = useCallback((opts) => { if (opts?.openSignUp) setOpenSignUpAfterDemo(true); setBrand(null); setIsDemo(false); }, []);
+  useEffect(() => { if (!brand && openSignUpAfterDemo) setOpenSignUpAfterDemo(false); }, [brand, openSignUpAfterDemo]);
   if (brand) return <BrandDashboardView brand={brand} setBrand={setBrand} nav={nav} isDemo={isDemo} exitDemo={exitDemo} />;
   return <div className="nav-pad" style={{minHeight:"100vh",background:C.bg}}>
     <nav style={{padding:"14px 20px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
       <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
     </nav>
-    <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} onDemo={() => { setBrand({ ...DEMO_PROFILE }); setIsDemo(true); }} />
+    <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} onDemo={() => { setBrand({ ...DEMO_PROFILE }); setIsDemo(true); }} initialMode={openSignUpAfterDemo ? 'signup' : 'login'} />
   </div>;
 }
 
