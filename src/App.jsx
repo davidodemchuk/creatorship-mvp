@@ -1890,7 +1890,36 @@ function CreatorPortal({nav}){
 ══════════════════════════════════════════════════════*/
 const BRAND_STORAGE = 'creatorship_brand';
 
-function BrandAuthForm({ onSuccess }) {
+const DEMO_PROFILE = {
+  id: 'demo', email: 'demo@creatorship.app', storeName: 'glowupskincare', storeDisplay: 'glowupskincare',
+  hasMetaToken: true, adAccount: 'act_••••7842', pageId: '••••3291', plan: 'Starter', createdAt: '2026-02-15', isDemo: true
+};
+
+const DEMO_CREATORS_RAW = [
+  { handle: 'skincarebyjess', followers: 124000, videoCount: 8, aiScore: 94, estGmv: 14200 },
+  { handle: 'glowwithnat', followers: 89000, videoCount: 5, aiScore: 87, estGmv: 9800 },
+  { handle: 'thebeautyplug', followers: 312000, videoCount: 12, aiScore: 91, estGmv: 22400 },
+  { handle: 'routinequeen', followers: 56000, videoCount: 3, aiScore: 78, estGmv: 4200 },
+  { handle: 'cleanbeautykim', followers: 201000, videoCount: 7, aiScore: 85, estGmv: 11600 },
+  { handle: 'dermdaily', followers: 445000, videoCount: 15, aiScore: 96, estGmv: 31000 },
+];
+
+const makeDemoVideos = (handle, count) => Array.from({ length: count }, (_, i) => ({
+  id: `vd_${handle}_${i}`, creator: handle, handle: '@' + handle, thumbnail: null, duration: (30 + (i * 7)) + '', views: 12000 + i * 8000, likes: 800 + i * 400,
+  caption: `This serum changed my whole routine 😍 #glowupskincare #skincare`, content_url: null
+}));
+
+const DEMO_CREATORS = DEMO_CREATORS_RAW.map((c, i) => ({
+  ...c, handle: '@' + c.handle, videos: makeDemoVideos(c.handle, 3 + (i % 3)), totalViews: c.estGmv * 2, bestScore: c.aiScore
+}));
+
+const DEMO_CAMPAIGNS = [
+  { id: 'camp_001', name: 'skincarebyjess_serum_v1', creator: 'skincarebyjess', status: 'ACTIVE', created_time: '2026-03-01', launchedAt: '2026-03-01', spend: 342.50, impressions: 58400, clicks: 2104, roas: 3.8, dailyBudget: 50, objective: 'Conversions', insights: { spend: '342.50', impressions: '58400', clicks: '2104', purchase_roas: [{ value: '3.8' }] } },
+  { id: 'camp_002', name: 'thebeautyplug_moisturizer_v2', creator: 'thebeautyplug', status: 'ACTIVE', created_time: '2026-03-03', launchedAt: '2026-03-03', spend: 187.20, impressions: 31200, clicks: 1087, roas: 4.2, dailyBudget: 50, objective: 'Conversions', insights: { spend: '187.20', impressions: '31200', clicks: '1087', purchase_roas: [{ value: '4.2' }] } },
+  { id: 'camp_003', name: 'glowwithnat_cleanser_v1', creator: 'glowwithnat', status: 'PAUSED', created_time: '2026-02-25', launchedAt: '2026-02-25', spend: 410.00, impressions: 44800, clicks: 1560, roas: 1.4, dailyBudget: 75, objective: 'Traffic', insights: { spend: '410.00', impressions: '44800', clicks: '1560', purchase_roas: [{ value: '1.4' }] } },
+];
+
+function BrandAuthForm({ onSuccess, onDemo }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1940,6 +1969,15 @@ function BrandAuthForm({ onSuccess }) {
       {mode==='login'?'No account? ':'Already have an account? '}
       <button onClick={()=>{setMode(m=>m==='login'?'signup':'login');setError(null)}} style={{background:"none",border:"none",color:C.teal,cursor:"pointer",fontWeight:600,fontFamily:"inherit",fontSize:13}}>{mode==='login'?'Sign up':'Log in'}</button>
     </div>
+    {onDemo&&<>
+      <div style={{display:"flex",alignItems:"center",gap:12,marginTop:24,marginBottom:16}}>
+        <div style={{flex:1,height:1,background:C.border}}/>
+        <span style={{fontSize:12,color:C.dim}}>or</span>
+        <div style={{flex:1,height:1,background:C.border}}/>
+      </div>
+      <button onClick={onDemo} style={{width:"100%",padding:"14px",background:"transparent",border:"1px solid rgba(255,255,255,.25)",borderRadius:10,color:C.text,fontSize:14,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Explore Demo Account →</button>
+      <p style={{fontSize:12,color:C.dim,textAlign:"center",marginTop:10}}>No sign-up required. See the full product with sample data.</p>
+    </>}
   </div>;
 }
 
@@ -2058,11 +2096,11 @@ function BrandOverviewOnboarding({ profile, storeDisplay, creatorsCount, campaig
 /*══════════════════════════════════════════════════════
   CREATOR DISCOVERY — Browse creators, video grid, launch flow
 ══════════════════════════════════════════════════════*/
-function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
+function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, demoCreators }) {
   const OB = { bgCard: '#111827', bgCardHover: '#1a2236', borderDim: 'rgba(255,255,255,0.06)', accent: '#00e0b4', orange: '#ff9f43', textPrimary: '#f0f2f5', textSecondary: '#8b95a8', textDim: '#5a6478', success: '#34d399' };
 
   const [scan, setScan] = useState(null);
-  const [loadingScan, setLoadingScan] = useState(true);
+  const [loadingScan, setLoadingScan] = useState(!demoCreators);
   const [scanError, setScanError] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [productUrl, setProductUrl] = useState('');
@@ -2078,16 +2116,16 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
   const hasMeta = !!(profile && profile.hasMetaToken);
 
   const fetchScan = useCallback(() => {
-    if (!brand?.id) return;
+    if (demoCreators || !brand?.id) return;
     setLoadingScan(true);
     setScanError(null);
     fetch('/api/status?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => {
       setScan(d.hasScan ? d : null);
       setLoadingScan(false);
     }).catch(() => { setLoadingScan(false); setScanError('Failed to load'); });
-  }, [brand?.id]);
+  }, [brand?.id, demoCreators]);
 
-  useEffect(() => { fetchScan(); }, [fetchScan]);
+  useEffect(() => { if (demoCreators) { setScan({ qualified: [] }); setLoadingScan(false); } else { fetchScan(); } }, [fetchScan, demoCreators]);
 
   const runScan = async () => {
     if (!productUrl.trim()) return;
@@ -2104,7 +2142,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
   };
 
   const allVideos = [...(scan?.qualified || []), ...(scan?.filtered || [])];
-  const creators = useMemo(() => {
+  const creatorsFromScan = useMemo(() => {
     const byHandle = new Map();
     allVideos.forEach(v => {
       const key = (v.handle || v.creator || 'unknown').toLowerCase();
@@ -2116,6 +2154,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
     });
     return [...byHandle.values()].sort((a, b) => b.bestScore - a.bestScore);
   }, [allVideos]);
+  const creators = demoCreators || creatorsFromScan;
 
   const currentCreator = selectedCreator !== null ? creators[selectedCreator] : null;
   const videos = currentCreator ? currentCreator.videos : [];
@@ -2210,14 +2249,14 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:16}}>
                 {videos.map((v,i)=>(
                   <div key={v.id} className="gl" style={{borderRadius:8,overflow:"hidden",background:OB.bgCard,border:"1px solid "+OB.borderDim}}>
-                    <div style={{aspectRatio:"16/9",background:C.bg2,position:"relative",cursor:"pointer"}} onClick={()=>setPlayingVideo(playingVideo===v.id?null:v.id)}>
-                      {v.cover?<img src={v.cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:C.dim}}>▶</div>}
-                      <div style={{position:"absolute",bottom:6,right:6,fontSize:10,fontWeight:700,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{v.duration?Math.floor(v.duration/1000)+"s":"—"}</div>
+                    <div style={{aspectRatio:"16/9",background:v.cover?undefined:`linear-gradient(${135+i*20}deg, ${C.teal}, #2dd4a0)`,position:"relative",cursor:"pointer"}} onClick={()=>setPlayingVideo(playingVideo===v.id?null:v.id)}>
+                      {v.cover?<img src={v.cover} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:"rgba(0,0,0,.6)",fontSize:32}}>▶</div>}
+                      <div style={{position:"absolute",bottom:6,right:6,fontSize:10,fontWeight:700,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{typeof v.duration==='number'?Math.floor(v.duration/1000)+'s':(v.duration||'—')}</div>
                       <div style={{position:"absolute",bottom:6,left:6,fontSize:10,background:"rgba(0,0,0,.7)",padding:"2px 6px",borderRadius:4}}>{fN(v.views||0)} views</div>
                     </div>
                     {playingVideo===v.id&&(
                       <div style={{padding:12,borderTop:"1px solid "+OB.borderDim}}>
-                        <video src={v.content_url} controls autoPlay muted playsInline style={{width:"100%",maxHeight:200,borderRadius:6}} />
+                        {v.content_url?<video src={v.content_url} controls autoPlay muted playsInline style={{width:"100%",maxHeight:200,borderRadius:6}} />:<div style={{width:"100%",aspectRatio:"16/9",maxHeight:200,borderRadius:6,background:C.bg2,display:"flex",alignItems:"center",justifyContent:"center",color:C.dim}}>Demo video</div>}
                         <button onClick={()=>openLaunch(v)} style={{width:"100%",marginTop:10,padding:"12px",background:OB.accent,color:"#0b0f1a",border:"none",borderRadius:8,fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Launch as Ad →</button>
                       </div>
                     )}
@@ -2272,6 +2311,14 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
                 <button onClick={()=>{closeLaunch();setBrandTab("settings")}} style={{...btnStyle,background:C.teal,color:C.bg}}>Go to Settings →</button>
               </div>
             </div>
+          ):isDemo?(
+            <div>
+              <div style={{padding:20,background:C.orange+"15",border:"1px solid "+C.orange+"40",borderRadius:12,marginBottom:16}}>
+                <div style={{fontSize:15,fontWeight:700,color:C.text,marginBottom:8}}>This is a demo</div>
+                <div style={{fontSize:13,color:C.sub,marginBottom:16}}>Like what you see? Sign up to launch real campaigns.</div>
+                <button onClick={()=>{closeLaunch();exitDemo&&exitDemo()}} style={{...btnStyle,width:"100%",background:C.teal,color:"#0b0f1a",padding:12}}>Sign Up →</button>
+              </div>
+            </div>
           ):(
             <div>
               <div className="gl" style={{padding:16,marginBottom:16}}>
@@ -2291,10 +2338,15 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab }) {
 /*══════════════════════════════════════════════════════
   CAMPAIGNS TAB — Performance dashboard
 ══════════════════════════════════════════════════════*/
-function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccount }) {
+function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccount, isDemo, exitDemo, setCampaigns }) {
   const [filter, setFilter] = useState('all');
   const [menuOpen, setMenuOpen] = useState(null);
   useEffect(() => { if (!menuOpen) return; const h = () => setMenuOpen(null); setTimeout(() => document.addEventListener('click', h), 0); return () => document.removeEventListener('click', h); }, [menuOpen]);
+
+  const togglePause = (c) => {
+    if (!isDemo || !setCampaigns) return;
+    setCampaigns(prev => prev.map(x => x.id === c.id ? { ...x, status: x.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' } : x));
+  };
 
   const filtered = campaigns.filter(c => {
     const s = (c.status || '').toUpperCase();
@@ -2371,13 +2423,11 @@ function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccou
               <div><div style={{fontSize:11,color:C.dim,marginBottom:2}}>Trend</div><div style={{fontSize:15,fontWeight:700,color:trendColor}}>{trend}</div></div>
             </div>
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <button style={{...btnStyle,background:"transparent",border:"1px solid "+C.border,color:C.text,padding:"8px 14px",fontSize:12}}>{s==='ACTIVE'?'Pause':'Resume'}</button>
+              <button onClick={()=>isDemo&&togglePause(c)} style={{...btnStyle,background:"transparent",border:"1px solid "+C.border,color:C.text,padding:"8px 14px",fontSize:12}}>{s==='ACTIVE'?'Pause':'Resume'}</button>
               <div style={{position:"relative"}}>
                 <button onClick={e=>{e.stopPropagation();setMenuOpen(menuOpen===c.id?null:c.id)}} style={{...btnStyle,background:"transparent",border:"none",padding:"6px 10px",color:C.sub,fontSize:16}}>⋮</button>
                 {menuOpen===c.id&&<div onClick={e=>e.stopPropagation()} style={{position:"absolute",right:0,top:32,zIndex:50,minWidth:200,background:C.bg2,border:"1px solid "+C.border,borderRadius:8,boxShadow:"0 8px 24px rgba(0,0,0,.4)",padding:8}}>
-                  <a href={metaAdsUrl()} target="_blank" rel="noopener noreferrer" style={{display:"block",padding:"10px 12px",fontSize:13,color:C.text,textDecoration:"none",borderRadius:6}}>View in Meta Ads Manager ↗</a>
-                  <button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.text,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>Duplicate</button>
-                  <button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.error,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>End Campaign</button>
+                  {isDemo?<div style={{padding:"10px 12px",fontSize:12,color:C.dim}}>Demo — sign up to manage real campaigns.</div>:<><a href={metaAdsUrl()} target="_blank" rel="noopener noreferrer" style={{display:"block",padding:"10px 12px",fontSize:13,color:C.text,textDecoration:"none",borderRadius:6}}>View in Meta Ads Manager ↗</a><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.text,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>Duplicate</button><button style={{display:"block",width:"100%",padding:"10px 12px",fontSize:13,color:C.error,background:"none",border:"none",textAlign:"left",cursor:"pointer",fontFamily:"inherit",borderRadius:6}}>End Campaign</button></>}
                 </div>}
               </div>
             </div>
@@ -2393,9 +2443,10 @@ function CampaignsTab({ campaigns, loading, error, setBrandTab, refresh, adAccou
 /*══════════════════════════════════════════════════════
   SETTINGS TAB — Connection flows + brand profile
 ══════════════════════════════════════════════════════*/
-function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile }) {
+function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile, isDemo, exitDemo }) {
   const [metaMsg, setMetaMsg] = useState(null);
   const [tiktokMsg, setTiktokMsg] = useState(null);
+  const demoGate = isDemo && <div style={{marginTop:12,padding:12,background:C.orange+"15",borderRadius:8,border:"1px solid "+C.orange+"30"}}><div style={{fontSize:13,color:C.sub,marginBottom:8}}>Like what you see? Sign up to connect your own accounts.</div><button onClick={()=>exitDemo&&exitDemo()} style={{...btnStyle,background:C.teal,color:C.bg,fontSize:12}}>Sign Up for Free →</button></div>;
   const [profileMsg, setProfileMsg] = useState(null);
 
   const handleMetaConnect = async () => {
@@ -2447,15 +2498,15 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
         <>
           <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Connect TikTok Shop</div>
           <p style={{fontSize:13,color:C.sub,lineHeight:1.5,marginBottom:16}}>Link your TikTok Seller Center to discover creators already selling your products. We'll pull your store catalog and sync affiliate data.</p>
-          <input placeholder="TikTok Shop URL or store handle" value={brandSettings.storeName||''} onChange={e=>setBrandSettings(p=>({...p,storeName:stripAt(e.target.value)}))} style={{...inputStyle,marginBottom:12}} />
-          <button onClick={handleTiktokConnect} style={{...btnStyle,background:C.teal,color:C.bg}}>Connect</button>
+          <input placeholder="TikTok Shop URL or store handle" value={brandSettings.storeName||''} onChange={e=>!isDemo&&setBrandSettings(p=>({...p,storeName:stripAt(e.target.value)}))} readOnly={isDemo} style={{...inputStyle,marginBottom:12}} />
+          {!isDemo&&<button onClick={handleTiktokConnect} style={{...btnStyle,background:C.teal,color:C.bg}}>Connect</button>}
         </>
       ) : (
         <div>
           <div className="mono" style={{fontSize:14,color:C.teal,marginBottom:8}}>@{storeDisplay}</div>
           <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>Connected</span>
           <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last synced: —</div>
-          <button onClick={handleTiktokDisconnect} style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>
+          {isDemo ? demoGate : <button onClick={handleTiktokDisconnect} style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>}
         </div>
       )}
       {tiktokMsg&&<div style={{marginTop:12,fontSize:13,color:tiktokMsg.ok?C.success:C.error}}>{tiktokMsg.text}</div>}
@@ -2472,20 +2523,20 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
           <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Connect Meta Ads</div>
           <p style={{fontSize:13,color:C.sub,lineHeight:1.5,marginBottom:16}}>Connect your Meta Ad Account so Creatorship can create and manage campaigns on your behalf. We need your Ad Account ID and Page ID.</p>
           <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Ad Account ID</label>
-          <input placeholder="act_XXXXXXXXX" value={brandSettings.adAccount||''} onChange={e=>setBrandSettings(p=>({...p,adAccount:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <input placeholder="act_XXXXXXXXX" value={brandSettings.adAccount||''} onChange={e=>!isDemo&&setBrandSettings(p=>({...p,adAccount:e.target.value}))} readOnly={isDemo} style={{...inputStyle,marginBottom:12}} />
           <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Page ID</label>
-          <input placeholder="Page ID" value={brandSettings.pageId||''} onChange={e=>setBrandSettings(p=>({...p,pageId:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <input placeholder="Page ID" value={brandSettings.pageId||''} onChange={e=>!isDemo&&setBrandSettings(p=>({...p,pageId:e.target.value}))} readOnly={isDemo} style={{...inputStyle,marginBottom:12}} />
           <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Access Token</label>
-          <input type="password" placeholder="Meta Access Token" value={brandSettings.metaToken||''} onChange={e=>setBrandSettings(p=>({...p,metaToken:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+          <input type="password" placeholder="Meta Access Token" value={brandSettings.metaToken||''} onChange={e=>!isDemo&&setBrandSettings(p=>({...p,metaToken:e.target.value}))} readOnly={isDemo} style={{...inputStyle,marginBottom:12}} />
           <div style={{fontSize:11,color:C.dim,marginBottom:16}}>Find these in <a href="https://business.facebook.com" target="_blank" rel="noopener noreferrer" style={{color:C.teal}}>Meta Business Suite</a></div>
-          <button onClick={handleMetaConnect} style={{...btnStyle,background:C.teal,color:C.bg}}>Connect & Verify</button>
+          {!isDemo&&<button onClick={handleMetaConnect} style={{...btnStyle,background:C.teal,color:C.bg}}>Connect & Verify</button>}
         </>
       ) : (
         <div>
-          <div className="mono" style={{fontSize:13,color:C.sub,marginBottom:8}}>{(brandSettings.adAccount||profile.adAccount||'').replace(/(.{4}).*(.{4})/,'$1•••$2')}</div>
+          <div className="mono" style={{fontSize:13,color:C.sub,marginBottom:8}}>{(brandSettings.adAccount||profile.adAccount||brand?.adAccount||'').replace(/(.{4}).*(.{4})/,'$1•••$2')}</div>
           <span style={{fontSize:12,padding:'4px 10px',borderRadius:6,background:C.success+'20',color:C.success,fontWeight:600}}>Connected</span>
           <div style={{fontSize:11,color:C.dim,marginTop:12}}>Last verified: —</div>
-          <button style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>
+          {isDemo ? demoGate : <button style={{background:'none',border:'none',color:C.error,fontSize:12,cursor:'pointer',fontFamily:'inherit',marginTop:12}}>Disconnect</button>}
         </div>
       )}
       {metaMsg&&<div style={{marginTop:12,fontSize:13,color:metaMsg.ok?C.success:C.error}}>{metaMsg.text}</div>}
@@ -2495,11 +2546,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     <div className="gl mobile-card" style={{background:'#111827',border:'1px solid '+C.border,borderRadius:16,padding:24,marginBottom:20}}>
       <h3 style={{color:C.text,margin:0,marginBottom:16,fontSize:17}}>Brand Profile</h3>
       <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Store display name</label>
-      <input placeholder="Your brand or store name" value={brandSettings.brandName||''} onChange={e=>setBrandSettings(p=>({...p,brandName:e.target.value}))} style={{...inputStyle,marginBottom:12}} />
+      <input placeholder="Your brand or store name" value={brandSettings.brandName||''} onChange={e=>!isDemo&&setBrandSettings(p=>({...p,brandName:e.target.value}))} readOnly={isDemo} style={{...inputStyle,marginBottom:12}} />
       <label style={{fontSize:11,color:C.dim,display:'block',marginBottom:4}}>Contact email</label>
       <div style={{fontSize:14,color:C.sub,marginBottom:16}}>{brand.email}</div>
-      <button onClick={handleProfileSave} style={{...btnStyle,background:C.teal,color:C.bg}}>Save Changes</button>
-      {profileMsg&&<div style={{marginTop:12,fontSize:13,color:profileMsg.ok?C.success:C.error}}>{profileMsg.text}</div>}
+      {isDemo ? demoGate : <><button onClick={handleProfileSave} style={{...btnStyle,background:C.teal,color:C.bg}}>Save Changes</button>{profileMsg&&<div style={{marginTop:12,fontSize:13,color:profileMsg.ok?C.success:C.error}}>{profileMsg.text}</div>}</>}
     </div>
 
     {/* Section 4: Billing placeholder */}
@@ -2519,10 +2569,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   </div>;
 }
 
-function BrandDashboardView({ brand, setBrand, nav }) {
+function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo }) {
   const [brandTab, setBrandTab] = useState('overview');
   const [profile, setProfile] = useState(brand);
-  const [brandSettings, setBrandSettings] = useState({ metaToken: '', adAccount: '', pageId: '', brandName: '', storeName: '' });
+  const [brandSettings, setBrandSettings] = useState(() => isDemo ? { adAccount: brand.adAccount || '', pageId: brand.pageId || '', brandName: 'GlowUp Skincare', storeName: brand.storeDisplay || '' } : { metaToken: '', adAccount: '', pageId: '', brandName: '', storeName: '' });
   const [creators, setCreators] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [campError, setCampError] = useState(null);
@@ -2531,6 +2581,7 @@ function BrandDashboardView({ brand, setBrand, nav }) {
   const [loadingCampaigns, setLoadingCampaigns] = useState(false);
 
   const refreshProfile = useCallback(() => {
+    if (isDemo) return;
     setLoadingProfile(true);
     fetch('/api/brand/me?email=' + encodeURIComponent(brand.email)).then(r => r.json()).then(d => {
       if (d.error) return;
@@ -2540,26 +2591,28 @@ function BrandDashboardView({ brand, setBrand, nav }) {
       localStorage.setItem(BRAND_STORAGE, JSON.stringify(updated));
       setBrand(updated);
     }).finally(() => setLoadingProfile(false));
-  }, [brand.email, setBrand]);
+  }, [brand.email, setBrand, isDemo]);
 
-  useEffect(() => { refreshProfile(); }, [brand.id]);
+  useEffect(() => { if (isDemo) { setProfile(brand); setCreators(DEMO_CREATORS); setCampaigns(DEMO_CAMPAIGNS); } else { refreshProfile(); } }, [brand.id, isDemo]);
 
   useEffect(() => {
+    if (isDemo) return;
     setLoadingCreators(true);
     fetch('/api/creators').then(r => r.json()).then(d => { setCreators(Array.isArray(d) ? d : []); setLoadingCreators(false); }).catch(() => setLoadingCreators(false));
-  }, []);
+  }, [isDemo]);
 
   const refreshCampaigns = useCallback(() => {
+    if (isDemo) return;
     setLoadingCampaigns(true); setCampError(null);
     fetch('/api/brand/campaigns?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => {
       setCampaigns(d.campaigns || []);
       setCampError(d.error || null);
       setLoadingCampaigns(false);
     }).catch(() => { setLoadingCampaigns(false); setCampError('Failed to load'); });
-  }, [brand.id]);
-  useEffect(() => { refreshCampaigns(); }, [refreshCampaigns]);
+  }, [brand.id, isDemo]);
+  useEffect(() => { if (!isDemo) refreshCampaigns(); }, [refreshCampaigns, isDemo]);
 
-  const logout = () => { localStorage.removeItem(BRAND_STORAGE); setBrand(null); window.location.href = '/brand'; };
+  const logout = () => { if (isDemo && exitDemo) { exitDemo(); return; } localStorage.removeItem(BRAND_STORAGE); setBrand(null); window.location.href = '/brand'; };
   const storeDisplay = stripAt(profile.storeName || brand.storeName);
 
   const tabs=[{id:"overview",l:"Overview",i:"🏠"},{id:"creators",l:"Creators",i:"👥"},{id:"campaigns",l:"Campaigns",i:"🚀"},{id:"settings",l:"Settings",i:"⚙️"}];
@@ -2598,19 +2651,29 @@ function BrandDashboardView({ brand, setBrand, nav }) {
     else alert(data.error || 'Failed to save');
   };
 
-  return <div className="bottom-gap" style={{display:"flex",minHeight:"100vh",background:C.bg}}>
-    <Sidebar/>
-    <BottomNav/>
-    <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:brandTab==="creators"?undefined:800,display:"flex",flexDirection:"column",minHeight:0}}>
+  return <div className="bottom-gap" style={{display:"flex",flexDirection:"column",minHeight:"100vh",background:C.bg}}>
+    {isDemo&&<DemoBanner onSignUp={()=>{ exitDemo(); }} />}
+    <div style={{display:"flex",flex:1,minHeight:0}}>
+      <Sidebar/>
+      <BottomNav/>
+      <div className="content-pad" style={{flex:1,padding:"28px 36px",maxWidth:brandTab==="creators"?undefined:800,display:"flex",flexDirection:"column",minHeight:0}}>
 
-      {brandTab==="overview"&&<BrandOverviewOnboarding profile={profile} storeDisplay={storeDisplay} creatorsCount={creators.length} campaignsCount={campaigns.length} setBrandTab={setBrandTab} />}
+        {brandTab==="overview"&&<BrandOverviewOnboarding profile={profile} storeDisplay={storeDisplay} creatorsCount={creators.length} campaignsCount={campaigns.length} setBrandTab={setBrandTab} />}
 
-      {brandTab==="creators"&&<CreatorDiscoveryView brand={brand} profile={profile} setBrandTab={setBrandTab} />}
+        {brandTab==="creators"&&<CreatorDiscoveryView brand={brand} profile={profile} setBrandTab={setBrandTab} isDemo={isDemo} exitDemo={exitDemo} demoCreators={isDemo?DEMO_CREATORS:null} />}
 
-      {brandTab==="campaigns"&&<CampaignsTab campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} refresh={refreshCampaigns} adAccount={profile.adAccount || brand.adAccount} />}
+        {brandTab==="campaigns"&&<CampaignsTab campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} refresh={refreshCampaigns} adAccount={profile.adAccount || brand.adAccount} isDemo={isDemo} exitDemo={exitDemo} setCampaigns={isDemo?setCampaigns:undefined} />}
 
-      {brandTab==="settings"&&<SettingsTab brand={brand} profile={profile} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} />}
+        {brandTab==="settings"&&<SettingsTab brand={brand} profile={profile} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} isDemo={isDemo} exitDemo={exitDemo} />}
+      </div>
     </div>
+  </div>;
+}
+
+function DemoBanner({ onSignUp }) {
+  return <div style={{width:'100%',background:C.orange+'26',borderLeft:'4px solid '+C.orange,padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+    <span style={{fontSize:13,color:C.text}}>You're viewing a demo account with sample data.</span>
+    <button onClick={onSignUp} style={{...btnStyle,background:C.teal,color:C.bg,padding:'8px 16px',fontSize:12}}>Sign Up for Free →</button>
   </div>;
 }
 
@@ -2620,12 +2683,14 @@ function BrandPortal() {
   const [brand, setBrand] = useState(() => {
     try { const j = localStorage.getItem(BRAND_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
   });
-  if (brand) return <BrandDashboardView brand={brand} setBrand={setBrand} nav={nav} />;
+  const [isDemo, setIsDemo] = useState(false);
+  const exitDemo = useCallback(() => { setBrand(null); setIsDemo(false); }, []);
+  if (brand) return <BrandDashboardView brand={brand} setBrand={setBrand} nav={nav} isDemo={isDemo} exitDemo={exitDemo} />;
   return <div className="nav-pad" style={{minHeight:"100vh",background:C.bg}}>
     <nav style={{padding:"14px 20px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
       <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
     </nav>
-    <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} />
+    <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} onDemo={() => { setBrand({ ...DEMO_PROFILE }); setIsDemo(true); }} />
   </div>;
 }
 
