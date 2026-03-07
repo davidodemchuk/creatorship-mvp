@@ -27,6 +27,7 @@ const g=(a,b)=>`linear-gradient(135deg,${a},${b})`;
 const gT=(a,b)=>({background:g(a,b),WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"});
 const $=n=>n>=1e6?"$"+(n/1e6).toFixed(1)+"M":n>=1000?"$"+(n/1000).toFixed(1)+"K":"$"+Math.round(n);
 const fN=n=>n>=1e6?(n/1e6).toFixed(1)+"M":n>=1000?(n/1000).toFixed(1)+"K":""+n;
+const formatDuration=(d)=>{if(d==null||d==='')return'—';if(typeof d==='string')return d;const s=typeof d==='number'?(d>=1000?Math.floor(d/1000):d):0;return s<60?s+'s':Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
 
 const KEYS={scrape:"hMbYVLvb7aWNOq0SkAqbykTusMw2",adAccount:"act_132555948",pageId:"101735585760049",metaToken:"EAAZAmUWLbRuwBQylKzUYCRjCXH1mskhr9QQgqUZBj8VNAG6Yc8ZCXW8DaWzJ554jkJsbw2YLVf0CfqJQAbV44wZBZCqPa4DXZA8jNLBa3IXzR5czwgmZC2J0KPKvc6z14UWuf0Ico7t12GBrlBWUQIjJmg0D3OkRMHvKbZC9lJAdb90xZBx2INSNBaZCq2JAZDZD"};
 
@@ -1910,7 +1911,10 @@ function CreatorDemoDashboard({ profile, videos, dealsList, nav, exitCreatorDemo
         <div className="content-pad" style={{ flex: 1, padding: '28px 36px', maxWidth: 800 }}>
           {/* Profile header */}
           <div className="creator-dashboard-enter gl" style={{ padding: 20, marginBottom: 24, background: OB_C.bgCard, border: '1px solid ' + OB_C.borderDim, borderRadius: 16, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, ' + C.teal + ', #22d3ee)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: 'rgba(0,0,0,.6)', flexShrink: 0 }}>JR</div>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', background: 'linear-gradient(135deg, ' + C.teal + ', #22d3ee)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800, color: 'rgba(0,0,0,.6)', flexShrink: 0, position: 'relative' }}>
+              <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{((profile.displayName || profile.handle || '?').toString())[0]?.toUpperCase()}{((profile.displayName || profile.handle || ' ').toString())[1]?.toUpperCase() || ''}</span>
+              {profile.avatar && <img src={profile.avatar} alt="" onError={(e) => { e.target.style.display = 'none'; }} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />}
+            </div>
             <div>
               <div style={{ fontSize: 18, fontWeight: 800, color: OB_C.textPrimary }}><span className="mono" style={{ color: C.teal }}>@{profile.handle}</span> · {profile.displayName}</div>
               <div style={{ fontSize: 13, color: OB_C.textDim, marginTop: 4 }}>{fN(profile.followers)} followers · TikTok Shop Active</div>
@@ -1978,7 +1982,7 @@ function CreatorDemoDashboard({ profile, videos, dealsList, nav, exitCreatorDemo
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, color: C.text, marginBottom: 4 }}>{v.caption?.slice(0, 60)}{(v.caption?.length || 0) > 60 ? '…' : ''}</div>
-                      <div style={{ fontSize: 11, color: C.dim }}>{v.postDate} · {v.duration}</div>
+                      <div style={{ fontSize: 11, color: C.dim }}>{v.postDate} · {formatDuration(v.duration)}</div>
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -2000,10 +2004,9 @@ function CreatorDemoDashboard({ profile, videos, dealsList, nav, exitCreatorDemo
                         <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, marginBottom: 8 }}>Creatorship</div>
                         <div style={{ fontSize: 13, color: C.teal, marginBottom: 6 }}>⚡ Not used in campaigns yet</div>
                         <div style={{ fontSize: 12, color: OB_C.textSecondary, marginBottom: 4 }}>This video could be earning you an extra ~${estCreatorship.toLocaleString()}/mo</div>
-                        <div style={{ fontSize: 11, color: OB_C.textDim }}>(Based on similar videos)</div>
-                      </div>
-                    )}
-                  </div>
+                        <div style={{ fontSize: 11, color: OB_C.textDim }}>(Based on similar videos)            </div>
+          </div>)}
+        </div>
                   <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid ' + C.border }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}><span style={{ fontSize: 12, color: C.dim }}>Total</span><span className="mono" style={{ fontSize: 18, fontWeight: 800, color: C.green }}>${total.toLocaleString()}</span></div>
                     <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', background: C.border, display: 'flex', position: 'relative' }}>
@@ -2923,31 +2926,33 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
               const roasRange = c?.predicted_roas;
               const initials = ((c?.creator || c?.handle || '?').toString().replace(/^@+/, ''))[0]?.toUpperCase() || '?';
               return (
-              <div key={c?.handle ?? i} onClick={()=>setSelectedCreator(i)} style={{padding:"12px 14px",cursor:"pointer",borderLeft:safeCreatorIndex===i?"3px solid "+OB.accent:"3px solid transparent",background:safeCreatorIndex===i?OB.bgCardHover:"transparent",borderBottom:"1px solid "+OB.borderDim,display:"flex",alignItems:"flex-start",gap:10}}>
-                <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",flexShrink:0,position:"relative"}}>
-                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg, #0891b2, #00e0b4)",fontSize:12,fontWeight:700,color:"rgba(0,0,0,.6)"}}>{initials}</div>
-                  {c?.avatar && <img src={c.avatar} alt="" onError={(e)=>{e.target.style.display="none"}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} />}
+                <div key={c?.handle ?? i} onClick={()=>setSelectedCreator(i)} style={{padding:"12px 14px",cursor:"pointer",borderLeft:safeCreatorIndex===i?"3px solid "+OB.accent:"3px solid transparent",background:safeCreatorIndex===i?OB.bgCardHover:"transparent",borderBottom:"1px solid "+OB.borderDim,display:"flex",alignItems:"flex-start",gap:10}}>
+                  <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",flexShrink:0,position:"relative"}}>
+                    <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"linear-gradient(135deg, #0891b2, #00e0b4)",fontSize:12,fontWeight:700,color:"rgba(0,0,0,.6)"}}>{initials}</div>
+                    {c?.avatar && <img src={c.avatar} alt="" onError={(e)=>{e.target.style.display="none"}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} />}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="mono" style={{fontSize:14,fontWeight:700,color:OB.textPrimary}}>{c?.handle ?? '—'}</div>
+                    <div style={{fontSize:11,color:OB.textDim,marginTop:2}}>{followers >= 1000 ? (followers/1000).toFixed(1)+'K' : followers || fN(Number(c?.totalViews)||0)} · {videoCount} videos{engRate != null ? ' · '+engRate+'% eng' : ''}{roasRange?.length ? ' · '+roasRange[0]+'-'+roasRange[1]+'× ROAS' : ''}</div>
+                    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginTop:6}}>
+                      {score>0&&<span style={{fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:4,background:scoreColor+"20",color:scoreColor}}>AI {score}</span>}
+                      <span style={{fontSize:10,color:OB.textDim}}>{gmv} GMV</span>
+                      <span style={{fontSize:10,color:statusColor,fontWeight:600}}>{status}</span>
+                    </div>
+                    <div style={{marginTop:6,height:4,borderRadius:2,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
+                      <div style={{width:barPct+"%",height:"100%",background:OB.accent,borderRadius:2}}/>
+                    </div>
+                  </div>
                 </div>
-                <div style={{flex:1,minWidth:0}}>
-                <div className="mono" style={{fontSize:14,fontWeight:700,color:OB.textPrimary}}>{c?.handle ?? '—'}</div>
-                <div style={{fontSize:11,color:OB.textDim,marginTop:2}}>{followers >= 1000 ? (followers/1000).toFixed(1)+'K' : followers || fN(Number(c?.totalViews)||0)} · {videoCount} videos{engRate != null ? ' · '+engRate+'% eng' : ''}{roasRange?.length ? ' · '+roasRange[0]+'-'+roasRange[1]+'× ROAS' : ''}</div>
-                <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",marginTop:6}}>
-                  {score>0&&<span style={{fontSize:10,fontWeight:700,padding:"2px 6px",borderRadius:4,background:scoreColor+"20",color:scoreColor}}>AI {score}</span>}
-                  <span style={{fontSize:10,color:OB.textDim}}>{gmv} GMV</span>
-                  <span style={{fontSize:10,color:statusColor,fontWeight:600}}>{status}</span>
-                </div>
-                <div style={{marginTop:6,height:4,borderRadius:2,background:"rgba(255,255,255,.08)",overflow:"hidden"}}>
-                  <div style={{width:barPct+"%",height:"100%",background:OB.accent,borderRadius:2}}/>
-                </div>
-              </div>
-            );})}
+              );
+            })}
           </div>
         </div>
 
         {/* Right — Creator detail + video grid (65%) */}
         <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflow:"hidden"}}>
-          {!currentCreator?<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:C.dim,fontSize:14}}>Select a creator</div>:
-          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {!currentCreator ? <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:C.dim,fontSize:14}}>Select a creator</div> : (
+          <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}} key="creator-detail">
             <div style={{padding:"16px 20px",borderBottom:"1px solid "+C.border,display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:12}}>
               <div>
                 <div style={{fontSize:20,fontWeight:800,color:OB.textPrimary}}>{currentCreator?.handle ?? '—'}</div>
@@ -2957,7 +2962,9 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
             </div>
 
             <div style={{flex:1,overflowY:"auto",padding:20}}>
-              {videos.length===0?<div style={{color:C.dim,fontSize:14}}>Videos processing...</div>:
+              {videos.length===0 ? (
+                <div style={{color:C.dim,fontSize:14}}>Videos processing...</div>
+              ) : (
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:16}}>
                 {videos.map((v,i)=>{
                   const cover = v?.cover ?? v?.thumbnail;
@@ -2988,9 +2995,11 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
                     )}
                   </div>
                 );})}
-              </div>}
+              </div>
+              )}
             </div>
-          </div>}
+          </div>
+          )}
         </div>
       </div>
     </div>
@@ -3053,8 +3062,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
                 <div style={{fontSize:14,fontWeight:700,color:OB.orange,marginTop:8}}>Est. spend: ${launchForm.dailyBudget*(launchForm.duration==="ongoing"?30:+launchForm.duration)}</div>
               </div>
               <button onClick={doLaunch} disabled={launching} style={{...btnStyle,width:"100%",background:OB.accent,color:"#0b0f1a",padding:14}}>{launching?"Launching...":"Launch Campaign"}</button>
-            </div>
-          )}
+            </div>)}
         </div>
       </div>
     </div>}
@@ -3460,7 +3468,7 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, 
   };
 
   return <div className="bottom-gap" style={{display:"flex",flexDirection:"column",minHeight:"100vh",background:C.bg}}>
-    {isDemo&&<DemoBanner onSignUp={()=>exitDemo({ openSignUp: true })} />}
+    {isDemo&&<DemoBanner onSignUp={()=>exitDemo({ openSignUp: true })} storeName={storeDisplay ? (storeDisplay.charAt(0).toUpperCase() + storeDisplay.slice(1)) : 'GlowUp Skincare'} />}
     <div style={{display:"flex",flex:1,minHeight:0}}>
       <Sidebar/>
       <BottomNav/>
@@ -3478,11 +3486,11 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, 
   </div>;
 }
 
-function DemoBanner({ onSignUp }) {
+function DemoBanner({ onSignUp, storeName = 'GlowUp Skincare' }) {
   return <div className="demo-banner-sticky" style={{position:'sticky',top:0,zIndex:50,width:'100%',background:C.bg2,borderLeft:'4px solid '+C.orange,boxShadow:'0 1px 0 '+C.border,padding:'10px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
     <span style={{fontSize:13,color:C.text,display:'flex',alignItems:'center',gap:8}}>
       <span style={{width:8,height:8,borderRadius:'50%',background:C.orange,flexShrink:0}} />
-      <span>Demo Mode — You're viewing sample data for <strong style={{color:C.text}}>GlowUp Skincare</strong>. Ready to see your own data?</span>
+      <span>Demo Mode — You're viewing sample data for <strong style={{color:C.text}}>{storeName}</strong>. Ready to see your own data?</span>
     </span>
     <button onClick={onSignUp} style={{...btnStyle,background:C.teal,color:C.bg,padding:'8px 16px',fontSize:12}}>Sign Up Free →</button>
   </div>;
