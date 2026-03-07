@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 const VIDEO_DIR = path.join(__dirname, 'videos');
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SCANS_DIR = path.join(DATA_DIR, 'scans');
 
 // ═══ CONFIG ═══
@@ -30,6 +30,8 @@ const TT_CLIENT_SECRET = 'EdFAfJUJtKHXDLPgenNkHlt788y1dHZX';
 function ensureDir(d) { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); }
 function saveJson(f, d) { fs.writeFileSync(f, JSON.stringify(d, null, 2)); }
 function loadJson(f) { return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null; }
+
+ensureDir(DATA_DIR);
 
 let ttTokens = null;
 try { const s = loadJson(path.join(DATA_DIR, 'tt_tokens.json')); if (s) ttTokens = s; } catch (e) {}
