@@ -1,5 +1,20 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, Component } from "react";
 import { Routes, Route, useNavigate, Link } from "react-router-dom";
+
+class ErrorBoundary extends Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return (
+      <div style={{ padding: 40, textAlign: 'center', background: C.bg, color: C.sub }}>
+        <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Something went wrong</div>
+        <div style={{ fontSize: 13, marginBottom: 16 }}>Try refreshing or going back.</div>
+        <button onClick={() => this.setState({ hasError: false })} style={{ ...btnStyle, background: C.teal, color: C.bg }}>Try again</button>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
 /*══════════════════════════════════════════════════════
   CREATORSHIP MVP
@@ -370,8 +385,8 @@ function AutomationSection(){
   ];
 
   return <section id="pipeline" className="sec-pad-lg" style={{background:C.bg2,padding:"80px 40px",position:"relative"}}>
-    <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
-    <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:g("transparent",C.border+"80","transparent")}}/>
+    <div style={{position:"absolute",top:0,left:0,right:0,height:1,background:g("transparent",C.border+"80")}}/>
+    <div style={{position:"absolute",bottom:0,left:0,right:0,height:1,background:g("transparent",C.border+"80")}}/>
     <div style={{maxWidth:720,width:'100%',margin:"0 auto",padding:'0 16px',boxSizing:'border-box'}}>
       <div style={{textAlign:"center",marginBottom:40}}>
         <div className="fu mono" style={{fontSize:11,fontWeight:700,letterSpacing:".15em",color:C.teal,textTransform:"uppercase",marginBottom:8}}>The Full Pipeline</div>
@@ -1655,9 +1670,104 @@ function BrandDashboard({nav}){
 }
 
 /*══════════════════════════════════════════════════════
+  CREATOR LOGIN + DEMO DATA
+══════════════════════════════════════════════════════*/
+const CREATOR_STORAGE = 'creatorship_creator';
+
+const DEMO_CREATOR_PROFILE = {
+  handle: 'skincarebyjess',
+  displayName: 'Jess Rivera',
+  email: 'demo-creator@creatorship.app',
+  followers: 124000,
+  profilePic: null,
+  joinedDate: '2026-02-01',
+  connectedBrands: 3,
+  totalEarnings: 23770,
+  totalViews: 892000,
+  tiktokConnected: true,
+};
+
+const DEMO_CREATOR_VIDEOS = [
+  { id: 'v001', caption: 'This serum changed my whole routine 😍 #glowupskincare', thumbnail: null, duration: '0:34', postDate: '2026-02-15', tiktok: { views: 248000, likes: 18400, comments: 842, shares: 1240, shopClicks: 3420, shopSales: 89, shopRevenue: 4232 }, creatorship: { campaignsUsedIn: 2, adImpressions: 58400, adClicks: 2104, adConversions: 156, creatorEarnings: 2934 }, totalEarnings: 7166 },
+  { id: 'v002', caption: 'Morning routine with the new moisturizer 🌅 #skincare', thumbnail: null, duration: '0:52', postDate: '2026-02-22', tiktok: { views: 156000, likes: 11200, comments: 534, shares: 780, shopClicks: 2180, shopSales: 54, shopRevenue: 2568 }, creatorship: { campaignsUsedIn: 1, adImpressions: 31200, adClicks: 1087, adConversions: 84, creatorEarnings: 1680 }, totalEarnings: 4248 },
+  { id: 'v003', caption: 'POV: your skin after 2 weeks of consistent routine ✨', thumbnail: null, duration: '0:28', postDate: '2026-03-01', tiktok: { views: 89000, likes: 6800, comments: 312, shares: 420, shopClicks: 1340, shopSales: 32, shopRevenue: 1520 }, creatorship: { campaignsUsedIn: 1, adImpressions: 18600, adClicks: 645, adConversions: 48, creatorEarnings: 960 }, totalEarnings: 2480 },
+  { id: 'v004', caption: 'Honest review of the cleanser after 1 month 🧴', thumbnail: null, duration: '1:14', postDate: '2026-03-04', tiktok: { views: 67000, likes: 4200, comments: 198, shares: 310, shopClicks: 890, shopSales: 18, shopRevenue: 856 }, creatorship: { campaignsUsedIn: 0, adImpressions: 0, adClicks: 0, adConversions: 0, creatorEarnings: 0 }, totalEarnings: 856 },
+  { id: 'v005', caption: 'Night routine essentials you need 🌙 #nightskincare', thumbnail: null, duration: '0:41', postDate: '2026-02-10', tiktok: { views: 332000, likes: 24600, comments: 1120, shares: 1840, shopClicks: 4560, shopSales: 112, shopRevenue: 5320 }, creatorship: { campaignsUsedIn: 3, adImpressions: 82000, adClicks: 3240, adConversions: 228, creatorEarnings: 4560 }, totalEarnings: 9880 },
+].sort((a, b) => (b.totalEarnings || 0) - (a.totalEarnings || 0));
+
+const DEMO_CREATOR_DEALS = [
+  { brand: 'GlowUp Skincare', status: 'active', videosUsed: 3, totalEarned: 8174, commissionRate: '10%', startDate: '2026-02-01' },
+  { brand: 'PureVita Beauty', status: 'active', videosUsed: 1, totalEarned: 1680, commissionRate: '12%', startDate: '2026-02-20' },
+  { brand: 'DermaClear', status: 'pending', videosUsed: 0, totalEarned: 0, commissionRate: '10%', startDate: null },
+];
+
+function CreatorAuthForm({ onSuccess, onDemo }) {
+  const [mode, setMode] = useState('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [tiktokHandle, setTiktokHandle] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const fire = useCallback(m => { setError(m); setTimeout(() => setError(null), 4000); }, []);
+
+  const submit = async () => {
+    setError(null);
+    if (!email.trim() || !password) { fire('Email and password required'); return; }
+    setLoading(true);
+    try {
+      const ep = mode === 'signup' ? '/api/creators/signup' : '/api/creators/login';
+      const body = mode === 'signup' ? { email, password, displayName: displayName.trim() || undefined, tiktokHandle: tiktokHandle.trim().replace(/^@/, '') || undefined } : { email, password };
+      const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const text = await r.text();
+      let d;
+      try { d = text ? JSON.parse(text) : {}; } catch { throw new Error(r.ok ? 'Invalid response' : 'Request failed'); }
+      if (!r.ok) throw new Error(d.error || r.statusText || 'Request failed');
+      const creator = { id: d.id, email: d.email, displayName: d.displayName || null, tiktokHandle: d.tiktokHandle || null };
+      localStorage.setItem(CREATOR_STORAGE, JSON.stringify(creator));
+      onSuccess(creator);
+    } catch (e) { fire(e.message || 'Failed'); }
+    setLoading(false);
+  };
+
+  const inputS = { width: '100%', padding: '12px 16px', background: 'rgba(255,255,255,.04)', border: '1px solid ' + C.border, borderRadius: 10, color: C.text, fontSize: 14, marginBottom: 12, fontFamily: 'inherit' };
+  return (
+    <div className="gl" style={{ maxWidth: 420, margin: '80px auto', padding: 32 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8 }}>Creator Login</h1>
+      <p style={{ fontSize: 13, color: C.sub, marginBottom: 24 }}>Sign in to your creator dashboard.</p>
+      {mode === 'signup' && (
+        <>
+          <input type="text" placeholder="Display name" value={displayName} onChange={e => setDisplayName(e.target.value)} style={inputS} />
+          <input type="text" placeholder="TikTok @handle" value={tiktokHandle} onChange={e => setTiktokHandle(e.target.value)} style={inputS} />
+        </>
+      )}
+      <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={inputS} />
+      <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} style={{ ...inputS, marginBottom: 16 }} />
+      {error && <div style={{ color: C.coral, fontSize: 13, marginBottom: 12 }}>{error}</div>}
+      <button onClick={submit} disabled={loading} style={{ width: '100%', padding: 14, background: C.teal, color: C.bg, border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>{loading ? '...' : mode === 'login' ? 'Sign In' : 'Sign Up'}</button>
+      <div style={{ marginTop: 16, fontSize: 13, color: C.sub, textAlign: 'center' }}>
+        {mode === 'login' ? 'No account? ' : 'Already have an account? '}
+        <button onClick={() => { setMode(m => m === 'login' ? 'signup' : 'login'); setError(null); }} style={{ background: 'none', border: 'none', color: C.teal, cursor: 'pointer', fontWeight: 600, fontFamily: 'inherit', fontSize: 13 }}>{mode === 'login' ? 'Sign up' : 'Log in'}</button>
+      </div>
+      {onDemo && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24, marginBottom: 16 }}>
+            <div style={{ flex: 1, height: 1, background: C.border }} />
+            <span style={{ fontSize: 12, color: C.dim }}>or</span>
+            <div style={{ flex: 1, height: 1, background: C.border }} />
+          </div>
+          <button onClick={onDemo} style={{ width: '100%', padding: 14, background: 'transparent', border: '1px solid rgba(255,255,255,.25)', borderRadius: 10, color: C.text, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Explore Demo Account →</button>
+          <p style={{ fontSize: 12, color: C.dim, textAlign: 'center', marginTop: 10 }}>No sign-up required. See what your earnings could look like.</p>
+        </>
+      )}
+    </div>
+  );
+}
+
+/*══════════════════════════════════════════════════════
   CREATOR PORTAL
 ══════════════════════════════════════════════════════*/
-function CreatorPortal({nav}){
+function CreatorPortal({ nav, isCreatorDemo, exitCreatorDemo }) {
   const[ttStatus,setTtStatus]=useState({connected:false,displayName:"",followers:0,videos:0});
   const[tab,setTab]=useState("connect");
   const[toast,setToast]=useState(null);
@@ -1678,22 +1788,22 @@ function CreatorPortal({nav}){
 
   useEffect(()=>{
     fetch("/api/tiktok/status").then(r=>r.json()).then(d=>{
-      if(d.connected){setTtStatus({connected:true,displayName:d.display_name||"",followers:d.follower_count||0,videos:d.video_count||0});setTab("deals")}
+      if(d&&d.connected){setTtStatus({connected:true,displayName:d.display_name||"",followers:d.follower_count||0,videos:d.video_count||0});setTab("deals")}
       else setTtStatus({connected:false,displayName:"",followers:0,videos:0});
-    }).catch(()=>{});
+    }).catch(()=>{ setTtStatus({connected:false,displayName:"",followers:0,videos:0}); });
     if(window.location.search?.includes("connected=true")){setTtStatus(s=>({...s,connected:true}));setTab("deals");fire("TikTok connected!")}
   },[]);
 
   useEffect(()=>{
     if(!ttStatus.connected||tab!=="deals")return;
     setLoadingDeals(true);
-    fetch("/api/creator/deals").then(r=>r.json()).then(d=>{setDeals(d);setLoadingDeals(false)}).catch(()=>setLoadingDeals(false));
+    fetch("/api/creator/deals").then(r=>r.json()).then(d=>{setDeals(d||null);setLoadingDeals(false)}).catch(()=>setLoadingDeals(false));
   },[ttStatus.connected,tab]);
 
   useEffect(()=>{
     if(!ttStatus.connected||tab!=="earnings")return;
     setLoadingEarnings(true);
-    fetch("/api/creator/earnings").then(r=>r.json()).then(d=>{setEarnings(d);setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
+    fetch("/api/creator/earnings").then(r=>r.json()).then(d=>{setEarnings(d||null);setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
   },[ttStatus.connected,tab]);
 
   const creatorTabs=[{id:"connect",l:"Connect TikTok",i:"🔗"},{id:"deals",l:"Deals",i:"💰"},{id:"earnings",l:"Earnings",i:"📈"}];
@@ -1910,11 +2020,49 @@ const makeDemoVideos = (handle, count) => Array.from({ length: count }, (_, i) =
   caption: `This serum changed my whole routine 😍 #glowupskincare #skincare`, content_url: null
 }));
 
-const DEMO_CREATORS = DEMO_CREATORS_RAW.map((c, i) => ({
+function buildCreatorsFromScan(scan) {
+  if (!scan || (!scan.qualified?.length && !scan.filtered?.length)) return null;
+  const allVideos = [...(scan.qualified || []), ...(scan.filtered || [])];
+  const byHandle = new Map();
+  allVideos.forEach(v => {
+    const key = (v.handle || v.creator || 'unknown').toLowerCase().replace(/^@/, '');
+    if (!key) return;
+    if (!byHandle.has(key)) byHandle.set(key, { handle: v.handle || '@' + (v.creator || 'creator'), creator: v.creator, videos: [], bestScore: 0, totalViews: 0 });
+    const c = byHandle.get(key);
+    c.videos.push(v);
+    c.bestScore = Math.max(c.bestScore, v.ai_score || 0);
+    c.totalViews += (c.totalViews || 0) + (v.views || 0);
+  });
+  return [...byHandle.values()].sort((a, b) => (b.bestScore || 0) - (a.bestScore || 0));
+}
+
+function buildDemoCampaignsFromCreators(creators, productTitle) {
+  if (!creators || creators.length === 0) return [];
+  const names = ['serum_v1', 'moisturizer_v2', 'cleanser_v1'];
+  const statuses = ['ACTIVE', 'ACTIVE', 'PAUSED'];
+  return creators.slice(0, 3).map((c, i) => {
+    const handle = (c.handle || c.creator || '').replace(/^@/, '') || 'creator';
+    const spend = [342.50, 187.20, 410.00][i];
+    const impressions = [58400, 31200, 44800][i];
+    const clicks = [2104, 1087, 1560][i];
+    const roas = [3.8, 4.2, 1.4][i];
+    return {
+      id: 'camp_demo_' + (i + 1),
+      name: handle + '_' + (names[i] || 'camp'),
+      creator: handle,
+      status: statuses[i],
+      created_time: '2026-03-0' + (i + 1),
+      launchedAt: '2026-03-0' + (i + 1),
+      insights: { spend: String(spend), impressions: String(impressions), clicks: String(clicks), purchase_roas: [{ value: String(roas) }] },
+    };
+  });
+}
+
+const DEMO_CREATORS_FALLBACK = DEMO_CREATORS_RAW.map((c, i) => ({
   ...c, handle: '@' + c.handle, videos: makeDemoVideos(c.handle, 3 + (i % 3)), totalViews: c.estGmv * 2, bestScore: c.aiScore
 }));
 
-const DEMO_CAMPAIGNS = [
+const DEMO_CAMPAIGNS_FALLBACK = [
   { id: 'camp_001', name: 'skincarebyjess_serum_v1', creator: 'skincarebyjess', status: 'ACTIVE', created_time: '2026-03-01', launchedAt: '2026-03-01', spend: 342.50, impressions: 58400, clicks: 2104, roas: 3.8, dailyBudget: 50, objective: 'Conversions', insights: { spend: '342.50', impressions: '58400', clicks: '2104', purchase_roas: [{ value: '3.8' }] } },
   { id: 'camp_002', name: 'thebeautyplug_moisturizer_v2', creator: 'thebeautyplug', status: 'ACTIVE', created_time: '2026-03-03', launchedAt: '2026-03-03', spend: 187.20, impressions: 31200, clicks: 1087, roas: 4.2, dailyBudget: 50, objective: 'Conversions', insights: { spend: '187.20', impressions: '31200', clicks: '1087', purchase_roas: [{ value: '4.2' }] } },
   { id: 'camp_003', name: 'glowwithnat_cleanser_v1', creator: 'glowwithnat', status: 'PAUSED', created_time: '2026-02-25', launchedAt: '2026-02-25', spend: 410.00, impressions: 44800, clicks: 1560, roas: 1.4, dailyBudget: 75, objective: 'Traffic', insights: { spend: '410.00', impressions: '44800', clicks: '1560', purchase_roas: [{ value: '1.4' }] } },
@@ -1942,8 +2090,10 @@ function BrandAuthForm({ onSuccess, onDemo, initialMode }) {
       const ep = mode === 'signup' ? '/api/brand/signup' : '/api/brand/login';
       const body = mode === 'signup' ? { brandName, storeName, email, password } : { email, password };
       const r = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      const d = await r.json();
-      if (d.error) throw new Error(d.error);
+      const text = await r.text();
+      let d;
+      try { d = text ? JSON.parse(text) : {}; } catch { throw new Error(r.ok ? 'Invalid response' : 'Request failed'); }
+      if (!r.ok) throw new Error(d.error || r.statusText || 'Request failed');
       if (!d.success || !d.brand) throw new Error('Invalid response');
       localStorage.setItem(BRAND_STORAGE, JSON.stringify(d.brand));
       onSuccess(d);
@@ -2121,7 +2271,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
     setLoadingScan(true);
     setScanError(null);
     fetch('/api/status?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => {
-      setScan(d.hasScan ? d : null);
+      setScan(d && d.hasScan ? d : null);
       setLoadingScan(false);
     }).catch(() => { setLoadingScan(false); setScanError('Failed to load'); });
   }, [brand?.id, demoCreators]);
@@ -2190,8 +2340,8 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, isDemo, exitDemo, d
     return <div className="fu" style={{padding:40,textAlign:"center"}}><div style={{fontSize:14,color:C.sub}}>Loading creators...</div><div style={{marginTop:16,width:32,height:32,border:"2px solid "+C.border,borderTopColor:C.teal,borderRadius:"50%",animation:"pulse 1s infinite",margin:"0 auto"}}/></div>;
   }
 
-  if (!scan || creators.length === 0) {
-    if (scan && creators.length === 0) {
+  if (creators.length === 0) {
+    if (scan || demoCreators) {
       return <div className="fu">
         <h1 className="heading-h3" style={{fontSize:24,fontWeight:800,marginBottom:24}}>Creator Discovery</h1>
         <div className="gl mobile-card" style={{padding:40,textAlign:"center"}}>
@@ -2570,12 +2720,12 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   </div>;
 }
 
-function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo }) {
+function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo, demoData, setDemoData }) {
   const [brandTab, setBrandTab] = useState('overview');
   const [profile, setProfile] = useState(brand);
   const [brandSettings, setBrandSettings] = useState(() => isDemo ? { adAccount: brand.adAccount || '', pageId: brand.pageId || '', brandName: 'GlowUp Skincare', storeName: brand.storeDisplay || '' } : { metaToken: '', adAccount: '', pageId: '', brandName: '', storeName: '' });
-  const [creators, setCreators] = useState([]);
-  const [campaigns, setCampaigns] = useState([]);
+  const [creators, setCreators] = useState(() => (isDemo && demoData?.creators?.length) ? demoData.creators : []);
+  const [campaigns, setCampaigns] = useState(() => (isDemo && demoData?.campaigns?.length) ? demoData.campaigns : []);
   const [campError, setCampError] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingCreators, setLoadingCreators] = useState(false);
@@ -2584,17 +2734,38 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo }) {
   const refreshProfile = useCallback(() => {
     if (isDemo) return;
     setLoadingProfile(true);
-    fetch('/api/brand/me?email=' + encodeURIComponent(brand.email)).then(r => r.json()).then(d => {
-      if (d.error) return;
-      setProfile(d);
-      setBrandSettings(p => ({ ...p, adAccount: d.adAccount || '', pageId: d.pageId || '', brandName: d.brandName || '', storeName: stripAt(d.storeName || '') }));
-      const updated = { ...brand, ...d };
-      localStorage.setItem(BRAND_STORAGE, JSON.stringify(updated));
-      setBrand(updated);
-    }).finally(() => setLoadingProfile(false));
+    fetch('/api/brand/me?email=' + encodeURIComponent(brand.email))
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.error) return;
+        if (d) {
+          setProfile(d);
+          setBrandSettings(p => ({ ...p, adAccount: d.adAccount || '', pageId: d.pageId || '', brandName: d.brandName || '', storeName: stripAt(d.storeName || '') }));
+          const updated = { ...brand, ...d };
+          localStorage.setItem(BRAND_STORAGE, JSON.stringify(updated));
+          setBrand(updated);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingProfile(false));
   }, [brand.email, setBrand, isDemo]);
 
-  useEffect(() => { if (isDemo) { setProfile(brand); setCreators(DEMO_CREATORS); setCampaigns(DEMO_CAMPAIGNS); } else { refreshProfile(); } }, [brand.id, isDemo]);
+  useEffect(() => { if (isDemo) { setProfile(brand); if (demoData?.creators?.length) setCreators(demoData.creators); if (demoData?.campaigns?.length) setCampaigns(demoData.campaigns); } else { refreshProfile(); } }, [brand.id, isDemo, demoData?.creators, demoData?.campaigns]);
+
+  useEffect(() => {
+    if (!isDemo) return;
+    fetch('/api/demo-data').then(r => r.json()).then(d => {
+      if (d && (d.qualified?.length || d.filtered?.length)) {
+        const list = buildCreatorsFromScan(d);
+        if (list && list.length) {
+          const camps = buildDemoCampaignsFromCreators(list, d.product?.title);
+          setCreators(list);
+          setCampaigns(camps);
+          if (setDemoData) setDemoData({ creators: list, campaigns: camps });
+        }
+      }
+    }).catch(() => {});
+  }, [isDemo, setDemoData]);
 
   useEffect(() => {
     if (isDemo) return;
@@ -2606,8 +2777,8 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo }) {
     if (isDemo) return;
     setLoadingCampaigns(true); setCampError(null);
     fetch('/api/brand/campaigns?brandId=' + encodeURIComponent(brand.id)).then(r => r.json()).then(d => {
-      setCampaigns(d.campaigns || []);
-      setCampError(d.error || null);
+      setCampaigns(Array.isArray(d && d.campaigns) ? d.campaigns : []);
+      setCampError(d && d.error ? d.error : null);
       setLoadingCampaigns(false);
     }).catch(() => { setLoadingCampaigns(false); setCampError('Failed to load'); });
   }, [brand.id, isDemo]);
@@ -2661,7 +2832,7 @@ function BrandDashboardView({ brand, setBrand, nav, isDemo, exitDemo }) {
 
         {brandTab==="overview"&&<BrandOverviewOnboarding profile={profile} storeDisplay={storeDisplay} creatorsCount={creators.length} campaignsCount={campaigns.length} setBrandTab={setBrandTab} />}
 
-        {brandTab==="creators"&&<CreatorDiscoveryView brand={brand} profile={profile} setBrandTab={setBrandTab} isDemo={isDemo} exitDemo={exitDemo} demoCreators={isDemo?DEMO_CREATORS:null} />}
+        {brandTab==="creators"&&<ErrorBoundary><CreatorDiscoveryView brand={brand} profile={profile} setBrandTab={setBrandTab} isDemo={isDemo} exitDemo={exitDemo} demoCreators={isDemo?creators:null} /></ErrorBoundary>}
 
         {brandTab==="campaigns"&&<CampaignsTab campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} refresh={refreshCampaigns} adAccount={profile.adAccount || brand.adAccount} isDemo={isDemo} exitDemo={exitDemo} setCampaigns={isDemo?setCampaigns:undefined} />}
 
@@ -2685,15 +2856,21 @@ function BrandPortal() {
     try { const j = localStorage.getItem(BRAND_STORAGE); return j ? JSON.parse(j) : null; } catch (_) { return null; }
   });
   const [isDemo, setIsDemo] = useState(false);
+  const [demoData, setDemoData] = useState(null);
   const [openSignUpAfterDemo, setOpenSignUpAfterDemo] = useState(false);
-  const exitDemo = useCallback((opts) => { if (opts?.openSignUp) setOpenSignUpAfterDemo(true); setBrand(null); setIsDemo(false); }, []);
+  const exitDemo = useCallback((opts) => { if (opts?.openSignUp) setOpenSignUpAfterDemo(true); setBrand(null); setIsDemo(false); setDemoData(null); }, []);
   useEffect(() => { if (!brand && openSignUpAfterDemo) setOpenSignUpAfterDemo(false); }, [brand, openSignUpAfterDemo]);
-  if (brand) return <BrandDashboardView brand={brand} setBrand={setBrand} nav={nav} isDemo={isDemo} exitDemo={exitDemo} />;
+  const onDemo = useCallback(() => {
+    setDemoData({ creators: DEMO_CREATORS_FALLBACK, campaigns: DEMO_CAMPAIGNS_FALLBACK });
+    setBrand({ ...DEMO_PROFILE });
+    setIsDemo(true);
+  }, []);
+  if (brand) return <BrandDashboardView brand={brand} setBrand={setBrand} nav={nav} isDemo={isDemo} exitDemo={exitDemo} demoData={demoData} setDemoData={setDemoData} />;
   return <div className="nav-pad" style={{minHeight:"100vh",background:C.bg}}>
     <nav style={{padding:"14px 20px",display:"flex",alignItems:"center",background:"rgba(3,7,17,.9)",borderBottom:"1px solid "+C.border}}>
       <Link to="/" style={{fontSize:18,fontWeight:900,textDecoration:"none",color:"inherit"}}><span style={gT(C.coral,C.gold)}>Creator</span><span style={gT(C.blue,C.teal)}>ship</span></Link>
     </nav>
-    <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} onDemo={() => { setBrand({ ...DEMO_PROFILE }); setIsDemo(true); }} initialMode={openSignUpAfterDemo ? 'signup' : 'login'} />
+    <BrandAuthForm onSuccess={() => setBrand(JSON.parse(localStorage.getItem(BRAND_STORAGE)))} onDemo={onDemo} initialMode={openSignUpAfterDemo ? 'signup' : 'login'} />
   </div>;
 }
 

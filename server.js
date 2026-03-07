@@ -824,6 +824,75 @@ app.post('/api/launch', async (req, res) => {
   } catch (e) { res.json({ success: false, error: e.message, ids, steps }); }
 });
 
+// ═══════════════════════════════════════════════════════════
+// DEMO DATA — one-time scrape, then serve from cache (no extra credits)
+// ═══════════════════════════════════════════════════════════
+const DEMO_SCAN_FILE = path.join(DATA_DIR, 'demo_scan.json');
+
+app.get('/api/demo-data', (req, res) => {
+  try {
+    if (fs.existsSync(DEMO_SCAN_FILE)) {
+      const scan = loadJson(DEMO_SCAN_FILE);
+      if (scan && (scan.qualified?.length || scan.filtered?.length || scan.product)) return res.json(scan);
+    }
+  } catch (_) {}
+  res.json({ hasCache: false });
+});
+
+app.post('/api/demo-data', async (req, res) => {
+  try {
+    if (fs.existsSync(DEMO_SCAN_FILE)) {
+      const scan = loadJson(DEMO_SCAN_FILE);
+      if (scan && (scan.qualified?.length || scan.filtered?.length || scan.product)) return res.json(scan);
+    }
+  } catch (_) {}
+  const { scrapeKey, productUrl } = req.body;
+  const url = productUrl || process.env.DEMO_PRODUCT_URL || '';
+  if (!scrapeKey || !url) return res.status(400).json({ error: 'scrapeKey and productUrl required (or set DEMO_PRODUCT_URL)' });
+  try {
+    const data = await apiFetch('https://api.scrapecreators.com/v1/tiktok/product?url=' + encodeURIComponent(url) + '&get_related_videos=true&region=US', { headers: { 'x-api-key': scrapeKey, 'Content-Type': 'application/json' } });
+    const productPrice = 39.99, gmvFloor = 200, commission = 10;
+    const videos = (data.related_videos || []).map((r, i) => {
+      const views = parseInt(r.play_count) || 0, likes = parseInt(r.like_count) || 0, shares = parseInt(r.share_count) || 0, comments = parseInt(r.comment_count) || 0;
+      const eng = views > 0 ? (likes + shares + comments) / views : 0, convEst = 0.02 + (eng * 2), orders = Math.round(views * convEst / 100), gmv = Math.round(orders * productPrice), hook = Math.min(Math.round(eng * 800 + 40), 100);
+      const name = r.author_name || 'Creator ' + (i + 1);
+      const handle = r.author_url ? '@' + r.author_url.split('/').pop() : '@creator' + (i + 1);
+      const v = {
+        id: 'v' + i, creator: name, handle, url: r.url || '', content_url: r.content_url || '',
+        cover: r.cover_image_url || '', avatar: r.author_avatar_url || '',
+        caption: r.title || r.desc || '', views, likes, shares, comments,
+        duration: r.duration || 0, est_gmv: gmv, orders, conv: convEst, hook,
+        engagement_rate: +(eng * 100).toFixed(2),
+        isAffiliate: !!r.bc_ad_label_text,
+        affiliateLabel: r.bc_ad_label_text || '',
+      };
+      v.ai_score = aiScore(v);
+      const rb = 2 + (v.ai_score / 100) * 4.5;
+      v.predicted_roas = [+rb.toFixed(1), +(rb + 1.4).toFixed(1)];
+      return v;
+    });
+    const connectedCreators = getConnectedCreators();
+    videos.forEach(v => { v.connected = isCreatorConnected(v, connectedCreators); });
+    const pb = data.product_base || {};
+    const sel = data.seller || {};
+    const product = {
+      id: data.product_id,
+      title: pb.title || sel.name || 'Product',
+      seller: sel.name || 'Unknown',
+      price: '$' + productPrice,
+    };
+    const scan = {
+      time: new Date().toISOString(), productUrl: url, commission, gmvFloor, product,
+      qualified: videos.filter(v => v.est_gmv >= gmvFloor).sort((a, b) => b.ai_score - a.ai_score),
+      filtered: videos.filter(v => v.est_gmv < gmvFloor),
+      total: videos.length,
+    };
+    ensureDir(DATA_DIR);
+    saveJson(DEMO_SCAN_FILE, scan);
+    res.json(scan);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/status', (req, res) => {
   const brandId = req.query.brandId;
   const s = getScanForBrand(brandId);
