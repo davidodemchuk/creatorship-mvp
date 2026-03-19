@@ -7752,6 +7752,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const hasCampaignData = !!(caiData?.campaign?.id && caiData?.creativesCount > 0);
   const dailyBudget = Math.round(monthlyBudget / 30);
   const a = deepDive?.analysis;
+  const sa = a || {};
   const caiInnerSubTabs = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'campaigns', label: 'Campaigns' },
@@ -8142,7 +8143,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ ANALYSIS TAB — DEEP DIVE REPORT ═══ */}
         {caiSubTab === 'analysis' && (<>
-          {a.verdict ? (<>
+          {sa.verdict ? (<>
 
             {/* ─── EXECUTIVE SUMMARY ─── */}
             <div style={{ marginBottom: 24 }}>
@@ -8154,56 +8155,56 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <button onClick={() => { rerunDeepDive(); }} style={{ padding: '8px 16px', background: 'var(--cs-a04)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Re-run Analysis</button>
               </div>
               <div className="cai-score-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-                {a.contentScore != null && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: a.contentScore>=80?'#34d399':a.contentScore>=60?'#ffb400':'#ef4444' }}>{a.contentScore}<span style={{ fontSize: 14, color: 'var(--cs-t4)' }}>/100</span></div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Content Score</div></div>}
-                {a.estimatedRoas && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: '#9b6dff' }}>{a.estimatedRoas}x</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Projected ROAS</div></div>}
-                {a.estimatedCpa && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: '#34d399' }}>${a.estimatedCpa}</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Projected CPA</div></div>}
+                {sa.contentScore != null && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: sa.contentScore>=80?'#34d399':sa.contentScore>=60?'#ffb400':'#ef4444' }}>{sa.contentScore}<span style={{ fontSize: 14, color: 'var(--cs-t4)' }}>/100</span></div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Content Score</div></div>}
+                {sa.estimatedRoas && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: '#9b6dff' }}>{sa.estimatedRoas}x</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Projected ROAS</div></div>}
+                {sa.estimatedCpa && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: '#34d399' }}>${sa.estimatedCpa}</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Projected CPA</div></div>}
                 <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: 'var(--cs-t1)' }}>{viewsStr}</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Total Views</div></div>
               </div>
             </div>
 
             {/* ─── SECTION 1: BRAND & MARKET INTELLIGENCE ─── */}
-            {(a.verdict || a.brandIntelligence) && (<>
+            {(sa.verdict || sa.brandIntelligence) && (<>
               {/* VERDICT — full-width intro */}
-              {a.verdict && (
+              {sa.verdict && (
                 <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '24px', marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                     <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(155,109,255,.1)', border: '1px solid rgba(155,109,255,.2)', color: '#9b6dff', fontWeight: 800 }}>1</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>We Know Your Product</span>
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#9b6dff', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>CAi Assessment</div>
-                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.7 }}>{a.verdict}</div>
+                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.7 }}>{sa.verdict}</div>
                 </div>
               )}
 
               {/* 3 TITLED SUB-SECTIONS — same row height, visually distinct */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
                 {/* PRODUCT */}
-                {a.brandIntelligence?.productInsight && (
+                {sa.brandIntelligence?.productInsight && (
                   <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '18px 16px', borderTop: '3px solid #9b6dff' }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#9b6dff', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.3px' }}>Product DNA</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{a.brandIntelligence.productInsight}</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{sa.brandIntelligence.productInsight}</div>
                   </div>
                 )}
                 {/* MARKET */}
-                {a.brandIntelligence?.marketPosition && (
+                {sa.brandIntelligence?.marketPosition && (
                   <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '18px 16px', borderTop: '3px solid #0668E1' }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#0668E1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.3px' }}>Market Position</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{a.brandIntelligence.marketPosition}</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{sa.brandIntelligence.marketPosition}</div>
                   </div>
                 )}
                 {/* BUYER */}
-                {a.brandIntelligence?.buyerProfile && (
+                {sa.brandIntelligence?.buyerProfile && (
                   <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '18px 16px', borderTop: '3px solid #34d399' }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color: '#34d399', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.3px' }}>Your Buyer</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{a.brandIntelligence.buyerProfile}</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{sa.brandIntelligence.buyerProfile}</div>
                   </div>
                 )}
               </div>
 
               {/* DATA PULLED — compact badges row */}
-              {a.brandIntelligence?.dataPulled?.length > 0 && (
+              {sa.brandIntelligence?.dataPulled?.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-                  {a.brandIntelligence.dataPulled.map((d, i) => (
+                  {sa.brandIntelligence.dataPulled.map((d, i) => (
                     <span key={i} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, background: 'rgba(155,109,255,.06)', border: '1px solid rgba(155,109,255,.1)', color: 'var(--cs-t3)' }}>{d}</span>
                   ))}
                 </div>
@@ -8218,25 +8219,25 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>These are your brand's TikTok videos — you own them. CAi will reformat and launch these as Meta ads.</div>
               <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 20, marginTop: 4, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#9b6dff', marginBottom: 4 }}>You own {(a.topPicks || []).length} proven videos — launch them as Meta ads now</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#9b6dff', marginBottom: 4 }}>You own {(sa.topPicks || []).length} proven videos — launch them as Meta ads now</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 16 }}>
-                  {a.modeReason || 'You already have the rights to your brand-owned content. No creator licensing needed — start running ads today.'}
+                  {sa.modeReason || 'You already have the rights to your brand-owned content. No creator licensing needed — start running ads today.'}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ padding: '16px 14px', borderRadius: 12, border: (a.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: (a.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
-                    {(a.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: (a.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Let CAi Run</div>
+                  <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ padding: '16px 14px', borderRadius: 12, border: (sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: (sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
+                    {(sa.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
+                    <div style={{ fontSize: 15, fontWeight: 800, color: (sa.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Let CAi Run</div>
                     <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
                   </button>
-                  <button type="button" onClick={() => setMode('manual')} style={{ padding: '16px 14px', borderRadius: 12, border: !(a.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: !(a.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
-                    {!(a.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: !(a.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Manual + CAi Assist</div>
+                  <button type="button" onClick={() => setMode('manual')} style={{ padding: '16px 14px', borderRadius: 12, border: !(sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: !(sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
+                    {!(sa.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
+                    <div style={{ fontSize: 15, fontWeight: 800, color: !(sa.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Manual + CAi Assist</div>
                     <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>You launch each video. CAi pre-fills copy.</div>
                   </button>
                 </div>
               </div>
 
-              {(a.topPicks || []).map((pick, idx) => {
+              {(sa.topPicks || []).map((pick, idx) => {
                 const vid = tiktokVideos.find(v => String(v.id) === String(pick.videoId));
                 if (!vid) return null;
                 const tierColors = { hero: { bg: 'rgba(232,89,60,.06)', border: 'rgba(232,89,60,.2)', text: '#E8593C', label: 'HERO' }, proven: { bg: 'rgba(52,211,153,.06)', border: 'rgba(52,211,153,.2)', text: '#34d399', label: 'PROVEN' }, test: { bg: 'rgba(155,109,255,.06)', border: 'rgba(155,109,255,.2)', text: '#9b6dff', label: 'TEST' } };
@@ -8283,47 +8284,47 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 );
               })}
 
-              {a.ownedContentAnalysis && (
+              {sa.ownedContentAnalysis && (
                 <div style={{ marginTop: 16, padding: '14px 16px', background: 'var(--cs-a04)', borderRadius: 10, borderTop: '1px solid var(--cs-a06)' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Content Library Summary</div>
-                  <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{typeof a.ownedContentAnalysis === 'string' ? a.ownedContentAnalysis : a.ownedContentAnalysis.summary || a.ownedContentAnalysis.overview || JSON.stringify(a.ownedContentAnalysis).slice(0, 300)}</div>
+                  <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{typeof sa.ownedContentAnalysis === 'string' ? sa.ownedContentAnalysis : sa.ownedContentAnalysis.summary || sa.ownedContentAnalysis.overview || JSON.stringify(sa.ownedContentAnalysis).slice(0, 300)}</div>
                 </div>
               )}
             </div>
 
             {/* ─── SECTION 3: AD STRATEGY BLUEPRINT ─── */}
-            {a.adStrategy && (
+            {sa.adStrategy && (
               <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '24px', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                   <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(6,104,225,.1)', border: '1px solid rgba(6,104,225,.2)', color: '#0668E1', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>3</span>
                   <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>Ad Strategy — CAi MAX</span>
                 </div>
-                {a.adStrategy.headline && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--cs-t1)', lineHeight: 1.5, marginBottom: 14 }}>{a.adStrategy.headline}</div>}
-                {a.adStrategy.approach && <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.7, marginBottom: 16, padding: '14px 16px', background: 'var(--cs-a04)', borderRadius: 10 }}>{a.adStrategy.approach}</div>}
+                {sa.adStrategy.headline && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--cs-t1)', lineHeight: 1.5, marginBottom: 14 }}>{sa.adStrategy.headline}</div>}
+                {sa.adStrategy.approach && <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.7, marginBottom: 16, padding: '14px 16px', background: 'var(--cs-a04)', borderRadius: 10 }}>{sa.adStrategy.approach}</div>}
                 
                 {/* Timeline */}
-                {a.adStrategy.expectedTimeline && (
+                {sa.adStrategy.expectedTimeline && (
                   <div style={{ padding: '14px 16px', background: 'rgba(6,104,225,.04)', border: '1px solid rgba(6,104,225,.1)', borderRadius: 10, marginBottom: 16 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#0668E1', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Expected Timeline</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{a.adStrategy.expectedTimeline}</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{sa.adStrategy.expectedTimeline}</div>
                   </div>
                 )}
 
                 {/* Projections */}
-                {a.adStrategy.projectedResults && (
+                {sa.adStrategy.projectedResults && (
                   <div className="cai-strategy-projections" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
-                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t1)' }}>${a.adStrategy.projectedResults.dailyBudget || Math.round((a.monthlyBudget||0)/30)}/d</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>budget</div></div>
-                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: '#34d399' }}>{a.adStrategy.projectedResults.monthlySales || '—'}</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>sales/mo</div></div>
-                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: '#34d399' }}>${(a.adStrategy.projectedResults.monthlyRevenue || 0).toLocaleString()}</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>revenue/mo</div></div>
-                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: '#9b6dff' }}>{a.adStrategy.projectedResults.roas || a.estimatedRoas}x</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>ROAS</div></div>
+                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t1)' }}>${sa.adStrategy.projectedResults.dailyBudget || Math.round((sa.monthlyBudget||0)/30)}/d</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>budget</div></div>
+                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: '#34d399' }}>{sa.adStrategy.projectedResults.monthlySales || '—'}</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>sales/mo</div></div>
+                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: '#34d399' }}>${(sa.adStrategy.projectedResults.monthlyRevenue || 0).toLocaleString()}</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>revenue/mo</div></div>
+                    <div style={{ textAlign: 'center', padding: '12px 8px', background: 'var(--cs-a04)', borderRadius: 8 }}><div className="mono" style={{ fontSize: 20, fontWeight: 800, color: '#9b6dff' }}>{sa.adStrategy.projectedResults.roas || sa.estimatedRoas}x</div><div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>ROAS</div></div>
                   </div>
                 )}
 
                 {/* vs TikTok GMV Max */}
-                {a.adStrategy.vsGmvMax && (
+                {sa.adStrategy.vsGmvMax && (
                   <div style={{ padding: '14px 16px', background: 'rgba(52,211,153,.04)', border: '1px solid rgba(52,211,153,.12)', borderRadius: 10 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Why This Beats TikTok GMV Max</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{a.adStrategy.vsGmvMax}</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{sa.adStrategy.vsGmvMax}</div>
                   </div>
                 )}
               </div>
@@ -8370,7 +8371,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
               <div className="cai-action-items" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[
-                  ...(creatives.length === 0 ? [{ priority: 'HIGH', text: 'Launch your first campaign — ' + (a.topPicks||[]).length + ' videos ranked and ready to test', action: () => setCaiSubTab('campaigns'), btn: 'Go to Campaigns' }] : []),
+                  ...(creatives.length === 0 ? [{ priority: 'HIGH', text: 'Launch your first campaign — ' + (sa.topPicks||[]).length + ' videos ranked and ready to test', action: () => setCaiSubTab('campaigns'), btn: 'Go to Campaigns' }] : []),
                   ...(creatives.filter(c => c.status === 'active').length < 10 ? [{ priority: 'HIGH', text: 'Add more videos to your campaign — Meta\'s algorithm gets dramatically better with volume. Top DTC brands test 20-100+ creatives per month.', action: () => setCaiSubTab('content'), btn: 'Add Content' }] : []),
                   { priority: 'MEDIUM', text: 'Explore creator content — find affiliate videos for your top products and request usage rights', action: () => { setCaiSubTab('content'); setTimeout(() => setContentSection('creator'), 100); }, btn: 'Creator Content' },
                   ...(!isActive && creatives.length > 0 ? [{ priority: 'HIGH', text: 'Resume your paused campaign to start collecting performance data', action: () => setCaiSubTab('campaigns'), btn: 'Resume' }] : []),
@@ -8565,12 +8566,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               if (contentSection === 'uploads') return v._source === 'upload';
               return true;
             }).sort((x,y) => (y.views||0)-(x.views||0));
-            const topPickIds = new Set((a.topPicks || []).map(p => String(p.videoId)));
+            const topPickIds = new Set((sa.topPicks || []).map(p => String(p.videoId)));
 
             const VideoRow = ({ v, isPick }) => {
               const inCamp = creatives.some(c => String(c.videoId) === String(v.id));
               const ca = analysisMap[String(v.id)];
-              const pick = isPick ? (a.topPicks || []).find(p => String(p.videoId) === String(v.id)) : null;
+              const pick = isPick ? (sa.topPicks || []).find(p => String(p.videoId) === String(v.id)) : null;
               const viewsStr = (v.views||0) >= 1e6 ? ((v.views||0)/1e6).toFixed(1)+'M' : (v.views||0) >= 1e3 ? Math.round((v.views||0)/1e3)+'K' : String(v.views||0);
               const brandHandle = (bp.storeName || '').toLowerCase().replace(/\s+/g,'').replace(/^@/,'');
               const vidHandle = (v.authorHandle || '').toLowerCase().replace(/^@/,'');
@@ -9851,23 +9852,23 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     if (typeof window !== 'undefined' && window.location.hash !== '#analysis') {
       try { window.history.replaceState(null, '', '#analysis'); } catch (_) {}
     }
-    const isAutoRec = (a.recommendedMode || 'auto').includes('auto');
+    const isAutoRec = (sa.recommendedMode || 'auto').includes('auto');
     const totalViews = tiktokVideos.reduce((s, v) => s + (v.views || 0), 0);
     const viewsStr = totalViews >= 1e6 ? (totalViews / 1e6).toFixed(0) + 'M' : totalViews.toLocaleString();
-    const bi = a.brandIntelligence || {};
-    const as = a.adStrategy || {};
-    const ng = a.creatorAcquisition || a.networkGrowth || {};
+    const bi = sa.brandIntelligence || {};
+    const as = sa.adStrategy || {};
+    const ng = sa.creatorAcquisition || sa.networkGrowth || {};
 
     return (
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         {/* Score cards — v3.4 clickable + CAi reasoning */}
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: expandedMetric ? 0 : 24 }}>
-            {[
-              { k: 'contentScore', v: (a.contentScore || '') + '', l: 'Content Score', c: (a.contentScore || 0) >= 70 ? '#34d399' : (a.contentScore || 0) >= 40 ? '#ffb400' : '#f87171', sub: '/100', reasoning: a.contentScoreReasoning },
-              { k: 'roas', v: (a.estimatedRoas || '') + 'x', l: a.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', c: '#9b6dff', sub: a.estimatedRoasRange ? (a.estimatedRoasRange.low + '-' + a.estimatedRoasRange.high + 'x') : '', reasoning: a.estimatedRoasReasoning },
-              { k: 'cpa', v: '$' + (a.estimatedCpa || ''), l: 'Est. CPA', c: (a.estimatedCpa || 0) <= (a.estimatedCpaRange?.low || 25) ? '#34d399' : '#ffb400', sub: a.estimatedCpaRange ? ('$' + a.estimatedCpaRange.low + '-$' + a.estimatedCpaRange.high) : '', reasoning: a.estimatedCpaReasoning },
-              { k: 'reach', v: viewsStr, l: 'TikTok Reach', c: '#4da6ff', sub: '', reasoning: a.tiktokReachReasoning },
+              {[
+              { k: 'contentScore', v: (sa.contentScore || '') + '', l: 'Content Score', c: (sa.contentScore || 0) >= 70 ? '#34d399' : (sa.contentScore || 0) >= 40 ? '#ffb400' : '#f87171', sub: '/100', reasoning: sa.contentScoreReasoning },
+              { k: 'roas', v: (sa.estimatedRoas || '') + 'x', l: sa.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', c: '#9b6dff', sub: sa.estimatedRoasRange ? (sa.estimatedRoasRange.low + '-' + sa.estimatedRoasRange.high + 'x') : '', reasoning: sa.estimatedRoasReasoning },
+              { k: 'cpa', v: '$' + (sa.estimatedCpa || ''), l: 'Est. CPA', c: (sa.estimatedCpa || 0) <= (sa.estimatedCpaRange?.low || 25) ? '#34d399' : '#ffb400', sub: sa.estimatedCpaRange ? ('$' + sa.estimatedCpaRange.low + '-$' + sa.estimatedCpaRange.high) : '', reasoning: sa.estimatedCpaReasoning },
+              { k: 'reach', v: viewsStr, l: 'TikTok Reach', c: '#4da6ff', sub: '', reasoning: sa.tiktokReachReasoning },
             ].map(s =>
               <div key={s.l} onClick={() => setExpandedMetric(expandedMetric === s.k ? null : s.k)} style={{ background: 'var(--cs-card)', border: '1px solid ' + (expandedMetric === s.k ? s.c + '44' : 'var(--cs-a06)'), borderRadius: 12, padding: '16px 12px', textAlign: 'center', cursor: s.reasoning ? 'pointer' : 'default', transition: 'border-color .2s', position: 'relative' }}>
                 <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: s.c }}>{s.v} <span style={{ fontSize: 13, color: 'var(--cs-t4)', fontWeight: 500 }}>{s.sub}</span></div>
@@ -9878,10 +9879,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           </div>
           {expandedMetric && (() => {
             const metricData = {
-              contentScore: { label: 'Content Score', reasoning: a.contentScoreReasoning, color: (a.contentScore || 0) >= 70 ? '#34d399' : (a.contentScore || 0) >= 40 ? '#ffb400' : '#f87171' },
-              roas: { label: a.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', reasoning: a.estimatedRoasReasoning, color: '#9b6dff' },
-              cpa: { label: 'Est. CPA', reasoning: a.estimatedCpaReasoning, color: '#ffb400' },
-              reach: { label: 'TikTok Reach', reasoning: a.tiktokReachReasoning, color: '#4da6ff' },
+              contentScore: { label: 'Content Score', reasoning: sa.contentScoreReasoning, color: (sa.contentScore || 0) >= 70 ? '#34d399' : (sa.contentScore || 0) >= 40 ? '#ffb400' : '#f87171' },
+              roas: { label: sa.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', reasoning: sa.estimatedRoasReasoning, color: '#9b6dff' },
+              cpa: { label: 'Est. CPA', reasoning: sa.estimatedCpaReasoning, color: '#ffb400' },
+              reach: { label: 'TikTok Reach', reasoning: sa.tiktokReachReasoning, color: '#4da6ff' },
             }[expandedMetric];
             if (!metricData?.reasoning) return null;
             return (
@@ -9895,11 +9896,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             );
           })()}
         </div>
-            {a.ltvRoas && a.businessModel === 'subscription' && (
+            {sa.ltvRoas && sa.businessModel === 'subscription' && (
               <div style={{ padding: '10px 14px', background: 'rgba(155,109,255,.06)', border: '1px solid rgba(155,109,255,.12)', borderRadius: 8, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 14 }}>📊</span>
                 <span style={{ fontSize: 13, color: 'var(--cs-t2)' }}>
-                  <strong style={{ color: '#9b6dff' }}>Subscription LTV ROAS: {a.ltvRoas.low}-{a.ltvRoas.high}x</strong> ({a.ltvRoas.period} projected) — first-purchase ROAS looks conservative because you're acquiring subscribers, not one-time buyers.
+                  <strong style={{ color: '#9b6dff' }}>Subscription LTV ROAS: {sa.ltvRoas.low}-{sa.ltvRoas.high}x</strong> ({sa.ltvRoas.period} projected) — first-purchase ROAS looks conservative because you're acquiring subscribers, not one-time buyers.
                 </span>
               </div>
             )}
@@ -9921,7 +9922,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
                 <div style={{ padding: '14px', background: 'rgba(155,109,255,.04)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 10 }}>
                   <div style={{ fontSize: 12, fontWeight: 800, color: '#9b6dff', marginBottom: 6 }}>WITH CAi</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 2 }}>{(a.ownedContentAnalysis || []).length + (a.creatorContentAnalysis || []).length}+ videos</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 2 }}>{(sa.ownedContentAnalysis || []).length + (sa.creatorContentAnalysis || []).length}+ videos</div>
                   <div style={{ fontSize: 12, color: 'var(--cs-t4)' }}>~13 seconds each · tests every signal</div>
                 </div>
               </div>
@@ -9956,7 +9957,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>Your Brand Profile</span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginBottom: 10 }}>CAi studied your TikTok Shop, products, pricing, and audience to build this profile.</div>
-          {a.verdict && <div style={{ fontSize: 15, color: 'var(--cs-t1)', lineHeight: 1.65, fontWeight: 500, marginBottom: 16 }}>{a.verdict}</div>}
+          {sa.verdict && <div style={{ fontSize: 15, color: 'var(--cs-t1)', lineHeight: 1.65, fontWeight: 500, marginBottom: 16 }}>{sa.verdict}</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
             {bi.productInsight && (
               <div style={{ background: 'var(--cs-a04)', borderRadius: 10, padding: '14px', borderTop: '3px solid #9b6dff' }}>
@@ -9987,7 +9988,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>Your Ad-Ready Videos</span>
             </div>
             <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginBottom: 14 }}>Videos CAi identified as ad-ready — from your brand or creators featuring your products.</div>
-            {(!a.ownedContentAnalysis || a.ownedContentAnalysis.length === 0) && (!a.topPicks || a.topPicks.length === 0) && (
+            {(!sa.ownedContentAnalysis || sa.ownedContentAnalysis.length === 0) && (!sa.topPicks || sa.topPicks.length === 0) && (
               <div style={{ padding: '24px', textAlign: 'center', background: 'var(--cs-a03)', borderRadius: 10, marginBottom: 16 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 6 }}>No videos found yet</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.5 }}>
@@ -9995,10 +9996,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
               </div>
             )}
-            {(!a.ownedContentAnalysis || a.ownedContentAnalysis.length === 0) && (a.topPicks && a.topPicks.length > 0) && (
+            {(!sa.ownedContentAnalysis || sa.ownedContentAnalysis.length === 0) && (sa.topPicks && sa.topPicks.length > 0) && (
             <>
             <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 16, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>CAi found {a.topPicks.length} creator videos for your products</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>CAi found {sa.topPicks.length} creator videos for your products</div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>Your brand doesn't post its own TikTok videos — but creators already are. CAi ranked these by ad potential and can launch them as Meta ads.</div>
               <div style={{ textAlign: 'center' }}>
                 <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 10, border: '2px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 360 }}>
@@ -10007,7 +10008,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </button>
               </div>
             </div>
-            {(a.topPicks || []).map((pick, idx) => {
+            {(sa.topPicks || []).map((pick, idx) => {
               const vid = tiktokVideos.find(v => String(v.id) === String(pick.videoId));
               if (!vid) return null;
               const tierColors = { hero: { bg: 'rgba(232,89,60,.06)', border: 'rgba(232,89,60,.2)', text: '#E8593C', label: 'HERO' }, proven: { bg: 'rgba(52,211,153,.06)', border: 'rgba(52,211,153,.2)', text: '#34d399', label: 'PROVEN' }, test: { bg: 'rgba(155,109,255,.06)', border: 'rgba(155,109,255,.2)', text: '#9b6dff', label: 'TEST' } };
@@ -10039,11 +10040,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             })}
             </>
             )}
-            {(a.ownedContentAnalysis && a.ownedContentAnalysis.length > 0) && (
+            {(sa.ownedContentAnalysis && sa.ownedContentAnalysis.length > 0) && (
             <>
             <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 16, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>You own these videos — launch them as Meta ads now</div>
-              <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>{a.modeReason || 'No creator licensing needed. Start running ads on your own content today.'}</div>
+              <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>{sa.modeReason || 'No creator licensing needed. Start running ads on your own content today.'}</div>
               <div style={{ textAlign: 'center' }}>
                   <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 10, border: '2px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 360 }}>
                     <div style={{ fontSize: 16, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
@@ -10054,7 +10055,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   </div>
                 </div>
             </div>
-            {a.ownedContentAnalysis.map((oc, i) => {
+            {sa.ownedContentAnalysis.map((oc, i) => {
               const vid = tiktokVideos.find(v => String(v.id) === String(oc.videoId));
               return (
                 <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderTop: i > 0 ? '1px solid var(--cs-a04)' : 'none' }}>
@@ -10117,14 +10118,14 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         )}
 
         {/* ═══ SECTION 4: CREATOR CONTENT (if exists) ═══ */}
-        {a.creatorContentAnalysis && a.creatorContentAnalysis.length > 0 && (
+        {sa.creatorContentAnalysis && sa.creatorContentAnalysis.length > 0 && (
           <div style={{ background: 'var(--cs-card)', border: '1px solid rgba(255,180,0,.1)', borderRadius: 14, padding: '20px', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(255,180,0,.1)', border: '1px solid rgba(255,180,0,.2)', color: '#ffb400', fontWeight: 800 }}>4</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>Creator Videos — License to Run as Ads</span>
             </div>
             <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginBottom: 14 }}>These videos were made by TikTok creators featuring your products. Creatorship handles outreach and licensing — you just approve.</div>
-            {a.creatorContentAnalysis.map((cc, i) => {
+            {sa.creatorContentAnalysis.map((cc, i) => {
               const vid = tiktokVideos.find(v => String(v.id) === String(cc.videoId));
               return (
                 <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderTop: i > 0 ? '1px solid var(--cs-a04)' : 'none' }}>
@@ -10145,7 +10146,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         {(ng.currentState || ng.creatorship_value || ng.recommendations) && (
           <div style={{ background: 'rgba(155,109,255,.03)', border: '1px solid rgba(155,109,255,.08)', borderRadius: 14, padding: '20px', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(155,109,255,.1)', border: '1px solid rgba(155,109,255,.2)', color: '#9b6dff', fontWeight: 800 }}>{a.creatorContentAnalysis?.length > 0 ? '5' : '4'}</span>
+              <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(155,109,255,.1)', border: '1px solid rgba(155,109,255,.2)', color: '#9b6dff', fontWeight: 800 }}>{sa.creatorContentAnalysis?.length > 0 ? '5' : '4'}</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>Creatorship Handles Creator Outreach</span>
             </div>
             {ng.currentState && <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, marginBottom: 10 }}>{ng.currentState}</div>}
@@ -10705,10 +10706,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
     // CAi analysis per video (from ownedContentAnalysis + topPicks)
     const analysisMap = {};
-    (a.ownedContentAnalysis || []).forEach(oc => { analysisMap[String(oc.videoId)] = oc; });
-    (a.creatorContentAnalysis || []).forEach(cc => { analysisMap[String(cc.videoId)] = cc; });
+    (sa.ownedContentAnalysis || []).forEach(oc => { analysisMap[String(oc.videoId)] = oc; });
+    (sa.creatorContentAnalysis || []).forEach(cc => { analysisMap[String(cc.videoId)] = cc; });
     const pickMap = {};
-    (a.topPicks || []).forEach(p => { pickMap[String(p.videoId)] = p; });
+    (sa.topPicks || []).forEach(p => { pickMap[String(p.videoId)] = p; });
 
     const VideoRow = ({ v, showCreator }) => {
       const ca = analysisMap[String(v.id)];
