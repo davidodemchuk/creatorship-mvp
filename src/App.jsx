@@ -7283,7 +7283,7 @@ function BrandContentTab({ brand, profile, setBrandTab, tiktokVideos: parentVide
 const BRAND_TAB_IDS = ['home','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
 let _deepDiveCache = null;
 let _deepDiveCacheBrandId = null;
-function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile }) {
+function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo }) {
   const [caiData, setCaiData] = useState(null);
   const [sysInfo, setSysInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -7507,8 +7507,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     if (!canDoAction('run_deep_dive')) {
       toast.error('You need Editor access to run deep dives.');
       setDeepDiveLoading(false);
+      if (setBuildInProgress) setBuildInProgress(false);
+      if (setBuildInfo) setBuildInfo(null);
       return;
     }
+    if (setBuildInProgress) setBuildInProgress(true);
+    if (setBuildInfo) setBuildInfo({ phase: 'deep-dive', videoCount: tiktokVideos?.length || 0, startedAt: Date.now() });
     const lines = [];
     const add = (text, type = 'info') => { lines.push({ text, type, ts: Date.now() }); setTerminalLines([...lines]); };
     const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -7692,6 +7696,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       }
     } catch (e) { clearInterval(waitTimer); add('✗ Network error: ' + e.message, 'error'); }
     setDeepDiveLoading(false);
+    if (setBuildInProgress) setBuildInProgress(false);
+    if (setBuildInfo) setBuildInfo(null);
   };
 
   // ═══ AUTO-START DEEP DIVE — runs ONCE for genuinely new brands only ═══
@@ -7766,21 +7772,29 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     if (!brand?.id) return;
     if (!canDoAction('launch')) {
       setActivationResult({ error: 'You need Editor access to activate CAi.' });
+      if (setBuildInProgress) setBuildInProgress(false);
+      if (setBuildInfo) setBuildInfo(null);
       return;
     }
     if (!brand?.emailVerified && !profile?.emailVerified) {
       setActivationResult({ error: 'Please verify your email (Step 4) before activating CAi.' });
       setActivating(false);
+      if (setBuildInProgress) setBuildInProgress(false);
+      if (setBuildInfo) setBuildInfo(null);
       return;
     }
     if ((brand.launchCount || 0) >= 3 && !brand.stripeCustomerId && !brand.billingConnected && !brand.billingEnabled) {
       setActivationResult({ error: 'Please connect billing to continue. You have used all 3 free launches.' });
       setActivating(false);
+      if (setBuildInProgress) setBuildInProgress(false);
+      if (setBuildInfo) setBuildInfo(null);
       return;
     }
     if (!brand?.outreachAuthorized) {
       setActivationResult({ error: 'Please authorize creator outreach in Step 3 above before activating.' });
       setActivating(false);
+      if (setBuildInProgress) setBuildInProgress(false);
+      if (setBuildInfo) setBuildInfo(null);
       return;
     }
     // ═══ PRE-FLIGHT: Meta health check ═══
@@ -7791,6 +7805,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         const critical = hc.issues.filter(i => i.severity === 'critical');
         if (critical.length > 0) {
           setMetaHealthIssues(critical);
+          if (setBuildInProgress) setBuildInProgress(false);
+          if (setBuildInfo) setBuildInfo(null);
           return;
         }
       }
@@ -7798,6 +7814,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       console.log('[activate] Health check failed, proceeding anyway:', hcErr.message);
     }
     setActivating(true);
+    if (setBuildInProgress) setBuildInProgress(true);
+    if (setBuildInfo) setBuildInfo({ phase: 'activating', videoCount: (deepDive?.analysis?.topPicks || []).length || (tiktokVideos?.length || 0), startedAt: Date.now() });
     setActivationLines([]);
     // Check if brand has a Facebook Page selected
     if (!brand?.pageId && !profile?.pageId) {
@@ -7943,6 +7961,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       setActivationResult({ error: e.message });
     }
     setActivating(false);
+    if (setBuildInProgress) setBuildInProgress(false);
+    if (setBuildInfo) setBuildInfo(null);
   };
 
   // Deactivate
@@ -11185,6 +11205,8 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const [aiPlanLoading, setAiPlanLoading] = useState(false);
   const [aiPlanStatus, setAiPlanStatus] = useState(null);
   const [caiData, setCaiDataParent] = useState(null);
+  const [buildInProgress, setBuildInProgress] = useState(false);
+  const [buildInfo, setBuildInfo] = useState(null); // { phase, videoCount, startedAt }
   const aiPlanCheckedRef = useRef(false);
 
   const onLaunchVideo = useCallback((video) => {
@@ -11309,6 +11331,16 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
     fetch('/api/cai/status?brandId=' + brand.id, { headers: { Authorization: 'Bearer ' + token } })
       .then(r => r.json()).then(d => setCaiDataParent(d)).catch(() => {});
   }, [brand?.id]);
+
+  useEffect(() => {
+    if (brand?.cai?.processingStatus === 'processing') {
+      setBuildInProgress(true);
+      setBuildInfo(prev => prev || { phase: 'uploading', videoCount: brand?.cai?.creatives?.length || 0, startedAt: Date.now() });
+    } else if (brand?.cai?.processingStatus === 'complete' && buildInProgress && buildInfo?.phase === 'uploading') {
+      setBuildInProgress(false);
+      setBuildInfo(null);
+    }
+  }, [brand?.cai?.processingStatus, brand?.cai?.creatives?.length, buildInProgress, buildInfo?.phase]);
 
   // When returning from Meta OAuth or Stripe billing, refresh profile and clean URL so Overview checklist updates.
   // On Meta OAuth callback, immediately fetch pages with the new access token so the page selector appears without extra click.
@@ -11568,6 +11600,37 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         </div>
       </div>
     </header>
+    {buildInProgress && (
+      <div style={{ position: 'sticky', top: 56, zIndex: 80, margin: '0 auto', maxWidth: 900, padding: '0 16px', animation: 'fadeUp 0.3s ease' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(155,109,255,0.12), rgba(6,104,225,0.12))', border: '1px solid rgba(155,109,255,0.25)', backdropFilter: 'blur(12px)', marginBottom: 16 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'spin 2s linear infinite' }}>
+            <span style={{ fontSize: 16, color: '#fff', fontWeight: 700 }}>C</span>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--cs-t0)', marginBottom: 2 }}>
+              {buildInfo?.phase === 'deep-dive' ? 'CAi is analyzing your brand'
+                : buildInfo?.phase === 'activating' ? 'CAi is building your campaign'
+                  : buildInfo?.phase === 'uploading' ? 'CAi is uploading videos to Meta'
+                    : 'CAi is working'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--cs-t3)' }}>
+              {buildInfo?.videoCount ? buildInfo.videoCount + ' videos being processed' : 'Processing your content'}
+              {' · '}
+              {buildInfo?.phase === 'deep-dive' ? 'Est. ~60 seconds'
+                : buildInfo?.phase === 'activating' ? 'Est. ~90 seconds'
+                  : buildInfo?.phase === 'uploading' ? 'Est. 2-5 minutes · You\'ll get an email when done'
+                    : 'Almost done'}
+            </div>
+          </div>
+          <button
+            onClick={() => setCaiTab('dashboard')}
+            style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(155,109,255,0.2)', border: '1px solid rgba(155,109,255,0.3)', color: '#b794ff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            View Progress
+          </button>
+        </div>
+      </div>
+    )}
     <div style={{flex:1,minHeight:0,display:'flex',justifyContent:'center'}}>
       <main className="content-pad brand-main" style={{flex:1,padding:"28px 36px",maxWidth:860,display:"flex",flexDirection:"column",minHeight:0,overflowY:'auto'}}>
         {(() => {
@@ -11610,7 +11673,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
 
         {brandTab==="content"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandContentTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} tiktokVideos={tiktokVideos} loadingTiktokVideos={loadingTiktokVideos} onLaunchVideo={onLaunchVideo} /></div>}
 
-        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} /></div>}
+        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} setBuildInProgress={setBuildInProgress} setBuildInfo={setBuildInfo} /></div>}
 
         {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
 
