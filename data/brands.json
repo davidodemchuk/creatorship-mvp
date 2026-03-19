@@ -1,0 +1,11 @@
+[
+  {
+    "id": "1772916970343",
+    "brandName": "Test",
+    "storeName": "test",
+    "email": "test@test.com",
+    "password": "$2b$10$9Bz8XuEI9e4faUAfpP9bS.K5B6bV2ENCweAxtiosOefKDMs5RO1Kq",
+    "createdAt": "2026-03-07T20:56:10.343Z",
+    "emailVerified": true
+  }
+]
