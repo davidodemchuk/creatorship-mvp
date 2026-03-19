@@ -1015,7 +1015,7 @@ function HomepageFooter() {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t5)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 12 }}>Contact</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <a href="/contact" style={{ fontSize: 13, color: 'var(--cs-t3)', textDecoration: 'none' }}>Contact Us</a>
+              <a href="/contact" style={{ fontSize: 13, color: 'var(--cs-t3)', textDecoration: 'none' }}>Get in touch</a>
             </div>
           </div>
         </div>
@@ -13483,11 +13483,38 @@ function ContactPage({ nav }) {
       </Link>
       <Link to="/brand?mode=login" style={{ padding: '9px 20px', background: MERGE_GRAD, border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>Login</Link>
     </nav>
-    {/* Form */}
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', paddingTop: 72 }}>
-      <div style={{ width: '100%', maxWidth: 520 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Get in Touch</h1>
-        <p style={{ fontSize: 14, color: C.sub, marginBottom: 32, lineHeight: 1.5 }}>Have a question, partnership inquiry, or feedback? We'd love to hear from you.</p>
+    {/* Contact content */}
+    <div style={{ flex: 1, padding: '48px 20px', paddingTop: 72 }}>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 24px' }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Talk to a human</h1>
+        <p style={{ color: 'var(--cs-t3)', fontSize: 15, lineHeight: 1.7, marginBottom: 32 }}>
+          Creatorship is built and run by David Odemchuk in Greenville, SC. No support tickets, no chatbots - just a direct line to the person building the product.
+        </p>
+
+        <div className="gl" style={{ padding: 24, borderRadius: 14, marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #0668E1, #00C2FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#fff' }}>D</div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15 }}>David Odemchuk</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12 }}>Founder & Developer</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ color: 'var(--cs-t4)', fontSize: 13 }}>Email:</span>
+              <a href="mailto:david@creatorship.app" style={{ color: '#0668E1', fontSize: 13, textDecoration: 'none' }}>david@creatorship.app</a>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ color: 'var(--cs-t4)', fontSize: 13 }}>Response time:</span>
+              <span style={{ color: 'var(--cs-t2)', fontSize: 13 }}>Within 24 hours, usually same day</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ color: 'var(--cs-t4)', fontSize: 13 }}>Book a call:</span>
+              <a href="https://calendly.com/david-odemchuk" target="_blank" rel="noopener noreferrer" style={{ color: '#0668E1', fontSize: 13, textDecoration: 'none' }}>Schedule a time</a>
+            </div>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Name *</label>
