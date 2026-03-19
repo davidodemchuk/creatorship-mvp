@@ -5081,7 +5081,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
         <div className="gl mobile-card" style={{padding:32,maxWidth:480}}>
           <div style={{fontSize:16,fontWeight:700,marginBottom:8}}>Connect your TikTok Shop first</div>
           <div style={{fontSize:13,color:C.sub,lineHeight:1.5,marginBottom:20}}>Complete the TikTok Shop step in the Overview checklist so we can load your products and find creators who feature them.</div>
-          <button onClick={()=>setBrandTab('overview')} style={{...btnStyle,background:MERGE_GRAD,color:'#fff',padding:'10px 20px'}}>Go to Dashboard →</button>
+          <button onClick={()=>setBrandTab('ai-plans')} style={{...btnStyle,background:MERGE_GRAD,color:'#fff',padding:'10px 20px'}}>Go to Dashboard →</button>
         </div>
       ) : (
         <>
@@ -7280,12 +7280,17 @@ function BrandContentTab({ brand, profile, setBrandTab, tiktokVideos: parentVide
 }
 
 
-const BRAND_TAB_IDS = ['home','overview','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
+const BRAND_TAB_IDS = ['home','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
+let _deepDiveCache = null;
+let _deepDiveCacheBrandId = null;
 function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile }) {
   const [caiData, setCaiData] = useState(null);
   const [sysInfo, setSysInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [deepDive, setDeepDive] = useState(() => brand?.caiDeepDive || null);
+  const [deepDive, setDeepDive] = useState(() => {
+    if (_deepDiveCacheBrandId === brand?.id && _deepDiveCache) return _deepDiveCache;
+    return brand?.caiDeepDive || null;
+  });
   const [expandedMetric, setExpandedMetric] = useState(null);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(true);
@@ -7349,6 +7354,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const [toggling, setToggling] = useState({});
   const [campSourceFilter, setCampSourceFilter] = useState('all');
   const [contentSection, setContentSection] = useState('creator');
+  useEffect(() => {
+    if (deepDive && brand?.id) {
+      _deepDiveCache = deepDive;
+      _deepDiveCacheBrandId = brand.id;
+    }
+  }, [deepDive, brand?.id]);
   useEffect(() => { if (contentSection === 'uploads') setShowUploadForm(true); }, [contentSection]);
   useEffect(() => {
     if (!activating) return;
@@ -11175,7 +11186,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
       url.searchParams.delete('mode');
       url.searchParams.delete('signup');
       url.searchParams.delete('login');
-      window.history.replaceState({}, '', url.pathname + (url.hash || '#overview'));
+      window.history.replaceState({}, '', url.pathname + (url.hash || '#dashboard'));
     }
   }, []);
 
@@ -11581,7 +11592,6 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         })()}
 
         {brandTab==="home"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandHomeTab brand={brand} profile={profile ?? brand} creatorsCount={creatorsCount} setBrandTab={setBrandTab} /></div>}
-        {brandTab==="overview"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} /></div>}
 
         {brandTab==="creators"&&<div style={{animation:'fadeIn 0.2s ease'}}>{loadingCreators ? <AILoader messages={['Scanning TikTok Shop creators...', 'Finding creators with your products...', 'Ranking by engagement score...', 'Calculating CAi performance index...', 'Building your creator pipeline...']} height={260} color="#EE1D52" /> : <ErrorBoundary><CreatorDiscoveryView brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} setMessagesThread={setMessagesThread} /></ErrorBoundary>}</div>}
 
@@ -11591,7 +11601,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
 
         {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
 
-        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>setBrandTab('overview')} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to CAi</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} />}</div>}
+        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>setBrandTab('ai-plans')} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to CAi</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} />}</div>}
 
         {/* Launch Campaign Modal — standalone, renders from any tab */}
         {pendingLaunchVideo && <LaunchCampaignModal video={pendingLaunchVideo} brand={brand} profile={profile ?? brand} onClose={() => setPendingLaunchVideo(null)} setBrandTab={setBrandTab} />}
