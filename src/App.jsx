@@ -7752,6 +7752,20 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const hasCampaignData = !!(caiData?.campaign?.id && caiData?.creativesCount > 0);
   const dailyBudget = Math.round(monthlyBudget / 30);
   const a = deepDive?.analysis;
+  const caiInnerSubTabs = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'campaigns', label: 'Campaigns' },
+    { id: 'content', label: 'Content' },
+    { id: 'analysis', label: 'Analysis' },
+    { id: 'optimize', label: 'Optimize' },
+  ];
+  const renderCaiSubNav = () => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+      {caiInnerSubTabs.map(t => (
+        <button key={t.id} type="button" onClick={() => setCaiSubTab(t.id)} style={pillSt(caiSubTab === t.id)}>{t.label}</button>
+      ))}
+    </div>
+  );
 
   if (loading) return <div style={{ padding: '60px 0', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} /><div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Loading CAi...</div></div>;
 
@@ -7790,14 +7804,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const $ = (n) => '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     const $d = (n) => '$' + (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    const subTabs = [
-      { id: 'dashboard', label: 'Dashboard' },
-      { id: 'campaigns', label: 'Campaigns' },
-      { id: 'content', label: 'Content' },
-      { id: 'analysis', label: 'Analysis' },
-      { id: 'optimize', label: 'Optimize' },
-    ];
-
     return (
       <div>
         {/* Compact toolbar */}
@@ -7820,6 +7826,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           </button>
           <button onClick={pollNow} disabled={polling} style={{ background: 'none', border: '1px solid rgba(155,109,255,.2)', borderRadius: 6, color: '#9b6dff', fontSize: 12, padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>{polling ? 'Polling...' : 'Refresh Metrics'}</button>
         </div>
+
+        {renderCaiSubNav()}
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
@@ -9731,7 +9739,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     );
   }
 
-  // ═══ NO DEEP DIVE YET ═══
+  // ═══ NO DEEP DIVE YET — sub-nav always visible (below header); only this body swaps ═══
   if (!a) {
     // Brand had campaigns that were deleted — redirect to campaigns tab, not welcome
     if (caiData?.processingStatus === 'cleared' || brand?.cai?.campaignDeletedAt) {
@@ -9741,12 +9749,16 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
     // If brand already has a deep dive stored, redirect to optimize (they're mid-setup)
     if (caiData?.deepDive || brand?.caiDeepDive) {
-      // Deep dive exists but hasn't loaded into `a` yet — redirect to optimize
       if (!mode || mode === 'auto') {
         setMode('auto');
         setCaiTab('optimize');
       }
-      return <div style={{ padding: '60px 20px', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div></div>;
+      return (
+        <div>
+          {renderCaiSubNav()}
+          <div style={{ padding: '40px 20px', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div></div>
+        </div>
+      );
     }
 
     // If brand already has campaigns, send them to campaigns tab — not welcome
@@ -9758,20 +9770,23 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     // If deep dive is currently running, show building state — NOT welcome screen
     if (deepDiveLoading) {
       return (
-        <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
-          <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
-          <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>Building your campaign...</h2>
-          <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 24 }}>CAi is analyzing your content, building targeting, and designing your ad campaign. This takes about 60 seconds.</p>
-          <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 10, padding: '16px 20px', textAlign: 'left', maxHeight: 300, overflowY: 'auto' }}>
-            <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--cs-t3)', lineHeight: 1.8 }}>
-              {(terminalLines || []).map((line, i) => (
-                <div key={i} style={{ color: line.type === 'highlight' ? '#9b6dff' : line.type === 'success' ? '#34d399' : line.type === 'error' ? '#ef4444' : 'var(--cs-t4)' }}>
-                  <span style={{ color: 'var(--cs-t5)', marginRight: 8 }}>{'>'.repeat(Math.min(i + 1, 3))}</span>{line.text != null ? line.text : line}
-                </div>
-              ))}
+        <div>
+          {renderCaiSubNav()}
+          <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
+            <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
+            <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>Building your campaign...</h2>
+            <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 24 }}>CAi is analyzing your content, building targeting, and designing your ad campaign. This takes about 60 seconds.</p>
+            <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 10, padding: '16px 20px', textAlign: 'left', maxHeight: 300, overflowY: 'auto' }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--cs-t3)', lineHeight: 1.8 }}>
+                {(terminalLines || []).map((line, i) => (
+                  <div key={i} style={{ color: line.type === 'highlight' ? '#9b6dff' : line.type === 'success' ? '#34d399' : line.type === 'error' ? '#ef4444' : 'var(--cs-t4)' }}>
+                    <span style={{ color: 'var(--cs-t5)', marginRight: 8 }}>{'>'.repeat(Math.min(i + 1, 3))}</span>{line.text != null ? line.text : line}
+                  </div>
+                ))}
+              </div>
             </div>
+            {elapsedSec > 0 && <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 12 }}>{elapsedSec}s elapsed</div>}
           </div>
-          {elapsedSec > 0 && <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 12 }}>{elapsedSec}s elapsed</div>}
         </div>
       );
     }
@@ -9779,33 +9794,42 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     // User is on a specific tab but no deep dive — show appropriate empty state
     if (caiSubTab === 'dashboard') {
       return (
-        <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
-          <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
-          <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>No campaign data yet</h2>
-          <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 20 }}>Run your first deep dive to see dashboard metrics.</p>
-          <button type="button" onClick={() => setCaiTab('analysis')} style={{ padding: '12px 28px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Analysis</button>
+        <div>
+          {renderCaiSubNav()}
+          <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
+            <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
+            <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>No campaign data yet</h2>
+            <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 20 }}>Run your first deep dive to see dashboard metrics.</p>
+            <button type="button" onClick={() => setCaiTab('analysis')} style={{ padding: '12px 28px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Analysis</button>
+          </div>
         </div>
       );
     }
 
     if (caiSubTab === 'campaigns') {
       return (
-        <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
-          <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
-          <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>No campaigns yet</h2>
-          <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 20 }}>Let CAi analyze your content first, then launch campaigns from the Analysis tab.</p>
-          <button type="button" onClick={() => setCaiTab('analysis')} style={{ padding: '12px 28px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Analysis</button>
+        <div>
+          {renderCaiSubNav()}
+          <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
+            <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
+            <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>No campaigns yet</h2>
+            <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 20 }}>Let CAi analyze your content first, then launch campaigns from the Analysis tab.</p>
+            <button type="button" onClick={() => setCaiTab('analysis')} style={{ padding: '12px 28px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Analysis</button>
+          </div>
         </div>
       );
     }
 
     if (caiSubTab === 'content') {
       return (
-        <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
-          <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
-          <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>Content library coming soon</h2>
-          <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 20 }}>Run your deep dive first to populate your content library.</p>
-          <button type="button" onClick={() => setCaiTab('analysis')} style={{ padding: '12px 28px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Analysis</button>
+        <div>
+          {renderCaiSubNav()}
+          <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
+            <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
+            <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>Content library coming soon</h2>
+            <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 20 }}>Run your deep dive first to populate your content library.</p>
+            <button type="button" onClick={() => setCaiTab('analysis')} style={{ padding: '12px 28px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Analysis</button>
+          </div>
         </div>
       );
     }
@@ -9816,24 +9840,26 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       const viewsStr = totalViews >= 1e6 ? (totalViews / 1e6).toFixed(0) + 'M+' : totalViews.toLocaleString();
       const brandName = (brand?.brandName || brand?.storeName || 'your brand').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       return (
-        <div style={{ maxWidth: 660, margin: '0 auto' }}>
-          {/* Welcome */}
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
-            <h2 style={{ fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 6 }}>Welcome, {brandName}.</h2>
-            <p style={{ fontSize: 15, color: 'var(--cs-t4)' }}>
-              {hasContent
-                ? `CAi found ${tiktokVideos.length} videos with ${viewsStr} organic views. Click below to run your deep dive.`
-                : 'Your TikTok content is already selling. CAi makes it sell on Meta too.'}
-            </p>
-          </div>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <button
-              type="button"
-              onClick={runDeepDive}
-              style={{ padding: '18px 48px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 17, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(155,109,255,.3)' }}
-            >Build My Report + Ad Campaign</button>
-            <div style={{ fontSize: 13, color: 'var(--cs-t5)', marginTop: 10 }}>Takes 60 seconds. No campaigns created. No money spent.</div>
+        <div>
+          {renderCaiSubNav()}
+          <div style={{ maxWidth: 660, margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: 32 }}>
+              <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
+              <h2 style={{ fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 6 }}>Welcome, {brandName}.</h2>
+              <p style={{ fontSize: 15, color: 'var(--cs-t4)' }}>
+                {hasContent
+                  ? `CAi found ${tiktokVideos.length} videos with ${viewsStr} organic views. Click below to run your deep dive.`
+                  : 'Your TikTok content is already selling. CAi makes it sell on Meta too.'}
+              </p>
+            </div>
+            <div style={{ textAlign: 'center', marginBottom: 32 }}>
+              <button
+                type="button"
+                onClick={runDeepDive}
+                style={{ padding: '18px 48px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 17, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(155,109,255,.3)' }}
+              >Build My Report + Ad Campaign</button>
+              <div style={{ fontSize: 13, color: 'var(--cs-t5)', marginTop: 10 }}>Takes 60 seconds. No campaigns created. No money spent.</div>
+            </div>
           </div>
         </div>
       );
@@ -11188,12 +11214,10 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
       <nav className="cai-header-nav" style={{display:'flex',alignItems:'center',gap:2,flex:1,justifyContent:'center'}}>
         {[
           { id: 'dashboard', label: 'Dashboard' },
-          ...(caiData?.deepDive ? [
-            { id: 'campaigns', label: 'Campaigns' },
-            { id: 'content', label: 'Content' },
-            { id: 'analysis', label: 'Analysis' },
-            { id: 'optimize', label: 'Optimize' },
-          ] : []),
+          { id: 'campaigns', label: 'Campaigns' },
+          { id: 'content', label: 'Content' },
+          { id: 'analysis', label: 'Analysis' },
+          { id: 'optimize', label: 'Optimize' },
           { id: null, label: 'Account', isAccount: true },
         ].map(t => {
           const isActive = t.isAccount ? brandTab === 'settings' : activeCaiTab === t.id;
