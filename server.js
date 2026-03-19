@@ -622,7 +622,7 @@ function getValidMetaToken(brand) {
   if (!token) throw new Error('Meta not connected — connect your Meta account in Settings');
   const expiresAt = brand.metaTokenExpiresAt ? new Date(brand.metaTokenExpiresAt).getTime() : 0;
   if (expiresAt > 0 && expiresAt <= Date.now()) {
-    throw new Error('Your Meta connection has expired. Please reconnect Meta in Account settings.');
+    throw new Error('Your Meta connection has expired. Go to Account → scroll to Meta Ads → click "Connect Meta" to reconnect.');
   }
   if (expiresAt > 0 && expiresAt - Date.now() < 3 * 24 * 60 * 60 * 1000) {
     console.warn('[meta-token] Token for brand ' + (brand.id || '?') + ' expires in less than 3 days — brand should reconnect soon');
@@ -5169,8 +5169,14 @@ app.get('/auth/meta/callback', async (req, res) => {
       if (longData.access_token) {
         longToken = longData.access_token;
         expiresIn = longData.expires_in || expiresIn;
+        console.log('[meta-oauth] Long-lived token obtained, expires in ' + Math.round(expiresIn / 86400) + ' days');
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('[meta-oauth] Long-lived token exchange FAILED:', e.message, '— using short-lived token with 1-hour expiry');
+      // CRITICAL: If long-lived exchange failed, the token expires in ~1 hour, NOT 60 days.
+      // Set expiresIn to 1 hour so getValidMetaToken will catch it and prompt reconnection.
+      expiresIn = 3600; // 1 hour in seconds
+    }
 
     // Get user info, ad accounts, and pages
     const meData = await apiFetch('https://graph.facebook.com/v22.0/me?fields=id,name&access_token=' + longToken);

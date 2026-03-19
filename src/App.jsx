@@ -8072,13 +8072,15 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const dailyBudget = Math.round(monthlyBudget / 30);
   const a = deepDive?.analysis;
   const sa = a || {};
+  const showCampaignWorkspace = isActive || hasCampaignData || (!!a && (caiSubTab === 'dashboard' || caiSubTab === 'campaigns'));
 
   if (loading) return <div style={{ padding: '60px 0', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} /><div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Loading CAi...</div></div>;
 
 
   // ═══ CAi DASHBOARD — shows when active OR when paused with existing campaign data ═══
-  if ((isActive || hasCampaignData) && !deepDiveLoading && !(terminalLines.length > 0 && !deepDive)) {
+  if (showCampaignWorkspace && !deepDiveLoading && !(terminalLines.length > 0 && !deepDive)) {
     const creatives = caiData?.creatives || [];
+    const noCampaignOrCreatives = (!caiData?.campaign?.id || creatives.length === 0);
     const perf = caiData?.performance || {};
     const today = perf.today || {};
     const week = perf.week || {};
@@ -8121,7 +8123,13 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 const r = await fetch('/api/cai/sync-meta', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand?.id }) });
                 const d = await r.json().catch(() => ({}));
                 if (d.changed) {
-                  window.location.reload();
+                  const syncLog = Array.isArray(d.log) ? d.log.join(' | ') : '';
+                  if (/clearing local data|no longer exists on Meta/i.test(syncLog)) {
+                    toast.success('Campaign was deleted on Meta — local data cleared. Build a new campaign to start fresh.');
+                    setTimeout(() => window.location.reload(), 700);
+                  } else {
+                    window.location.reload();
+                  }
                 } else if (d.error) {
                   alert(d.error);
                 } else {
@@ -8153,6 +8161,31 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             ))}
           </div>
+
+          {noCampaignOrCreatives && a && (
+            <div className="gl" style={{ padding: 24, borderRadius: 14, textAlign: 'center', marginTop: 24, marginBottom: 16 }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>&#128640;</div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>Ready to launch your first campaign</h3>
+              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 400, margin: '0 auto 16px' }}>
+                CAi has analyzed your content. Click below to build a campaign — CAi will select your best videos, write ad copy, and set up targeting automatically.
+              </p>
+              <button
+                onClick={() => { if (typeof runDeepDive === 'function') runDeepDive(); }}
+                style={{
+                  padding: '12px 28px',
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Build My Campaign
+              </button>
+            </div>
+          )}
 
           {/* ─── ROW 2: Budget Pacing + This Week ─── */}
           <div className="cai-budget-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
@@ -9244,6 +9277,31 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>{(caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1} campaign{((caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1) !== 1 ? 's' : ''} · {creatives.length} ads · ${Math.round((caiData?.monthlyBudget || 0) / 30)}/day budget</div>
             </div>
           </div>
+
+          {(!caiData?.campaign?.id || (creatives || []).length === 0) && (
+            <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>&#128203;</div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>No active campaigns</h3>
+              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 400, margin: '0 auto 16px' }}>
+                {a ? 'Your analysis is ready. Build a new campaign to start running ads.' : 'Run a deep dive first and CAi will build your campaign.'}
+              </p>
+              <button
+                onClick={() => setCaiSubTab('dashboard')}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: 10,
+                  background: '#0668E1',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          )}
 
           {/* CAi MAX header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
