@@ -1001,6 +1001,37 @@ function ForCreatorsSection() {
 
       <div style={{ textAlign: 'center' }}>
         <Link to="/creator?mode=signup" style={{ display: 'inline-block', background: 'transparent', border: '1px solid rgba(238,29,82,.5)', color: '#EE1D52', fontWeight: 700, fontSize: 15, padding: '14px 32px', borderRadius: 10, textDecoration: 'none' }}>Start Earning →</Link>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, maxWidth: 800, margin: '40px auto 0' }}>
+          <div className="gl" style={{ padding: 20, borderRadius: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>0</div>
+            <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15, marginBottom: 6 }}>Zero extra work</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 13, lineHeight: 1.6 }}>You don't re-film anything. Your existing TikTok videos become Meta ads as-is.</div>
+          </div>
+          <div className="gl" style={{ padding: 20, borderRadius: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>$</div>
+            <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15, marginBottom: 6 }}>Passive income</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 13, lineHeight: 1.6 }}>Earn commission on every sale your content generates as a Meta ad. Paid weekly via Stripe.</div>
+          </div>
+          <div className="gl" style={{ padding: 20, borderRadius: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>10x</div>
+            <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15, marginBottom: 6 }}>Bigger audience</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 13, lineHeight: 1.6 }}>Your TikTok video reaches Meta's 3B+ users. Same content, massively wider distribution.</div>
+          </div>
+        </div>
+
+        <div className="gl" style={{ maxWidth: 600, margin: '24px auto 0', padding: 20, borderRadius: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #FE2C55, #ff6b35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0 }}>TT</div>
+            <div>
+              <div style={{ fontWeight: 600, color: 'var(--cs-t0)', fontSize: 14, marginBottom: 6 }}>How it works for you</div>
+              <div style={{ color: 'var(--cs-t3)', fontSize: 13, lineHeight: 1.7 }}>
+                You keep posting on TikTok as usual. When a brand on Creatorship selects your video, CAi handles everything — downloading, uploading to Meta, writing ad copy, setting targeting. You get notified and start earning commission from day one. No contracts, no exclusivity.
+              </div>
+            </div>
+          </div>
+        </div>
+
         <p style={{ marginTop: 12, fontSize: 13, color: 'var(--cs-t5)' }}>Already have TikTok Shop sales? You're already qualified.</p>
       </div>
     </div>
