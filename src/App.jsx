@@ -8080,6 +8080,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   // ═══ CAi DASHBOARD — shows when active OR when paused with existing campaign data ═══
   if (showCampaignWorkspace || deepDiveLoading || terminalLines.length || deepDive) {
     const creatives = caiData?.creatives || [];
+    const activeCreativeCount = (caiData?.creatives || []).filter(c => c.status !== 'deleted' && c.status !== 'archived').length;
     const noCampaignOrCreatives = (!caiData?.campaign?.id || creatives.length === 0);
     const perf = caiData?.performance || {};
     const today = perf.today || {};
@@ -8503,7 +8504,22 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ ANALYSIS TAB — DEEP DIVE REPORT ═══ */}
         {caiSubTab === 'analysis' && (<>
-          {sa.verdict ? (<>
+          {a && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+              <button onClick={() => { if (typeof runDeepDive === 'function') runDeepDive(); }} style={{
+                padding: '8px 16px',
+                borderRadius: 8,
+                background: 'var(--cs-a06)',
+                border: '1px solid var(--cs-a10)',
+                color: 'var(--cs-t2)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}>Re-run Analysis</button>
+            </div>
+          )}
+          {a ? (<>
 
             {/* ─── EXECUTIVE SUMMARY ─── */}
             <div style={{ marginBottom: 24 }}>
@@ -9716,6 +9732,29 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ OPTIMIZE TAB — Budget/ROAS first so post-OAuth lands on them ═══ */}
         {caiSubTab === 'optimize' && (<>
+          {(!caiData?.campaign?.id || activeCreativeCount === 0) && (
+            <div className="gl" style={{ padding: 32, borderRadius: 16, textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>&#9881;</div>
+              <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>No active campaign to optimize</h3>
+              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+                Once you build a campaign, this tab lets you adjust your daily budget, ROAS target, and automation settings. Changes sync directly to Meta in real-time.
+              </p>
+              <button onClick={() => setCaiSubTab('dashboard')} style={{
+                padding: '12px 28px',
+                borderRadius: 10,
+                background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
+                color: '#fff',
+                border: 'none',
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}>Build a Campaign First</button>
+            </div>
+          )}
+
+          {caiData?.campaign?.id && activeCreativeCount > 0 && (
+            <>
           {/* ─── Daily Budget (first so users see it after Meta connect) ─── */}
           <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '20px 24px', marginBottom: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -9729,7 +9768,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
             {/* Budget context — volume-first */}
             <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, fontSize: 13, lineHeight: 1.5, background: Math.round(monthlyBudget/30) < 25 ? 'rgba(255,180,0,.05)' : Math.round(monthlyBudget/30) < 50 ? 'rgba(6,104,225,.04)' : Math.round(monthlyBudget/30) < 100 ? 'rgba(52,211,153,.04)' : Math.round(monthlyBudget/30) < 300 ? 'rgba(52,211,153,.06)' : 'rgba(155,109,255,.04)', border: '1px solid ' + (Math.round(monthlyBudget/30) < 25 ? 'rgba(255,180,0,.12)' : Math.round(monthlyBudget/30) < 50 ? 'rgba(6,104,225,.1)' : Math.round(monthlyBudget/30) < 300 ? 'rgba(52,211,153,.1)' : 'rgba(155,109,255,.1)'), color: Math.round(monthlyBudget/30) < 25 ? '#ffb400' : Math.round(monthlyBudget/30) < 50 ? '#4da6ff' : Math.round(monthlyBudget/30) < 300 ? '#34d399' : '#9b6dff' }}>
-              {Math.round(monthlyBudget/30) >= 10 && Math.round(monthlyBudget/30) < 25 && 'Testing phase — 50+ creatives, let Meta learn.'}
+              {Math.round(monthlyBudget/30) >= 10 && Math.round(monthlyBudget/30) < 25 && activeCreativeCount > 0 && `Testing phase — ${activeCreativeCount} creatives, let Meta learn.`}
               {Math.round(monthlyBudget/30) >= 25 && Math.round(monthlyBudget/30) < 50 && 'Solid budget — 100+ creatives competing.'}
               {Math.round(monthlyBudget/30) >= 50 && Math.round(monthlyBudget/30) < 100 && 'Growth mode — 200+ creatives, Meta finds winners fast.'}
               {Math.round(monthlyBudget/30) >= 100 && Math.round(monthlyBudget/30) < 300 && 'Scale mode — load everything, Meta\'s algorithm does the work.'}
@@ -9799,8 +9838,24 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           )}
           {(!(profile?.metaPages || brand?.metaPages || metaPagesProp) || (profile?.metaPages || brand?.metaPages || metaPagesProp).length === 0) && (
             <div style={{ padding: '12px 16px', background: 'rgba(232,89,60,.06)', border: '1px solid rgba(232,89,60,.15)', borderRadius: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 13, color: '#e8593c' }}>No Facebook Page found. </span>
-              <button type="button" onClick={() => { window.location.href = '/auth/meta?email=' + encodeURIComponent(brand?.email || ''); }} style={{ background: 'none', border: 'none', color: '#0668E1', fontWeight: 600, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Connect Meta →</button>
+              {(() => {
+                const expiresAtRaw = profile?.metaTokenExpiresAt || brand?.metaTokenExpiresAt;
+                const isMetaExpired = !!expiresAtRaw && (new Date(expiresAtRaw).getTime() <= Date.now());
+                if (isMetaExpired) {
+                  return (
+                    <>
+                      <span style={{ fontSize: 13, color: '#e8593c' }}>Meta connection expired. </span>
+                      <button type="button" onClick={() => setBrandTab('settings')} style={{ background: 'none', border: 'none', color: '#0668E1', fontWeight: 600, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Reconnect in Account settings →</button>
+                    </>
+                  );
+                }
+                return (
+                  <>
+                    <span style={{ fontSize: 13, color: '#e8593c' }}>No Facebook Page found. </span>
+                    <button type="button" onClick={() => { window.location.href = '/auth/meta?email=' + encodeURIComponent(brand?.email || ''); }} style={{ background: 'none', border: 'none', color: '#0668E1', fontWeight: 600, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Connect Meta →</button>
+                  </>
+                );
+              })()}
             </div>
           )}
 
@@ -9814,6 +9869,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             } catch (err) { toast.error('Failed: ' + err.message); }
           }} style={{ width: '100%', padding: '14px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6 }}>Save Changes — Updates Meta Instantly</button>
           <div style={{ fontSize: 12, color: 'var(--cs-t4)', textAlign: 'center', marginBottom: 28 }}>Changes are applied directly to your Meta campaign via the API. No need to open Ads Manager.</div>
+            </>
+          )}
 
           <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>Optimize</h3>
           <p style={{ fontSize: 14, color: 'var(--cs-t4)', margin: '0 0 24px' }}>Budget, ROAS target, and automation settings. Changes sync to Meta instantly.</p>
