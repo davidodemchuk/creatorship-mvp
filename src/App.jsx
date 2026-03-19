@@ -5635,6 +5635,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   const tabs = [{ id: 'general', label: 'General' }, { id: 'integrations', label: 'Integrations' }, { id: 'security', label: 'Security' }, { id: 'billing', label: 'Billing' }, { id: 'support', label: 'Support' }];
   const activeTabStyle = { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#0668E1', background: 'none', border: 'none', borderBottom: '2px solid #0668E1', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' };
   const inactiveTabStyle = { padding: '10px 20px', fontSize: 13, fontWeight: 500, color: 'var(--cs-t4)', background: 'none', border: 'none', borderBottom: '2px solid transparent', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s' };
+  const outreachAuthorized = (brand?.outreachAuthorized === true) || (profile?.outreachAuthorized === true);
 
   return <div className="fu">
     {/* Header with avatar */}
@@ -5654,15 +5655,6 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
 
     {/* ═══ GENERAL TAB ═══ */}
     {settingsTab === 'general' && <>
-      <div style={S.card}>
-        <div style={S.sectionTitle}>Creator Outreach</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ color: '#34d399', fontSize: 16 }}>✓</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#34d399' }}>Authorized</span>
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.6 }}>Creatorship contacts TikTok creators on behalf of <strong style={{ color: 'var(--cs-t1)' }}>{brand?.brandName || brand?.storeName || 'your brand'}</strong> to request content usage rights for Meta ads. Creators approve via a licensing agreement before any content is used. You retain final approval on all campaigns.</div>
-      </div>
-
       {/* Profile section */}
       <div style={S.card}>
         <div style={S.sectionTitle}>Brand Profile</div>
@@ -5874,6 +5866,16 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
             <button onClick={handleMetaDisconnect} style={{ ...btnStyle, background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#fca5a5', padding: '8px 18px', fontSize: 14 }}>Disconnect Meta Ads</button>
           </div>
         )}
+        <div style={S.card} id="creator-outreach-card">
+          <div style={S.sectionTitle}>Creator Outreach</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+            <span style={{ color: outreachAuthorized ? '#34d399' : '#fca5a5', fontSize: 16 }}>{outreachAuthorized ? '✓' : '⚠️'}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: outreachAuthorized ? '#34d399' : '#fca5a5' }}>{outreachAuthorized ? 'Authorized' : 'Not Authorized'}</span>
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.6 }}>
+            Creatorship contacts TikTok creators on behalf of <strong style={{ color: 'var(--cs-t1)' }}>{brand?.brandName || brand?.storeName || 'your brand'}</strong> to request content usage rights for Meta ads. Creators approve via a licensing agreement before any content is used. You retain final approval on all campaigns.
+          </div>
+        </div>
         <FeedbackMsg msg={metaMsg} />
       </div>
     </>}
