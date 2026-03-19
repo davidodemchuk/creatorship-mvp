@@ -5515,6 +5515,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     const newProfile = needProfile ? derivedProfileUrl : (currentProfile || derivedProfileUrl);
     setTikTokShopUrl(newShop);
     setTikTokStorePageUrl(newProfile);
+  }, []);
 
   const handleMetaConnect = async () => {
     setMetaMsg(null);
