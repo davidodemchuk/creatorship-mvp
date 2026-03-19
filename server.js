@@ -575,20 +575,24 @@ function hasPermission(userRole, requiredRole) {
   return (ROLE_HIERARCHY[userRole] || 0) >= (ROLE_HIERARCHY[requiredRole] || 99);
 }
 
-// Middleware: require minimum role for an endpoint
-function requireRole(minRole) {
+// Middleware: require roles (or minimum role when single argument is provided)
+function requireRole(...allowed) {
   return (req, res, next) => {
     const role = req.brandAuth?.role || 'owner'; // owner is implicit
-    if (!hasPermission(role, minRole)) {
-      return res.status(403).json({ error: 'Insufficient permissions', requiredRole: minRole, yourRole: role });
+    if (!allowed || allowed.length === 0) return next();
+    const ok = allowed.length === 1
+      ? hasPermission(role, allowed[0])
+      : allowed.includes(role);
+    if (!ok) {
+      return res.status(403).json({ error: 'Insufficient permissions. Your role: ' + role + '. Required: ' + allowed.join(' or ') + '.' });
     }
     next();
   };
 }
 
-function signBrandToken(brand, role) {
+function signBrandToken(brand, role = 'owner') {
   return jwt.sign(
-    { brandId: brand.id, email: (brand.email || '').toLowerCase(), role: role || 'owner' },
+    { brandId: brand.id, email: (brand.email || '').toLowerCase(), role },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -2404,7 +2408,7 @@ app.get('/api/brand/team', async (req, res) => {
   res.json({ members });
 });
 
-app.delete('/api/brand/team/:memberId', requireRole('admin'), async (req, res) => {
+app.delete('/api/brand/team/:memberId', requireRole('owner'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.query.brandId;
   const { memberId } = req.params;
   const team = await loadTeam();
@@ -2415,8 +2419,8 @@ app.delete('/api/brand/team/:memberId', requireRole('admin'), async (req, res) =
   res.json({ success: true });
 });
 
-// Update a team member role (admin only)
-app.put('/api/brand/team/:memberId/role', requireRole('admin'), async (req, res) => {
+// Update a team member role (owner only)
+app.put('/api/brand/team/:memberId/role', requireRole('owner'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const { memberId } = req.params;
   const { role } = req.body || {};
@@ -2435,15 +2439,31 @@ app.put('/api/brand/team/:memberId/role', requireRole('admin'), async (req, res)
     return res.status(403).json({ error: 'Cannot change the owner role' });
   }
 
-  // Only owner can promote to admin
-  if (role === 'admin' && req.brandAuth?.role !== 'owner') {
-    return res.status(403).json({ error: 'Only the owner can promote members to admin' });
-  }
-
   member.role = role;
   await saveTeam(team);
 
   res.json({ success: true, member: { id: member.id, email: member.email, role: member.role } });
+});
+
+// Update role endpoint used by team management UI (owner only)
+app.post('/api/brand/team/update-role', requireRole('owner'), async (req, res) => {
+  try {
+    const { memberId, newRole } = req.body || {};
+    if (!memberId || !newRole) return res.status(400).json({ error: 'memberId and newRole required' });
+    if (!['admin', 'editor', 'viewer'].includes(newRole)) return res.status(400).json({ error: 'Invalid role' });
+    const brandId = req.brandAuth?.brandId;
+    if (!brandId) return res.status(401).json({ error: 'Authentication required' });
+
+    const team = await loadTeam();
+    const member = team.find(t => t.id === memberId && t.brandId === brandId);
+    if (!member) return res.status(404).json({ error: 'Team member not found' });
+
+    member.role = newRole;
+    await saveTeam(team);
+    return res.json({ ok: true, role: newRole });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
 });
 
 // Helper: find brand by id or email (fallback)
@@ -2536,7 +2556,7 @@ app.post('/api/brand/update-tiktok', requireRole('admin'), async (req, res) => {
   res.json({ success: true, brand: brandResponse(brand) });
 });
 
-app.post('/api/brand/update-profile', requireRole('admin'), async (req, res) => {
+app.post('/api/brand/update-profile', requireRole('owner', 'admin', 'editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   const { email, brandName, storeName } = req.body;
   const brand = await getBrand(brandId, email);
@@ -6402,7 +6422,7 @@ TIKTOK GMV MAX PRINCIPLES (applied to Meta):
 
 // ═══ CAi DEEP DIVE — Personalized brand analysis that builds trust ═══
 // This is the "sell" — before asking for money, prove we know their business
-app.post('/api/cai/deep-dive', authBrand, requireRole('editor'), async (req, res) => {
+app.post('/api/cai/deep-dive', authBrand, requireRole('owner', 'admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);
@@ -6823,7 +6843,7 @@ function saveCaiCampaigns(brand, campaigns) {
 }
 
 // Activate CAi — brand sets budget + ROAS target, CAi builds everything
-app.post('/api/cai/activate', authBrand, requireRole('editor'), async (req, res) => {
+app.post('/api/cai/activate', authBrand, requireRole('owner', 'admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);

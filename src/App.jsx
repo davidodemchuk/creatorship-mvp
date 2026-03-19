@@ -79,13 +79,16 @@ function canDo(userRole, action) {
     edit_campaigns: 'editor',
     launch: 'editor',
     toggle_campaign: 'editor',
-    run_deep_dive: 'editor',
+    run_deep_dive: 'admin',
+    run_cai: 'admin',
     upload_content: 'editor',
     edit_settings: 'admin',
     manage_team: 'admin',
     manage_billing: 'admin',
+    billing: 'admin',
     connect_integrations: 'admin',
     delete_brand: 'owner',
+    delete_account: 'owner',
   };
   const required = roleActions[action] || 'owner';
   return (ROLE_LEVEL[userRole] || 0) >= (ROLE_LEVEL[required] || 99);
@@ -5887,6 +5890,13 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   const memberSince = brand.createdAt ? new Date(brand.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'March 2026';
 
   const S = { card: { background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '20px 24px', marginBottom: 16 }, label: { fontSize: 14, color: 'var(--cs-t4)', display: 'block', marginBottom: 6, fontWeight: 600, letterSpacing: '.3px' }, val: { fontSize: 14, color: 'var(--cs-t0)', fontWeight: 500 }, dim: { fontSize: 14, color: 'var(--cs-t4)' }, inp: { ...inputStyle, background: 'var(--cs-bg2)', border: '1px solid var(--cs-a08)', borderRadius: 10, fontSize: 14, padding: '12px 14px' }, row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--cs-a04)' }, badge: (ok) => ({ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, padding: '4px 12px', borderRadius: 20, background: ok ? 'rgba(52,211,153,.1)' : 'var(--cs-a04)', color: ok ? '#34d399' : 'var(--cs-t4)' }), sectionTitle: { fontSize: 13, fontWeight: 700, color: 'var(--cs-t3)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 16 } };
+  const roleBadge = { owner: '#9b6dff', admin: '#0668E1', editor: '#34D399', viewer: 'var(--cs-t4)' };
+  const roleDescription = {
+    owner: 'Full access',
+    admin: 'Can run CAi and manage campaigns',
+    editor: 'Can edit campaigns and settings',
+    viewer: 'Read-only',
+  };
   const StatusDot = ({ ok }) => <span style={{ width: 8, height: 8, borderRadius: '50%', background: ok ? '#34d399' : 'var(--cs-t4)', display: 'inline-block' }} />;
   const FeedbackMsg = ({ msg }) => msg ? <div style={{ marginTop: 10, fontSize: 13, padding: '8px 12px', borderRadius: 8, background: msg.ok ? 'rgba(52,211,153,.08)' : 'rgba(239,68,68,.08)', border: '1px solid ' + (msg.ok ? 'rgba(52,211,153,.2)' : 'rgba(239,68,68,.2)'), color: msg.ok ? '#34d399' : '#fca5a5' }}>{msg.text}</div> : null;
 
@@ -6463,9 +6473,12 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
       <div style={{ padding: '12px 16px', background: 'rgba(6,104,225,.04)', border: '1px solid rgba(6,104,225,.1)', borderRadius: 10, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t0)' }}>{profile?.email}</div>
-          <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Owner</div>
+          <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Owner · {roleDescription.owner}</div>
         </div>
-        <span style={{ fontSize: 13, padding: '2px 8px', borderRadius: 4, background: 'rgba(6,104,225,.1)', color: '#0668E1' }}>You</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', padding: '3px 8px', borderRadius: 999, background: roleBadge.owner + '1a', color: roleBadge.owner, border: '1px solid ' + roleBadge.owner + '44' }}>Owner</span>
+          <span style={{ fontSize: 13, padding: '2px 8px', borderRadius: 4, background: 'rgba(6,104,225,.1)', color: '#0668E1' }}>You</span>
+        </div>
       </div>
 
       {/* Team Members */}
@@ -6475,10 +6488,36 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: m.status === 'active' ? 'rgba(52,211,153,.1)' : 'rgba(255,180,0,.1)', border: '1px solid ' + (m.status === 'active' ? 'rgba(52,211,153,.2)' : 'rgba(255,180,0,.2)'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: m.status === 'active' ? '#34d399' : '#ffb400', flexShrink: 0 }}>{(m.email || '?').charAt(0).toUpperCase()}</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t0)' }}>{m.email}</div>
-              <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>{m.role.charAt(0).toUpperCase() + m.role.slice(1)}{m.acceptedAt ? ' · Joined ' + new Date(m.acceptedAt).toLocaleDateString() : ''}</div>
+              <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>
+                {(m.role || 'viewer').charAt(0).toUpperCase() + (m.role || 'viewer').slice(1)} · {roleDescription[m.role || 'viewer']}
+                {m.acceptedAt ? ' · Joined ' + new Date(m.acceptedAt).toLocaleDateString() : ''}
+              </div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', padding: '3px 8px', borderRadius: 999, background: (roleBadge[m.role || 'viewer'] || roleBadge.viewer) + '1a', color: roleBadge[m.role || 'viewer'] || roleBadge.viewer, border: '1px solid ' + (roleBadge[m.role || 'viewer'] || roleBadge.viewer) + '44' }}>
+              {(m.role || 'viewer')}
+            </span>
+            {userRole === 'owner' && (
+              <select
+                value={m.role || 'viewer'}
+                onChange={async (e) => {
+                  const token = localStorage.getItem('creatorship_brand_token');
+                  const resp = await fetch('/api/brand/team/update-role', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ memberId: m.id, newRole: e.target.value }),
+                  });
+                  if (resp.ok) refreshProfile();
+                  loadTeamMembers();
+                }}
+                style={{ padding: '4px 8px', borderRadius: 6, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 12 }}
+              >
+                <option value="admin">Admin</option>
+                <option value="editor">Editor</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            )}
             {m.status === 'active' ? (
               <span style={{ fontSize: 13, padding: '3px 10px', borderRadius: 20, background: 'rgba(52,211,153,.1)', border: '1px solid rgba(52,211,153,.15)', color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399' }}/>Logged in</span>
             ) : (
@@ -10195,9 +10234,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     <button
                       type="button"
                       onClick={runDeepDive}
-                      style={{ padding: '18px 48px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 17, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(155,109,255,.3)' }}
+                      disabled={!canDoAction('run_deep_dive')}
+                      style={{ padding: '18px 48px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 17, fontWeight: 800, cursor: !canDoAction('run_deep_dive') ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(155,109,255,.3)', opacity: !canDoAction('run_deep_dive') ? 0.55 : 1 }}
                     >Build My Report + Ad Campaign</button>
                     <div style={{ fontSize: 13, color: 'var(--cs-t5)', marginTop: 10 }}>Takes 60 seconds. No campaigns created. No money spent.</div>
+                    {!canDoAction('run_deep_dive') && <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 8 }}>View only. Ask an owner/admin to run CAi.</div>}
                   </div>
                 </div>
               )
