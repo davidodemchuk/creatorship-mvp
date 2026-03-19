@@ -13488,7 +13488,7 @@ function ContactPage({ nav }) {
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 24px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Talk to a human</h1>
         <p style={{ color: 'var(--cs-t3)', fontSize: 15, lineHeight: 1.7, marginBottom: 32 }}>
-          Creatorship is built and run by David Odemchuk in Greenville, SC. No support tickets, no chatbots - just a direct line to the person building the product.
+          Creatorship is built and run by David Odemchuk in Greenville, SC. No support tickets, no chatbots — just a direct line to the person building the product.
         </p>
 
         <div className="gl" style={{ padding: 24, borderRadius: 14, marginBottom: 24 }}>
@@ -13496,7 +13496,7 @@ function ContactPage({ nav }) {
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #0668E1, #00C2FF)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: '#fff' }}>D</div>
             <div>
               <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15 }}>David Odemchuk</div>
-              <div style={{ color: 'var(--cs-t4)', fontSize: 12 }}>Founder & Developer</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12 }}>Director of Creator Partnerships</div>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -13550,7 +13550,7 @@ function ContactPage({ nav }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <a href="/terms" style={{ fontSize: 14, color: C.sub, textDecoration: 'none' }}>Terms</a>
         <a href="/privacy" style={{ fontSize: 14, color: C.sub, textDecoration: 'none' }}>Privacy</a>
-        <a href="/contact" style={{ fontSize: 14, color: C.sub, textDecoration: 'none' }}>Contact</a>
+        <a href="/contact" style={{ fontSize: 14, color: C.sub, textDecoration: 'none' }}>Get in touch</a>
         <span style={{ fontSize: 14, color: C.dim }}>© 2026 Creatorship</span>
       </div>
     </footer>
