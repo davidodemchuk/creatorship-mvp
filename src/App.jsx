@@ -5515,22 +5515,6 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     const newProfile = needProfile ? derivedProfileUrl : (currentProfile || derivedProfileUrl);
     setTikTokShopUrl(newShop);
     setTikTokStorePageUrl(newProfile);
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...brandIdPayload,
-        brandName: brandSettings.brandName ?? profile?.brandName ?? brand?.brandName,
-        defaultCommission: brandSettings.defaultCommission ?? profile?.defaultCommission ?? brand?.defaultCommission ?? 10,
-        tikTokShopUrl: newShop,
-        tikTokStorePageUrl: newProfile,
-      }),
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (!d.success) console.warn('[auto-populate] save failed:', d.error);
-      })
-      .catch(() => { autoPopulateTikTokRan.current = false; });
-  }, []);
 
   const handleMetaConnect = async () => {
     setMetaMsg(null);
