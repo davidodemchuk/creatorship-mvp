@@ -8072,13 +8072,13 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const dailyBudget = Math.round(monthlyBudget / 30);
   const a = deepDive?.analysis;
   const sa = a || {};
-  const showCampaignWorkspace = isActive || hasCampaignData || (!!a && (caiSubTab === 'dashboard' || caiSubTab === 'campaigns'));
+  const showCampaignWorkspace = isActive || hasCampaignData || a || caiSubTab === 'dashboard' || caiSubTab === 'campaigns';
 
   if (loading) return <div style={{ padding: '60px 0', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} /><div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Loading CAi...</div></div>;
 
 
   // ═══ CAi DASHBOARD — shows when active OR when paused with existing campaign data ═══
-  if (showCampaignWorkspace && !deepDiveLoading && !(terminalLines.length > 0 && !deepDive)) {
+  if (showCampaignWorkspace || deepDiveLoading || terminalLines.length || deepDive) {
     const creatives = caiData?.creatives || [];
     const noCampaignOrCreatives = (!caiData?.campaign?.id || creatives.length === 0);
     const perf = caiData?.performance || {};
