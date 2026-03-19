@@ -568,8 +568,30 @@ const forgotPasswordLimiter = rateLimit({
 });
 
 // ═══ JWT AUTH ═══
-function signBrandToken(brand) {
-  return jwt.sign({ brandId: brand.id, email: (brand.email || '').toLowerCase() }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+// ── Role-based access control ──
+const ROLE_HIERARCHY = { owner: 4, admin: 3, editor: 2, viewer: 1 };
+
+function hasPermission(userRole, requiredRole) {
+  return (ROLE_HIERARCHY[userRole] || 0) >= (ROLE_HIERARCHY[requiredRole] || 99);
+}
+
+// Middleware: require minimum role for an endpoint
+function requireRole(minRole) {
+  return (req, res, next) => {
+    const role = req.brandAuth?.role || 'owner'; // owner is implicit
+    if (!hasPermission(role, minRole)) {
+      return res.status(403).json({ error: 'Insufficient permissions', requiredRole: minRole, yourRole: role });
+    }
+    next();
+  };
+}
+
+function signBrandToken(brand, role) {
+  return jwt.sign(
+    { brandId: brand.id, email: (brand.email || '').toLowerCase(), role: role || 'owner' },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
 }
 
 // Middleware: verifies JWT and sets req.brandAuth = { brandId, email }
@@ -579,7 +601,7 @@ function authBrand(req, res, next) {
   if (!token) return res.status(401).json({ error: 'Authentication required', code: 'NO_TOKEN' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    req.brandAuth = { brandId: payload.brandId, email: payload.email };
+    req.brandAuth = { brandId: payload.brandId, email: payload.email, role: payload.role || 'owner' };
     // SECURITY: Force-override any client-supplied brandId with JWT-authenticated value
     if (req.body && typeof req.body === 'object') req.body.brandId = payload.brandId;
     if (req.query && typeof req.query === 'object') req.query.brandId = payload.brandId;
@@ -1983,7 +2005,7 @@ app.post('/api/brand/signup', signupLimiter, async (req, res) => {
   await saveBrand(brand);
   const verifyUrl = `https://www.creatorship.app/api/auth/verify-email?token=${emailToken}`;
   const sessionBrand = brandResponse(brand);
-  res.status(200).json({ success: true, brand: { ...sessionBrand, showVerifyBanner: true }, token: signBrandToken(brand) });
+  res.status(200).json({ success: true, brand: { ...sessionBrand, showVerifyBanner: true }, token: signBrandToken(brand, 'owner') });
   // fire-and-forget verification email
   sendEmail(
     brand.email,
@@ -2169,7 +2191,7 @@ app.post('/api/brand/login', authLimiter, async (req, res) => {
     if (brand.banned) return res.status(403).json({ error: 'Your account has been suspended. Contact support@creatorship.app.' });
     const match = brand.password ? await bcrypt.compare(password, brand.password) : false;
     if (match) {
-      return res.json({ success: true, brand: brandResponse(brand), token: signBrandToken(brand) });
+      return res.json({ success: true, brand: brandResponse(brand), token: signBrandToken(brand, 'owner') });
     }
     // Check team members before returning generic auth error.
     const team = await loadTeam();
@@ -2180,7 +2202,7 @@ app.post('/api/brand/login', authLimiter, async (req, res) => {
         const ownerBrand = brands.find(b => b.id === teamMember.brandId);
         if (ownerBrand) {
           const { password: _, ...safe } = ownerBrand;
-          return res.json({ success: true, brand: { ...brandResponse(ownerBrand), teamMemberEmail: teamMember.email, teamRole: teamMember.role }, token: signBrandToken(ownerBrand) });
+          return res.json({ success: true, brand: { ...brandResponse(ownerBrand), teamMemberEmail: teamMember.email, teamRole: teamMember.role }, token: signBrandToken(ownerBrand, teamMember.role) });
         }
       }
     }
@@ -2195,7 +2217,7 @@ app.post('/api/brand/login', authLimiter, async (req, res) => {
       const ownerBrand = brands.find(b => b.id === teamMember.brandId);
       if (ownerBrand) {
         const { password: _, ...safe } = ownerBrand;
-        return res.json({ success: true, brand: { ...brandResponse(ownerBrand), teamMemberEmail: teamMember.email, teamRole: teamMember.role }, token: signBrandToken(ownerBrand) });
+        return res.json({ success: true, brand: { ...brandResponse(ownerBrand), teamMemberEmail: teamMember.email, teamRole: teamMember.role }, token: signBrandToken(ownerBrand, teamMember.role) });
       }
     }
   }
@@ -2221,7 +2243,7 @@ app.get('/api/brand/me', async (req, res) => {
   res.json(brandResponse(brand));
 });
 
-app.put('/api/brand/me', authBrand, async (req, res) => {
+app.put('/api/brand/me', authBrand, requireRole('admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   if (!brandId) return res.status(401).json({ error: 'Not authenticated' });
   const brand = await getBrandById(brandId);
@@ -2236,7 +2258,7 @@ app.put('/api/brand/me', authBrand, async (req, res) => {
   res.json({ success: true, brand: brandResponse(brand) });
 });
 
-app.post('/api/brand/settings', async (req, res) => {
+app.post('/api/brand/settings', requireRole('admin'), async (req, res) => {
   const { email, metaToken, adAccount, pageId, pageName, brandName, storeName, storeUrl, tikTokShopUrl, tikTokStorePageUrl } = req.body;
   const brand = await getBrand(req.brandAuth?.brandId, email);
   if (!brand) return res.json({ error: 'Brand not found' });
@@ -2256,7 +2278,7 @@ app.post('/api/brand/settings', async (req, res) => {
 });
 
 // ═══ Team member management ═══
-app.post('/api/brand/team/invite', async (req, res) => {
+app.post('/api/brand/team/invite', requireRole('admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   const { email, role } = req.body;
   if (!brandId || !email) return res.status(400).json({ error: 'brandId and email required' });
@@ -2339,7 +2361,7 @@ app.get('/api/brand/team', async (req, res) => {
   res.json({ members });
 });
 
-app.delete('/api/brand/team/:memberId', async (req, res) => {
+app.delete('/api/brand/team/:memberId', requireRole('admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.query.brandId;
   const { memberId } = req.params;
   const team = await loadTeam();
@@ -2348,6 +2370,37 @@ app.delete('/api/brand/team/:memberId', async (req, res) => {
   team.splice(idx, 1);
   await saveTeam(team);
   res.json({ success: true });
+});
+
+// Update a team member role (admin only)
+app.put('/api/brand/team/:memberId/role', requireRole('admin'), async (req, res) => {
+  const brandId = req.brandAuth?.brandId;
+  const { memberId } = req.params;
+  const { role } = req.body || {};
+
+  if (!brandId) return res.status(401).json({ error: 'Authentication required' });
+  if (!role || !['viewer', 'editor', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role. Must be viewer, editor, or admin.' });
+  }
+
+  const team = await loadTeam();
+  const member = team.find(t => t.id === memberId && t.brandId === brandId);
+  if (!member) return res.status(404).json({ error: 'Team member not found' });
+
+  // Owner role is not represented in the team table; keep this guard for safety.
+  if (member.role === 'owner') {
+    return res.status(403).json({ error: 'Cannot change the owner role' });
+  }
+
+  // Only owner can promote to admin
+  if (role === 'admin' && req.brandAuth?.role !== 'owner') {
+    return res.status(403).json({ error: 'Only the owner can promote members to admin' });
+  }
+
+  member.role = role;
+  await saveTeam(team);
+
+  res.json({ success: true, member: { id: member.id, email: member.email, role: member.role } });
 });
 
 // Helper: find brand by id or email (fallback)
@@ -2399,7 +2452,7 @@ function brandResponse(b) {
 }
 
 // Dedicated save endpoints — accept brandId or email for lookup
-app.post('/api/brand/update-meta', async (req, res) => {
+app.post('/api/brand/update-meta', requireRole('admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   const { email, adAccount, pageId, accessToken } = req.body;
   const brand = await getBrand(brandId, email);
@@ -2422,7 +2475,7 @@ app.post('/api/brand/update-meta', async (req, res) => {
   res.json({ success: true, brand: brandResponse(brand) });
 });
 
-app.post('/api/brand/update-tiktok', async (req, res) => {
+app.post('/api/brand/update-tiktok', requireRole('admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   const { email, storeUrl } = req.body;
   const brand = await getBrand(brandId, email);
@@ -2440,7 +2493,7 @@ app.post('/api/brand/update-tiktok', async (req, res) => {
   res.json({ success: true, brand: brandResponse(brand) });
 });
 
-app.post('/api/brand/update-profile', async (req, res) => {
+app.post('/api/brand/update-profile', requireRole('admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   const { email, brandName, storeName } = req.body;
   const brand = await getBrand(brandId, email);
@@ -2458,7 +2511,7 @@ app.post('/api/brand/update-profile', async (req, res) => {
   res.json({ success: true, brand: brandResponse(brand) });
 });
 
-app.delete('/api/brand/account', async (req, res) => {
+app.delete('/api/brand/account', requireRole('owner'), async (req, res) => {
   // Use JWT brandId — never trust email from body for deletion
   const brandId = req.brandAuth?.brandId;
   const { password } = req.body;
@@ -2596,7 +2649,7 @@ async function saveBillingRecords(brandId, records) {
 }
 
 // Create Stripe Checkout Session — setup mode (saves payment method, no charge)
-app.post('/api/billing/setup-checkout', authBrand, async (req, res) => {
+app.post('/api/billing/setup-checkout', authBrand, requireRole('admin'), async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe is not configured. Set STRIPE_SECRET_KEY.' });
   const { brandId, email } = req.body;
   const brand = await getBrand(brandId || req.brandAuth?.brandId, email);
@@ -2843,7 +2896,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 });
 
 // Get billing status (requires auth — prevents unauthenticated billing scans)
-app.get('/api/billing/status', authBrand, async (req, res) => {
+app.get('/api/billing/status', authBrand, requireRole('admin'), async (req, res) => {
   const brand = await getBrandById(req.brandAuth.brandId);
   if (!brand) return res.json({ error: 'Brand not found' });
   const records = loadBillingRecords(brand.id);
@@ -2934,8 +2987,9 @@ app.get('/api/billing/history', async (req, res) => {
 });
 
 // Remove payment method
-app.post('/api/billing/remove-payment', async (req, res) => {
-  const { brandId, email } = req.body;
+app.post('/api/billing/remove-payment', authBrand, requireRole('admin'), async (req, res) => {
+  const brandId = req.brandAuth?.brandId || req.body.brandId;
+  const email = req.body.email || req.brandAuth?.email;
   const brand = await getBrand(brandId, email);
   if (!brand) return res.json({ error: 'Brand not found' });
   if (stripe && brand.stripePaymentMethodId) { try { await stripe.paymentMethods.detach(brand.stripePaymentMethodId); } catch (e) {} }
@@ -4006,7 +4060,7 @@ const uploadMiddleware = multer({ storage: uploadStorage, limits: { fileSize: 50
   else cb(new Error('Only video files are allowed (MP4, MOV, WebM)'));
 }}).single('video');
 
-app.post('/api/brand/upload-file', (req, res) => {
+app.post('/api/brand/upload-file', requireRole('editor'), (req, res) => {
   uploadMiddleware(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -4047,7 +4101,7 @@ app.post('/api/brand/upload-file', (req, res) => {
 
 app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads')));
 
-app.post('/api/brand/upload-video', express.json({ limit: '50mb' }), async (req, res) => {
+app.post('/api/brand/upload-video', express.json({ limit: '50mb' }), requireRole('editor'), async (req, res) => {
   try {
     const brandId = req.brandAuth?.brandId || req.body?.brandId;
     if (!brandId) return res.status(400).json({ error: 'brandId required' });
@@ -4099,7 +4153,7 @@ app.post('/api/brand/upload-video', express.json({ limit: '50mb' }), async (req,
   }
 });
 
-app.delete('/api/brand/upload/:uploadId', async (req, res) => {
+app.delete('/api/brand/upload/:uploadId', requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body?.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);
@@ -5136,7 +5190,7 @@ app.get('/api/brand/meta-accounts', async (req, res) => {
   });
 });
 
-app.post('/api/brand/select-meta-account', async (req, res) => {
+app.post('/api/brand/select-meta-account', requireRole('admin'), async (req, res) => {
   const { email, brandId, adAccount, pageId } = req.body;
   const brand = await getBrand(brandId || req.brandAuth?.brandId, email);
   if (!brand) return res.json({ error: 'Brand not found' });
@@ -6305,7 +6359,7 @@ TIKTOK GMV MAX PRINCIPLES (applied to Meta):
 
 // ═══ CAi DEEP DIVE — Personalized brand analysis that builds trust ═══
 // This is the "sell" — before asking for money, prove we know their business
-app.post('/api/cai/deep-dive', authBrand, async (req, res) => {
+app.post('/api/cai/deep-dive', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);
@@ -6726,7 +6780,7 @@ function saveCaiCampaigns(brand, campaigns) {
 }
 
 // Activate CAi — brand sets budget + ROAS target, CAi builds everything
-app.post('/api/cai/activate', authBrand, async (req, res) => {
+app.post('/api/cai/activate', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);
@@ -7335,7 +7389,7 @@ async function sendBuildCompleteNotification(brandId, campaignName, creativesCou
   return sendEmail(brand.email, subject, html);
 }
 
-app.post('/api/cai/notify-build-complete', authBrand, async (req, res) => {
+app.post('/api/cai/notify-build-complete', authBrand, requireRole('editor'), async (req, res) => {
   try {
     const brandId = req.brandAuth?.brandId || req.body?.brandId;
     const { campaignName, creativesCount } = req.body || {};
@@ -7542,7 +7596,7 @@ app.get('/api/cai/status', authBrand, async (req, res) => {
 });
 
 // ═══ MANUAL META SYNC ═══
-app.post('/api/cai/sync-meta', authBrand, async (req, res) => {
+app.post('/api/cai/sync-meta', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);
@@ -7558,7 +7612,7 @@ app.post('/api/cai/sync-meta', authBrand, async (req, res) => {
 });
 
 // ═══ CAi Create Campaign — create a new promotion, A/B test, or additional always-on campaign ═══
-app.post('/api/cai/create-campaign', authBrand, async (req, res) => {
+app.post('/api/cai/create-campaign', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const brand = await getBrandById(brandId);
   if (!brand) return res.status(404).json({ error: 'Brand not found' });
@@ -7859,7 +7913,7 @@ async function caiAddCreativeToCampaign(brand, campaignLocalId, videoId, primary
 }
 
 // CAi Add Creative — add a video to the active campaign
-app.post('/api/cai/add-creative', authBrand, async (req, res) => {
+app.post('/api/cai/add-creative', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);
@@ -7881,7 +7935,7 @@ app.post('/api/cai/add-creative', authBrand, async (req, res) => {
 });
 
 // CAi Deactivate
-app.post('/api/cai/deactivate', authBrand, async (req, res) => {
+app.post('/api/cai/deactivate', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   const brand = await getBrandById(brandId);
   if (!brand) return res.status(404).json({ error: 'Brand not found' });
@@ -7899,7 +7953,7 @@ app.post('/api/cai/deactivate', authBrand, async (req, res) => {
 });
 
 // ═══ FULL RESET — Clear ALL CAi data, return brand to pre-analysis state ═══
-app.post('/api/cai/reset', authBrand, async (req, res) => {
+app.post('/api/cai/reset', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   const brand = await getBrandById(brandId);
   if (!brand) return res.status(404).json({ error: 'Brand not found' });
@@ -9219,7 +9273,7 @@ app.post('/api/brand/ai-plans/launch-approved', authBrand, async (req, res) => {
   res.json({ success: true, results, launched, total: approved.length });
 });
 
-app.post('/api/launch', authBrand, async (req, res) => {
+app.post('/api/launch', authBrand, requireRole('editor'), async (req, res) => {
   let { videoId, metaToken, adAccount, pageId, dailyBudget = 50, brandId,
     campaignName, objective, budgetType, lifetimeBudget, duration, startNow, startDate,
     primaryText, headline, description, cta, displayUrl, websiteUrl,
@@ -9631,7 +9685,7 @@ app.get('/api/brand/dashboard', async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // META CAMPAIGN INSIGHTS
 // ═══════════════════════════════════════════════════════════
-app.post('/api/campaigns/delete', authBrand, async (req, res) => {
+app.post('/api/campaigns/delete', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const { campaignId, archiveOnMeta } = req.body;
   if (!brandId || !campaignId) return res.json({ error: 'brandId and campaignId required' });
@@ -9745,7 +9799,7 @@ app.get('/api/campaigns', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/campaigns/toggle', async (req, res) => {
+app.post('/api/campaigns/toggle', authBrand, requireRole('editor'), async (req, res) => {
   const { metaToken, campaignId, newStatus } = req.body;
   if (!metaToken || !campaignId) return res.status(400).json({ error: 'metaToken and campaignId required' });
   try {
@@ -9755,7 +9809,7 @@ app.post('/api/campaigns/toggle', async (req, res) => {
 });
 
 // ═══ CAi Campaign Actions — pause, resume, update specific campaigns ═══
-app.post('/api/cai/campaign/pause', authBrand, async (req, res) => {
+app.post('/api/cai/campaign/pause', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const { localId } = req.body;
   const brand = await getBrandById(brandId);
@@ -9774,7 +9828,7 @@ app.post('/api/cai/campaign/pause', authBrand, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/cai/campaign/resume', authBrand, async (req, res) => {
+app.post('/api/cai/campaign/resume', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const { localId } = req.body;
   const brand = await getBrandById(brandId);
@@ -9794,7 +9848,7 @@ app.post('/api/cai/campaign/resume', authBrand, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/cai/campaign/update', authBrand, async (req, res) => {
+app.post('/api/cai/campaign/update', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const { localId, budget, roasTarget, name } = req.body;
   const brand = await getBrandById(brandId);
@@ -9822,7 +9876,7 @@ app.post('/api/cai/campaign/update', authBrand, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/cai/campaign/add-creative', authBrand, async (req, res) => {
+app.post('/api/cai/campaign/add-creative', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const { localId, videoId } = req.body;
   if (!localId || !videoId) return res.status(400).json({ error: 'localId and videoId required' });
@@ -9839,7 +9893,7 @@ app.post('/api/cai/campaign/add-creative', authBrand, async (req, res) => {
   }
 });
 
-app.post('/api/cai/campaign/archive', authBrand, async (req, res) => {
+app.post('/api/cai/campaign/archive', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const { localId } = req.body;
   const brand = await getBrandById(brandId);
@@ -9857,7 +9911,7 @@ app.post('/api/cai/campaign/archive', authBrand, async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/brand/campaigns/pause-all', authBrand, async (req, res) => {
+app.post('/api/brand/campaigns/pause-all', authBrand, requireRole('editor'), async (req, res) => {
   const brandId = req.brandAuth?.brandId;
   const brand = await getBrandById(brandId);
   if (!brand) return res.status(404).json({ error: 'Brand not found' });
@@ -9883,7 +9937,7 @@ app.post('/api/brand/campaigns/pause-all', authBrand, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/campaigns/budget', async (req, res) => {
+app.post('/api/campaigns/budget', authBrand, requireRole('editor'), async (req, res) => {
   const { metaToken, adsetId, dailyBudget } = req.body;
   if (!metaToken || !adsetId) return res.status(400).json({ error: 'metaToken and adsetId required' });
   try {
@@ -10568,6 +10622,7 @@ app.get('/api/brand/enrich', async (req, res) => {
         const brand = await getBrandById(brandId);
         if (brand) {
           brand.tikTokShopUrl = tikTokShopUrl;
+          brand.shopLogo = logoUrl || brand.shopLogo;
           if (!brand.tikTokStorePageUrl && storeName) {
             const cleanHandle = storeName.toLowerCase().replace(/[^a-z0-9]/g, '');
             brand.tikTokStorePageUrl = 'https://www.tiktok.com/@' + cleanHandle;
@@ -10639,6 +10694,13 @@ app.get('/api/brand/enrich', async (req, res) => {
       const enrichSold = finalShopInfo.sold_count ?? finalShopInfo.total_sold ?? totalItemsSold;
       const enrichRating = finalShopInfo.shop_rating ?? finalShopInfo.rating ?? rating;
       const enrichReviews = finalShopInfo.review_count ?? reviewCount;
+      if (brandId && finalLogo) {
+        const brand = await getBrandById(brandId);
+        if (brand) {
+          brand.shopLogo = finalLogo || brand.shopLogo;
+          await saveBrand(brand);
+        }
+      }
       return res.json({
         shopName: finalShopInfo.shop_name || storeName,
         storeName: finalShopInfo.shop_name || storeName || undefined,
@@ -10734,6 +10796,7 @@ app.get('/api/brand/enrich', async (req, res) => {
       const brand = await getBrandById(brandIdEnrich);
       if (brand) {
         brand.tikTokShopUrl = tikTokShopUrlEnrich;
+        brand.shopLogo = logoUrl || brand.shopLogo;
         if (!brand.tikTokStorePageUrl && storeName) {
           const cleanHandle = storeName.toLowerCase().replace(/[^a-z0-9]/g, '');
           brand.tikTokStorePageUrl = 'https://www.tiktok.com/@' + cleanHandle;
@@ -11356,7 +11419,7 @@ function scheduleCron() {
 // CONTENT LICENSING SYSTEM — outreach, approvals, content rights
 // ═══════════════════════════════════════════════════════════════
 
-app.post('/api/brand/authorize-outreach', authBrand, async (req, res) => {
+app.post('/api/brand/authorize-outreach', authBrand, requireRole('admin'), async (req, res) => {
   const brandId = req.brandAuth?.brandId || req.body.brandId;
   if (!brandId) return res.status(400).json({ error: 'brandId required' });
   const brand = await getBrandById(brandId);

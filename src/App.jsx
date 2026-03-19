@@ -1018,7 +1018,11 @@ function SiteNav({ nav }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [dropOpen]);
 
-  const avatarUrl = brand?.shopLogo ? '/api/proxy-image?url=' + encodeURIComponent(brand.shopLogo) : brand?.enrichedShop?.shopLogo ? '/api/proxy-image?url=' + encodeURIComponent(brand.enrichedShop.shopLogo) : brand?.tikTokStorePageUrl ? 'https://unavatar.io/tiktok/' + brand.tikTokStorePageUrl.split('@').pop() : null;
+  const avatarUrl = brand?.shopLogo
+    ? '/api/proxy-image?url=' + encodeURIComponent(brand.shopLogo)
+    : brand?.enrichedShop?.shopLogo
+      ? '/api/proxy-image?url=' + encodeURIComponent(brand.enrichedShop.shopLogo)
+      : null;
   const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
 
   return <>
@@ -1035,7 +1039,22 @@ function SiteNav({ nav }) {
         {loggedIn ? (
           <div ref={dropRef} style={{ position: 'relative' }}>
             <button type="button" onClick={() => setDropOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t0)', fontFamily: 'inherit', cursor: 'pointer' }}>
-              {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--cs-a15)' }} /> : <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>{initial}</div>}
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', border: '1.5px solid var(--cs-a15)', overflow: 'hidden', flexShrink: 0 }}>
+                {(brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? (
+                  <img
+                    src={avatarUrl || ''}
+                    alt=""
+                    style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div style={{ display: (brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
+                  {initial}
+                </div>
+              </div>
               <span style={{ fontSize: 13, fontWeight: 600, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</span>
               {brand && userRole !== 'owner' && (
                 <span
@@ -5800,7 +5819,22 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   return <div className="fu">
     {/* Header with avatar */}
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-      <div style={{ width: 52, height: 52, borderRadius: 14, background: BRAND_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,.9)', flexShrink: 0 }}>{(profile.brandName || brand.brandName || brand.email || '?')[0].toUpperCase()}</div>
+      <div style={{ width: 52, height: 52, borderRadius: 14, background: BRAND_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,.9)', flexShrink: 0, overflow: 'hidden' }}>
+        {(brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? (
+          <img
+            src={'/api/proxy-image?url=' + encodeURIComponent(brand?.shopLogo || brand?.enrichedShop?.shopLogo)}
+            alt=""
+            style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.style.display = 'flex';
+            }}
+          />
+        ) : null}
+        <div style={{ display: (brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'rgba(255,255,255,.9)' }}>
+          {(profile.brandName || brand.brandName || brand.email || '?')[0].toUpperCase()}
+        </div>
+      </div>
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: 'var(--cs-t0)' }}>Settings</h1>
         <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginTop: 2 }}>{brand.email} · Member since {memberSince}</div>
@@ -11434,7 +11468,30 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <button type="button" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} style={{background:'none',border:'1px solid var(--cs-a08)',borderRadius:8,padding:'6px 8px',cursor:'pointer',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',color:'var(--cs-t3)'}}>{theme === 'dark' ? '☀️' : '🌙'}</button>
         <div ref={brandNavRef} style={{position:'relative'}}>
           <button type="button" onClick={()=>setBrandNavOpen(o=>!o)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',background:'var(--cs-a06)',border:'1px solid var(--cs-a08)',borderRadius:8,color:'var(--cs-t0)',fontFamily:'inherit',cursor:'pointer'}}>
-            {(()=>{const avatarUrl=brand?.shopLogo?'/api/proxy-image?url='+encodeURIComponent(brand.shopLogo):brand?.enrichedShop?.shopLogo?'/api/proxy-image?url='+encodeURIComponent(brand.enrichedShop.shopLogo):brand?.tikTokStorePageUrl?'https://unavatar.io/tiktok/'+brand.tikTokStorePageUrl.split('@').pop():null;const displayName=brand?.storeName?'@'+brand.storeName:brand?.brandName||'Dashboard';const initial=(displayName||'?').replace(/^@/,'')[0]?.toUpperCase()||'?';return avatarUrl?<img src={avatarUrl} alt="" style={{width:30,height:30,borderRadius:'50%',objectFit:'cover',border:'1.5px solid var(--cs-a15)'}}/>:<div style={{width:30,height:30,borderRadius:'50%',background:'linear-gradient(135deg,#0668E1,#0099ff)',color:'#fff',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13}}>{initial}</div>;})()}
+            {(() => {
+              const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo || '';
+              const avatarUrl = logoRaw ? '/api/proxy-image?url=' + encodeURIComponent(logoRaw) : '';
+              const displayName = brand?.storeName ? '@' + brand.storeName : brand?.brandName || 'Dashboard';
+              const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
+              return (
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', border: '1.5px solid var(--cs-a15)', overflow: 'hidden', flexShrink: 0 }}>
+                  {logoRaw ? (
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div style={{ display: logoRaw ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
+                    {initial}
+                  </div>
+                </div>
+              );
+            })()}
             <span className="cai-brand-name" style={{fontSize:13,fontWeight:600,maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{brand?.storeName?'@'+brand.storeName.replace(/^@/,''):brand?.brandName||'Dashboard'}</span>
             <span style={{fontSize:12,opacity:.7}}>{'\u25BE'}</span>
           </button>
