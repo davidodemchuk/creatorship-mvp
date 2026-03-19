@@ -7372,7 +7372,7 @@ function BrandContentTab({ brand, profile, setBrandTab, tiktokVideos: parentVide
 const BRAND_TAB_IDS = ['home','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
 let _deepDiveCache = null;
 let _deepDiveCacheBrandId = null;
-function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo }) {
+function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo, buildInProgress = false }) {
   const [caiData, setCaiData] = useState(null);
   const [sysInfo, setSysInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -8147,6 +8147,15 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
+          {!deepDiveLoading && !activating && (setBuildInProgress ? buildInProgress : false) && (
+            <div className="gl" style={{ padding: 24, borderRadius: 14, textAlign: 'center', marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
+              <div style={{ animation: 'spin 2s linear infinite', display: 'inline-block', fontSize: 24, marginBottom: 12 }}>&#9881;</div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>CAi is building in the background</h3>
+              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto' }}>
+                Your campaign build is still running. The terminal view was interrupted but the build continues on the server. You'll see results when it completes.
+              </p>
+            </div>
+          )}
 
           {/* ─── ROW 1: Metric Cards ─── */}
           <div className="cai-metrics-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
@@ -11852,7 +11861,17 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
             </div>
           </div>
           <button
-            onClick={() => setCaiTab('dashboard')}
+            onClick={() => {
+              setCaiTab('dashboard');
+              setTimeout(() => {
+                const terminal = document.querySelector('.cai-terminal');
+                if (terminal) {
+                  terminal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }, 100);
+            }}
             style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(155,109,255,0.2)', border: '1px solid rgba(155,109,255,0.3)', color: '#b794ff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
           >
             View Progress
@@ -11902,7 +11921,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
 
         {brandTab==="content"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandContentTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} tiktokVideos={tiktokVideos} loadingTiktokVideos={loadingTiktokVideos} onLaunchVideo={onLaunchVideo} /></div>}
 
-        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} setBuildInProgress={setBuildInProgress} setBuildInfo={setBuildInfo} /></div>}
+        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} setBuildInProgress={setBuildInProgress} setBuildInfo={setBuildInfo} buildInProgress={buildInProgress} /></div>}
 
         {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
 
