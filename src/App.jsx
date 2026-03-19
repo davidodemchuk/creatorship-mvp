@@ -6041,7 +6041,32 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ flexShrink: 0 }}><rect width="28" height="28" rx="6" fill="rgba(6,104,225,.1)"/><path d="M8.5 18c-.9-1.4-1.5-3.2-1.5-4 0-1.2.4-2 1.1-2s1.3.8 2.1 2.2l.6 1c.8 1.3 1.7 2.8 3.2 2.8 2.3 0 3.8-2.4 3.8-5.8 0-3.1-2-5.2-5-5.2-3.6 0-5.8 3-5.8 6.2 0 1.5.5 3 1.3 4l.2.1zm5-8c1.6 0 2.5 1.3 2.5 3.2 0 2.2-.8 3.5-1.6 3.5-.7 0-1.2-.7-2-2l-.6-1.1c-.5-.9-1.1-1.8-1.8-2.4.7-.8 1.8-1.2 3.5-1.2z" fill="#0668E1"/></svg>
             <div><div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t0)' }}>Meta Ads</div><div style={S.dim}>Campaign creation and ad management</div></div>
           </div>
-          <span style={S.badge(hasMeta)}><StatusDot ok={hasMeta} />{hasMeta ? 'Connected' : 'Not connected'}</span>
+          {(() => {
+            const expiresAt = brand?.metaTokenExpiresAt ? new Date(brand.metaTokenExpiresAt).getTime() : 0;
+            const now = Date.now();
+            const daysLeft = expiresAt > 0 ? Math.floor((expiresAt - now) / 86400000) : -1;
+            const isExpired = expiresAt > 0 && expiresAt <= now;
+            const expiresSoon = daysLeft >= 0 && daysLeft <= 7;
+            const noPage = !brand?.metaPageId && !brand?.pageId;
+            const noAdAccount = !brand?.adAccount;
+
+            if (isExpired) {
+              return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'rgba(239,68,68,0.15)', color: '#ef4444', fontSize: 12, fontWeight: 600 }}>Token Expired — Reconnect</span>;
+            }
+            if (noAdAccount) {
+              return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'rgba(255,180,0,0.15)', color: '#ffb400', fontSize: 12, fontWeight: 600 }}>No Ad Account Selected</span>;
+            }
+            if (noPage) {
+              return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'rgba(255,180,0,0.15)', color: '#ffb400', fontSize: 12, fontWeight: 600 }}>No Page Selected</span>;
+            }
+            if (expiresSoon) {
+              return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'rgba(255,180,0,0.15)', color: '#ffb400', fontSize: 12, fontWeight: 600 }}>Expires in {daysLeft} days — Reconnect soon</span>;
+            }
+            if (brand?.hasMetaToken) {
+              return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'rgba(52,211,153,0.15)', color: '#34D399', fontSize: 12, fontWeight: 600 }}>Connected</span>;
+            }
+            return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'var(--cs-a06)', color: 'var(--cs-t4)', fontSize: 12, fontWeight: 600 }}>Not Connected</span>;
+          })()}
         </div>
         {!hasMeta ? (
           <div>
@@ -6074,6 +6099,11 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
         ) : (
           <div>
             {profile.metaTokenType === 'oauth' && profile.metaUserName && <div style={{ fontSize: 13, color: '#34d399', marginBottom: 12 }}>Connected as <strong>{profile.metaUserName}</strong> via Facebook</div>}
+            {brand?.metaTokenExpiresAt && (
+              <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: -4, marginBottom: 12 }}>
+                Token expires: {new Date(brand.metaTokenExpiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div style={{ padding: 14, background: 'var(--cs-bg2)', borderRadius: 10, border: '1px solid var(--cs-a04)' }}>
                 <div style={S.dim}>Ad Account</div>
@@ -6157,17 +6187,17 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
             <button onClick={handleMetaDisconnect} style={{ ...btnStyle, background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#fca5a5', padding: '8px 18px', fontSize: 14 }}>Disconnect Meta Ads</button>
           </div>
         )}
-        <div style={S.card} id="creator-outreach-card">
-          <div style={S.sectionTitle}>Creator Outreach</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <span style={{ color: outreachAuthorized ? '#34d399' : '#fca5a5', fontSize: 16 }}>{outreachAuthorized ? '✓' : '⚠️'}</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: outreachAuthorized ? '#34d399' : '#fca5a5' }}>{outreachAuthorized ? 'Authorized' : 'Not Authorized'}</span>
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.6 }}>
-            Creatorship contacts TikTok creators on behalf of <strong style={{ color: 'var(--cs-t1)' }}>{brand?.brandName || brand?.storeName || 'your brand'}</strong> to request content usage rights for Meta ads. Creators approve via a licensing agreement before any content is used. You retain final approval on all campaigns.
-          </div>
-        </div>
         <FeedbackMsg msg={metaMsg} />
+      </div>
+      <div className="gl" style={{ padding: 24, borderRadius: 14, marginTop: 24 }} id="creator-outreach-card">
+        <div style={S.sectionTitle}>Creator Outreach</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ color: (brand?.outreachAuthorized === true) ? '#34d399' : '#fca5a5', fontSize: 16 }}>{(brand?.outreachAuthorized === true) ? '✓' : '⚠️'}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: (brand?.outreachAuthorized === true) ? '#34d399' : '#fca5a5' }}>{(brand?.outreachAuthorized === true) ? 'Authorized' : 'Not Authorized'}</span>
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.6 }}>
+          Creatorship contacts TikTok creators on behalf of <strong style={{ color: 'var(--cs-t1)' }}>{brand?.brandName || brand?.storeName || 'your brand'}</strong> to request content usage rights for Meta ads. Creators approve via a licensing agreement before any content is used. You retain final approval on all campaigns.
+        </div>
       </div>
     </>}
 
