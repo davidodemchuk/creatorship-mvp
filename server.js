@@ -604,46 +604,70 @@ function getValidMetaToken(brand) {
   return token;
 }
 
-// ═══ WATERMARK-FREE VIDEO URL — NEVER return play_addr ═══
-// TikTok play_addr has watermarks. download_addr doesn't.
-// If download_addr is expired, we must re-fetch from ScrapeCreators to get a fresh one.
-// NEVER fall back to play_addr — skip the video instead.
+// ═══ WATERMARK-SAFE VIDEO URL ═══
+// Prefer explicit nwm + play_addr (streaming, typically no baked TikTok watermark).
+// download_addr is often the watermarked file — use only as last resort.
 async function getCleanVideoUrl(video, scrapeKey) {
-  // 1. Try cached download_addr first
-  const dlUrl = video.downloadUrl || (video.video?.download_addr?.url_list || [])[0] || '';
-  if (dlUrl && !dlUrl.includes('play_addr') && !isUrlExpired(dlUrl)) {
-    return { url: dlUrl, source: 'cached_download_addr' };
+  // Priority 1: Explicit no-watermark URL from cached data
+  const nwmCached = video.nwm_video_url || video.video_url_no_watermark || video.nwm_url;
+  if (nwmCached && !isUrlExpired(nwmCached)) {
+    console.log('[watermark-safe] Using cached nwm_url for video', video.id);
+    return { url: nwmCached, source: 'cached_nwm' };
   }
 
-  // 2. Re-fetch from ScrapeCreators to get fresh download_addr
+  // Priority 2: play_addr from cached data (streaming URL, no baked watermark)
+  const playUrl = video.playUrl || video.play ||
+    video.video?.play_addr?.url_list?.[0] ||
+    video.play_addr?.url_list?.[0];
+  if (playUrl && !playUrl.includes('download_addr') && !isUrlExpired(playUrl)) {
+    console.log('[watermark-safe] Using cached play_addr for video', video.id);
+    return { url: playUrl, source: 'cached_play_addr' };
+  }
+
+  // Priority 3: Re-fetch from ScrapeCreators to get fresh URLs
   if (scrapeKey && video.id) {
     try {
-      const freshResp = await fetch('https://api.scrapecreators.com/v2/tiktok/video?video_id=' + video.id, {
+      const freshResp = await fetch(`https://api.scrapecreators.com/v2/tiktok/video?video_id=${video.id}`, {
         headers: { 'x-api-key': scrapeKey },
       });
       if (freshResp.ok) {
         const freshData = await freshResp.json();
-        const freshDl = (freshData.video?.download_addr?.url_list || freshData.download_addr?.url_list || [])[0]
-          || freshData.downloadUrl || freshData.download_url || '';
-        if (freshDl && !freshDl.includes('play_addr')) {
-          console.log('[watermark-safe] Fresh download_addr for video ' + video.id);
-          return { url: freshDl, source: 'fresh_download_addr' };
-        }
-        // ScrapeCreators might return a nwm (no watermark) URL
-        const nwmUrl = freshData.nwm_video_url || freshData.video_url_no_watermark || freshData.nwm_url || '';
+        const detail = freshData.aweme_detail || freshData;
+
+        // Try nwm URLs first
+        const nwmUrl = detail.nwm_video_url || detail.video_url_no_watermark || detail.nwm_url ||
+          freshData.nwm_video_url || freshData.video_url_no_watermark || freshData.nwm_url;
         if (nwmUrl) {
-          console.log('[watermark-safe] Using nwm_url for video ' + video.id);
-          return { url: nwmUrl, source: 'nwm_url' };
+          console.log('[watermark-safe] Fresh nwm_url for video', video.id);
+          return { url: nwmUrl, source: 'fresh_nwm' };
+        }
+
+        // Try play_addr (streaming, no watermark)
+        const freshPlay = detail.video?.play_addr?.url_list?.[0] ||
+          freshData.video?.play_addr?.url_list?.[0] ||
+          detail.play || freshData.play;
+        if (freshPlay) {
+          console.log('[watermark-safe] Fresh play_addr for video', video.id);
+          return { url: freshPlay, source: 'fresh_play_addr' };
+        }
+
+        // download_addr is WATERMARKED — only use as absolute last resort with warning
+        const dlUrl = detail.video?.download_addr?.url_list?.[0] ||
+          freshData.video?.download_addr?.url_list?.[0] ||
+          freshData.downloadUrl || freshData.download_url;
+        if (dlUrl) {
+          console.log('[watermark-safe] WARNING: Using download_addr (may have watermark) for video', video.id);
+          return { url: dlUrl, source: 'fresh_download_addr_WATERMARKED' };
         }
       }
     } catch (e) {
-      console.log('[watermark-safe] Re-fetch failed for video ' + video.id + ':', e.message);
+      console.log('[watermark-safe] Re-fetch failed for video', video.id, e.message);
     }
   }
 
-  // 3. NEVER fall back to play_addr — reject the video
-  console.log('[watermark-safe] REJECTED video ' + video.id + ' — no watermark-free URL available');
-  return { url: null, source: 'rejected_watermark' };
+  // No clean URL found
+  console.log('[watermark-safe] REJECTED video', video.id, '- no watermark-free URL available');
+  return { url: null, source: 'rejected_no_clean_url' };
 }
 
 // Check if a TikTok CDN URL is likely expired (URLs contain timestamp params)
@@ -7078,9 +7102,10 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
             dbg('ScrapeCreators returned ' + rawVideos.length + ' videos. Keys: ' + (rawVideos[0] ? Object.keys(rawVideos[0]).slice(0, 5).join(',') : 'empty'));
             for (const fv of rawVideos) {
               const fid = String(fv.aweme_id || fv.id);
+              const freshPlayUrls = fv.video?.play_addr?.url_list || [];
               const freshDlUrls = fv.video?.download_addr?.url_list || [];
-              // Only use download_addr (no watermark). Never use play_addr for Meta uploads.
-              freshVideosMap[fid] = freshDlUrls[0] || '';
+              // Prefer play_addr (clean); download_addr often has baked TikTok watermark.
+              freshVideosMap[fid] = freshPlayUrls[0] || freshDlUrls[0] || '';
             }
             dbg('freshMap keys: ' + Object.keys(freshVideosMap).join(', '));
             dbg('freshMap sample URL: ' + (Object.values(freshVideosMap)[0] || 'EMPTY').slice(0, 60));
@@ -7110,9 +7135,9 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
               });
               if (vResp.ok) {
                 const vData = await vResp.json();
-                const dlUrls = vData.video?.download_addr?.url_list || vData.aweme_detail?.video?.download_addr?.url_list || [];
-                if (dlUrls[0]) {
-                  freshVideosMap[String(vid.id)] = dlUrls[0];
+                const pickedUrl = vData?.aweme_detail?.video?.play_addr?.url_list?.[0] || vData?.video?.play_addr?.url_list?.[0] || vData?.aweme_detail?.video?.download_addr?.url_list?.[0] || vData?.video?.download_addr?.url_list?.[0];
+                if (pickedUrl) {
+                  freshVideosMap[String(vid.id)] = pickedUrl;
                   dbg('Individual fetch OK for ' + vid.id);
                 }
               }
@@ -7131,9 +7156,9 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
         if (!video) { dbg('SKIP ' + pick.videoId + ': not found in allVideos'); errors++; done++; continue; }
 
         try {
-          // ═══ WATERMARK-SAFE: Only use download_addr, never play_addr ═══
+          // ═══ WATERMARK-SAFE: Prefer play_addr / nwm; download_addr may be watermarked ═══
           const cleanResult = await getCleanVideoUrl(video, process.env.SCRAPE_KEY);
-          let videoUrl = freshVideosMap[String(video.id)] || cleanResult.url;
+          let videoUrl = cleanResult.url || freshVideosMap[String(video.id)];
           if (!videoUrl) {
             console.log('[cai-activate] SKIPPED video ' + video.id + ' — no watermark-free URL (' + cleanResult.source + ')');
             if (cai.activityLog) cai.activityLog.push({ type: 'video_skipped', videoId: video.id, reason: 'watermark', ts: new Date().toISOString() });
@@ -7142,13 +7167,9 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
             done++;
             continue;
           }
-          // Watermark check: reject if URL contains play_addr or /play/
-          if (videoUrl.includes('play_addr') || videoUrl.includes('/play/')) {
-            console.log('[cai-activate] REJECTED video ' + video.id + ' — URL contains play_addr (watermarked)');
-            if (cai.activityLog) cai.activityLog.push({ type: 'video_rejected', videoId: video.id, reason: 'play_addr_url', ts: new Date().toISOString() });
-            errors++;
-            done++;
-            continue;
+          // Watermark check — warn if URL contains download_addr (often watermarked)
+          if (videoUrl.includes('download_addr')) {
+            console.log('[cai-activate] WARNING video ' + video.id + ' URL contains download_addr (potentially watermarked), proceeding anyway');
           }
           dbg('Video ' + video.id + ': freshUrl=' + (freshVideosMap[String(video.id)] ? 'YES' : 'no') + ', cachedDl=' + (video.downloadUrl ? 'yes' : 'no') + ', final=' + videoUrl.slice(0, 50));
 
@@ -7355,10 +7376,10 @@ app.get('/api/cai/test-download', authBrand, async (req, res) => {
       const fv = rawVideos[0];
       const dlUrls = fv.video?.download_addr?.url_list || [];
       const playUrls = fv.video?.play_addr?.url_list || [];
-      const videoUrl = dlUrls[0] || '';
+      const videoUrl = playUrls[0] || dlUrls[0] || '';
       if (!videoUrl) {
-        console.log('[cai-activate] SKIPPED video ' + (fv.aweme_id || fv.id) + ' — only play_addr available (watermarked)');
-        steps.push({ step: 'url_extract', videoId: fv.aweme_id || fv.id, hasDl: dlUrls.length, hasPlay: playUrls.length, skipped: 'watermark' });
+        console.log('[cai-activate] SKIPPED video ' + (fv.aweme_id || fv.id) + ' — no play_addr or download_addr');
+        steps.push({ step: 'url_extract', videoId: fv.aweme_id || fv.id, hasDl: dlUrls.length, hasPlay: playUrls.length, skipped: 'no_url' });
       } else {
       steps.push({ step: 'url_extract', videoId: fv.aweme_id || fv.id, hasDl: dlUrls.length, hasPlay: playUrls.length, urlPrefix: videoUrl.slice(0, 80) });
       
@@ -8557,7 +8578,7 @@ const CAI_CHANGELOG = [
     'CAi Video Qualification System: scoring engine for future TikTok Shop Partner API (handles thousands of videos)',
     'Fast-track rules: videos with 2+ sales, 100K+ views, or 500+ shares auto-qualify',
     'Realistic projections with delivery rate model — higher ROAS targets show lower delivery estimates',
-    'CRITICAL: Watermark-free video enforcement — never upload play_addr URLs, re-fetch from API, skip if no clean URL',
+    'CRITICAL: Watermark-safe video URLs — prefer play_addr / nwm over download_addr for Meta uploads; re-fetch via ScrapeCreators when needed',
     'Meta Pixel auto-fetch during OAuth + attach to campaigns + fallback to TRAFFIC if no pixel',
     'Meta campaign sync: verify campaign status against Meta every 5 min + manual Sync button',
     'Analysis page "Why CAi Tests Videos You\'d Never Consider" value section',
