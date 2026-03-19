@@ -8173,31 +8173,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             ))}
           </div>
 
-          {noCampaignOrCreatives && a && (
-            <div className="gl" style={{ padding: 24, borderRadius: 14, textAlign: 'center', marginTop: 24, marginBottom: 16 }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>&#128640;</div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>Ready to launch your first campaign</h3>
-              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 400, margin: '0 auto 16px' }}>
-                CAi has analyzed your content. Click below to build a campaign — CAi will select your best videos, write ad copy, and set up targeting automatically.
-              </p>
-              <button
-                onClick={() => { if (typeof runDeepDive === 'function') runDeepDive(); }}
-                style={{
-                  padding: '12px 28px',
-                  borderRadius: 10,
-                  background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
-                  color: '#fff',
-                  border: 'none',
-                  fontSize: 15,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                Build My Campaign
-              </button>
-            </div>
-          )}
-
           {/* ─── ROW 2: Budget Pacing + This Week ─── */}
           <div className="cai-budget-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
             <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 18px' }}>
