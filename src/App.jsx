@@ -10051,7 +10051,20 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const viewsStr = totalViews >= 1e6 ? (totalViews / 1e6).toFixed(0) + 'M+' : totalViews.toLocaleString();
     const brandName = (brand?.brandName || brand?.storeName || 'your brand').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-    const noAnalysisBody = deepDiveLoading
+    const noAnalysisBody = ((deepDiveLoading || activating) && caiSubTab !== 'dashboard')
+      ? (
+        <div style={{ textAlign: 'center', padding: '80px 24px' }}>
+          <div style={{ fontSize: 40, marginBottom: 16, animation: 'pulse 2s ease-in-out infinite' }}>&#9881;</div>
+          <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>CAi is building your campaign</h3>
+          <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 400, margin: '0 auto' }}>
+            Your deep dive analysis and campaign are being built right now. This takes about 60 seconds. Switch to the Dashboard tab to see live progress.
+          </p>
+          <button onClick={() => setCaiSubTab('dashboard')} style={{ marginTop: 20, padding: '10px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            View Build Progress
+          </button>
+        </div>
+      )
+      : deepDiveLoading
       ? (
         <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
           <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
