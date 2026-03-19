@@ -10194,7 +10194,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>Your Ad-Ready Videos</span>
             </div>
             <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginBottom: 14 }}>Videos CAi identified as ad-ready — from your brand or creators featuring your products.</div>
-            {(!sa.ownedContentAnalysis || sa.ownedContentAnalysis.length === 0) && (!sa.topPicks || sa.topPicks.length === 0) && (
+            {(sa.ownedContentAnalysis || []).length === 0 && (sa.topPicks || []).length === 0 && (
               <div style={{ padding: '24px', textAlign: 'center', background: 'var(--cs-a03)', borderRadius: 10, marginBottom: 16 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 6 }}>No videos found yet</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.5 }}>
@@ -10202,10 +10202,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
               </div>
             )}
-            {(!sa.ownedContentAnalysis || sa.ownedContentAnalysis.length === 0) && (sa.topPicks && sa.topPicks.length > 0) && (
+            {(sa.ownedContentAnalysis || []).length === 0 && (sa.topPicks || []).length > 0 && (
             <>
             <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 16, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>CAi found {sa.topPicks.length} creator videos for your products</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>CAi found {(sa.topPicks || []).length} creator videos for your products</div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>Your brand doesn't post its own TikTok videos — but creators already are. CAi ranked these by ad potential and can launch them as Meta ads.</div>
               <div style={{ textAlign: 'center' }}>
                 <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 10, border: '2px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 360 }}>
@@ -10246,7 +10246,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             })}
             </>
             )}
-            {(sa.ownedContentAnalysis && sa.ownedContentAnalysis.length > 0) && (
+            {(sa.ownedContentAnalysis || []).length > 0 && (
             <>
             <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 16, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>You own these videos — launch them as Meta ads now</div>
@@ -10261,7 +10261,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   </div>
                 </div>
             </div>
-            {sa.ownedContentAnalysis.map((oc, i) => {
+            {(sa.ownedContentAnalysis || []).map((oc, i) => {
               const vid = tiktokVideos.find(v => String(v.id) === String(oc.videoId));
               return (
                 <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderTop: i > 0 ? '1px solid var(--cs-a04)' : 'none' }}>
@@ -10324,14 +10324,14 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         )}
 
         {/* ═══ SECTION 4: CREATOR CONTENT (if exists) ═══ */}
-        {sa.creatorContentAnalysis && sa.creatorContentAnalysis.length > 0 && (
+        {(sa.creatorContentAnalysis || []).length > 0 && (
           <div style={{ background: 'var(--cs-card)', border: '1px solid rgba(255,180,0,.1)', borderRadius: 14, padding: '20px', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(255,180,0,.1)', border: '1px solid rgba(255,180,0,.2)', color: '#ffb400', fontWeight: 800 }}>4</span>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>Creator Videos — License to Run as Ads</span>
             </div>
             <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginBottom: 14 }}>These videos were made by TikTok creators featuring your products. Creatorship handles outreach and licensing — you just approve.</div>
-            {sa.creatorContentAnalysis.map((cc, i) => {
+            {(sa.creatorContentAnalysis || []).map((cc, i) => {
               const vid = tiktokVideos.find(v => String(v.id) === String(cc.videoId));
               return (
                 <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderTop: i > 0 ? '1px solid var(--cs-a04)' : 'none' }}>
@@ -11047,7 +11047,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const initialBrandTab = (() => { try { const caiHashes = ['dashboard','campaigns','content','analysis','optimize']; if (typeof window === 'undefined') return 'ai-plans'; const h = (window.location.hash || '').replace(/^#/, ''); if (caiHashes.includes(h)) return 'ai-plans'; if (h === 'account' || (h && h.startsWith('account/'))) return 'settings'; if (h && BRAND_TAB_IDS.includes(h)) return h; return initialTab && BRAND_TAB_IDS.includes(initialTab) ? initialTab : 'ai-plans'; } catch (_) { return 'ai-plans'; } })();
   const [brandTab, setBrandTabState] = useState(initialBrandTab);
-  const setBrandTab = useCallback((tabId) => { setBrandTabState(tabId); window.history.pushState(null, '', '#' + tabId); }, []);
+  const setBrandTab = useCallback((tabId) => {
+    setBrandTabState(tabId);
+    window.location.hash = '#' + tabId;
+  }, []);
   const [activeCaiTab, setActiveCaiTab] = useState(() => {
     const h = (window.location.hash || '').replace(/^#/, '').split('/')[0];
     if (['dashboard','campaigns','content','analysis','optimize'].includes(h)) return h;
@@ -11058,7 +11061,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const setCaiTab = useCallback((tabId) => {
     setActiveCaiTab(tabId);
     setBrandTabState(tabId === null ? 'settings' : 'ai-plans');
-    window.history.pushState(null, '', '#' + (tabId || 'account'));
+    window.location.hash = '#' + (tabId || 'account');
     if (tabId === 'optimize') window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
   const [caiStatusActive, setCaiStatusActive] = useState(false);
@@ -11194,6 +11197,19 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   }, [brand.email, setBrand]);
 
   useEffect(() => { refreshProfile(); }, [brand.id]);
+
+  // Keep CAi tab in sync with URL hash after brand/profile refreshes.
+  useEffect(() => {
+    const h = (window.location.hash || '#dashboard').replace(/^#/, '').split('?')[0];
+    const caiTabs = ['dashboard', 'campaigns', 'content', 'analysis', 'optimize'];
+    if (caiTabs.includes(h) && h !== activeCaiTab) {
+      setActiveCaiTab(h);
+      setBrandTabState('ai-plans');
+    } else if ((h === 'account' || (h && h.startsWith('account/'))) && brandTab !== 'settings') {
+      setActiveCaiTab(null);
+      setBrandTabState('settings');
+    }
+  }, [brand, activeCaiTab, brandTab]);
 
   // Fetch CAi data at parent level so Dashboard tab can show status
   useEffect(() => {
@@ -11365,7 +11381,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
     return () => document.removeEventListener('mousedown', h);
   }, []);
   const syncHashToState = useCallback(() => {
-    const t = (window.location.hash || '').replace(/^#/, '') || 'dashboard';
+    const t = (window.location.hash || '').replace(/^#/, '').split('?')[0] || 'dashboard';
     if (['dashboard','campaigns','content','analysis','optimize'].includes(t)) {
       setBrandTabState('ai-plans');
       setActiveCaiTab(t);
@@ -11381,6 +11397,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
     window.addEventListener('hashchange', syncHashToState);
     return () => { window.removeEventListener('popstate', syncHashToState); window.removeEventListener('hashchange', syncHashToState); };
   }, [syncHashToState]);
+  useEffect(() => { syncHashToState(); }, [syncHashToState]);
 
   // Scroll to top when switching to Optimize tab (budget section at top)
   useEffect(() => {
