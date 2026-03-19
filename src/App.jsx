@@ -7828,8 +7828,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           <button onClick={pollNow} disabled={polling} style={{ background: 'none', border: '1px solid rgba(155,109,255,.2)', borderRadius: 6, color: '#9b6dff', fontSize: 12, padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>{polling ? 'Polling...' : 'Refresh Metrics'}</button>
         </div>
 
-        {renderCaiSubNav()}
-
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
           <MasterCampaignToggle />
@@ -7987,10 +7985,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginBottom: 12, lineHeight: 1.5 }}>
                       {unusedHighPerf.length} video{unusedHighPerf.length !== 1 ? 's' : ''} with 1M+ organic views sitting idle. These already proved they stop scrolls on TikTok — add them to your Meta campaigns to test with paid traffic.
                     </div>
-                    <div className="cai-untapped-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(' + Math.min(unusedHighPerf.length, 5) + ', 1fr)', gap: 8 }}>
+                    <div className="cai-untapped-grid" style={{ maxWidth: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
                       {unusedHighPerf.slice(0, 5).map(v => (
-                        <div key={v.id} onClick={() => setCaiSubTab('content')} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', cursor: 'pointer', background: '#111', aspectRatio: '9/12' }}>
-                          {v.cover && <img src={v.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                        <div key={v.id} onClick={() => setCaiSubTab('content')} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#111', height: 220, maxWidth: '100%' }}>
+                          {v.cover && <img src={v.cover} alt="" style={{ width: '100%', height: 220, maxHeight: 220, objectFit: 'cover', display: 'block' }} />}
                           {/* Gradient overlay */}
                           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.75) 0%, transparent 50%)' }} />
                           {/* View count */}
@@ -9753,7 +9751,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       }
       return (
         <div>
-          {renderCaiSubNav()}
           <div style={{ padding: '40px 20px', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div></div>
         </div>
       );
@@ -9839,7 +9836,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     if (noAnalysisBody != null) {
       return (
         <div>
-          {renderCaiSubNav()}
           {noAnalysisBody}
         </div>
       );
