@@ -7098,9 +7098,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const [savingBudget, setSavingBudget] = useState(false);
   const [metaHealthIssues, setMetaHealthIssues] = useState(null);
   const [togglingAd, setTogglingAd] = useState({});
-  const [masterToggling, setMasterToggling] = useState(false);
-  const [showGoLiveModal, setShowGoLiveModal] = useState(false);
-  const [pausingAll, setPausingAll] = useState(false);
+  const [toggling, setToggling] = useState({});
   const [campSourceFilter, setCampSourceFilter] = useState('all');
   const [contentSection, setContentSection] = useState('creator');
   useEffect(() => { if (contentSection === 'uploads') setShowUploadForm(true); }, [contentSection]);
@@ -7187,90 +7185,28 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const token = localStorage.getItem('creatorship_brand_token');
   const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) };
 
-  const handleMasterToggle = async (action) => {
-    setMasterToggling(true);
+  // Toggle a single Meta campaign (ACTIVE <-> PAUSED) for individual controls.
+  const toggleCamp = async (campId, currentStatus) => {
+    if (!campId) return false;
+    const current = String(currentStatus || 'PAUSED').toUpperCase();
+    const newStatus = current === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+    setToggling(t => ({ ...t, [campId]: true }));
     try {
-      const r = await fetch('/api/brand/campaign-master-toggle', {
+      const r = await fetch('/api/campaigns/toggle', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ metaToken: 'fromJWT', campaignId: campId, newStatus }),
       });
-      const d = await r.json().catch(() => ({}));
-      if (d.success) {
-        if (setCaiStatusActive) setCaiStatusActive(action === 'activate');
-        setShowGoLiveModal(false);
-        if (typeof refreshProfile === 'function') await refreshProfile();
-        try {
-          const status = await fetch('/api/cai/status?brandId=' + brand.id, { headers }).then(x => x.json());
-          if (status && !status.error) setCaiData(status);
-        } catch (_) {}
-      } else {
-        alert('Toggle failed: ' + (d.error || 'Unknown error'));
-      }
+      const d = await r.json();
+      if (d.success) return true;
+      toast.error(d.error || 'Something went wrong');
+      return false;
     } catch (e) {
-      alert('Toggle failed: ' + (e.message || 'Unknown error'));
+      toast.error(e.message || 'Something went wrong');
+      return false;
     } finally {
-      setMasterToggling(false);
+      setToggling(t => ({ ...t, [campId]: false }));
     }
-  };
-
-  const MasterCampaignToggle = ({ compact }) => {
-    const hasCai = !!(brand?.cai?.campaign?.id || brand?.cai?.isActive || caiData?.campaign?.id);
-    if (!hasCai) return null;
-    const isLive = !!caiStatusActive;
-    return (
-      <div style={{ display: 'flex', alignItems: compact ? 'center' : 'flex-start', gap: compact ? 12 : 16, padding: compact ? '12px 16px' : '16px 20px', borderRadius: 10, border: '1px solid ' + (isLive ? 'rgba(52,211,153,.25)' : 'rgba(255,180,0,.25)'), background: isLive ? 'rgba(52,211,153,.04)' : 'rgba(255,180,0,.04)', ...(compact ? {} : { marginBottom: 16 }) }}>
-        <div style={{ display: 'flex', flexDirection: compact ? 'row' : 'column', alignItems: compact ? 'center' : 'flex-start', gap: compact ? 8 : 6, flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: isLive ? '#34d399' : '#ffb400', boxShadow: isLive ? '0 0 8px rgba(52,211,153,.5)' : 'none' }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: isLive ? '#34d399' : '#ffb400', letterSpacing: '.3px' }}>{isLive ? 'CAMPAIGNS LIVE' : 'CAMPAIGNS PAUSED'}</span>
-          </div>
-          {!compact && <span style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{isLive ? 'Meta is spending your daily budget' : 'No spend — flip the switch to go live'}</span>}
-        </div>
-        <button
-          type="button"
-          disabled={masterToggling}
-          onClick={() => { if (isLive) { handleMasterToggle('pause'); } else { setShowGoLiveModal(true); } }}
-          style={{
-            padding: compact ? '6px 16px' : '8px 20px',
-            borderRadius: 6,
-            border: 'none',
-            background: isLive ? 'rgba(239,68,68,.1)' : 'rgba(52,211,153,.15)',
-            color: isLive ? '#ef4444' : '#34d399',
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: masterToggling ? 'wait' : 'pointer',
-            opacity: masterToggling ? 0.6 : 1,
-            fontFamily: 'inherit',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          {masterToggling ? 'Updating...' : isLive ? 'Pause All' : 'Go Live'}
-        </button>
-      </div>
-    );
-  };
-
-  const GoLiveModal = () => {
-    if (!showGoLiveModal) return null;
-    const budget = brand?.cai?.monthlyBudget ? '$' + Math.round(brand.cai.monthlyBudget / 30) + '/day' : 'your configured budget';
-    return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowGoLiveModal(false)}>
-        <div style={{ background: 'var(--cs-bg2)', borderRadius: 12, padding: 28, maxWidth: 420, width: '90%', border: '1px solid var(--cs-a06)' }} onClick={e => e.stopPropagation()}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>Go Live?</div>
-          <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.5, marginBottom: 20 }}>
-            This will activate all your CAi campaigns on Meta. Ad spend begins immediately at {budget}. You can pause anytime.
-          </div>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-            <button type="button" onClick={() => setShowGoLiveModal(false)} style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid var(--cs-a06)', background: 'none', color: 'var(--cs-t3)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-            <button type="button" disabled={masterToggling} onClick={() => handleMasterToggle('activate')} style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: '#34d399', color: '#000', fontSize: 13, fontWeight: 700, cursor: masterToggling ? 'wait' : 'pointer', opacity: masterToggling ? 0.6 : 1, fontFamily: 'inherit' }}>
-              {masterToggling ? 'Activating...' : 'Go Live'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   };
 
   // Fetch CAi status + system info + existing deep dive
@@ -7749,6 +7685,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
   const pillSt = (active) => ({ padding: '6px 14px', borderRadius: 6, border: '1px solid ' + (active ? '#9b6dff' : 'var(--cs-a06)'), background: active ? 'rgba(155,109,255,.1)' : 'transparent', color: active ? '#9b6dff' : 'var(--cs-t4)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' });
   const isActive = caiData?.isActive;
+  const alwaysOnCampaignId = caiData?.campaign?.id;
   const hasCampaignData = !!(caiData?.campaign?.id && caiData?.creativesCount > 0);
   const dailyBudget = Math.round(monthlyBudget / 30);
   const a = deepDive?.analysis;
@@ -7816,7 +7753,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
-          <MasterCampaignToggle />
 
           {/* ─── ROW 1: Metric Cards ─── */}
           <div className="cai-metrics-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
@@ -8891,7 +8827,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ CAMPAIGNS TAB ═══ */}
         {caiSubTab === 'campaigns' && (<>
-          <MasterCampaignToggle compact />
           {/* ─── Campaign Command Center Hero ─── */}
           <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.05), rgba(6,104,225,.03))', border: '1px solid rgba(155,109,255,.12)', borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -8941,7 +8876,35 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Always-On Campaign</span>
                   <span style={{ fontSize: 12, color: 'var(--cs-t5)', transform: expandedCamp ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .2s', display: 'inline-block' }}>▶</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: isActive ? 'rgba(52,211,153,.1)' : 'rgba(255,180,0,.1)', border: '1px solid ' + (isActive ? 'rgba(52,211,153,.2)' : 'rgba(255,180,0,.2)'), color: isActive ? '#34d399' : '#ffb400' }}>{isActive ? 'ACTIVE' : 'PAUSED'}</span>
+                <button
+                  type="button"
+                  disabled={!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId]}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!alwaysOnCampaignId) return;
+                    const currentStatus = isActive ? 'ACTIVE' : 'PAUSED';
+                    if (currentStatus !== 'ACTIVE') {
+                      if (!confirm('Activate this campaign? Meta will start spending immediately.')) return;
+                    }
+                    const ok = await toggleCamp(alwaysOnCampaignId, currentStatus);
+                    if (ok) setTimeout(() => window.location.reload(), 1000);
+                  }}
+                  style={{
+                    padding: '4px 12px',
+                    borderRadius: 4,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    background: isActive ? 'rgba(239,68,68,.08)' : 'rgba(52,211,153,.1)',
+                    color: isActive ? '#ef4444' : '#34d399',
+                    border: '1px solid ' + (isActive ? 'rgba(239,68,68,.2)' : 'rgba(52,211,153,.25)'),
+                    opacity: (!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId]) ? 0.6 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId] ? '...' : isActive ? 'Pause' : 'Activate'}
+                </button>
               </div>
 
               {/* Budget / Ads / ROAS row — always visible */}
@@ -9059,6 +9022,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             const campCreatives = camp.creatives || [];
             const typeColors = { 'always-on': { bg: 'rgba(155,109,255,.06)', border: 'rgba(155,109,255,.2)', label: 'Always-On', color: '#9b6dff' }, promotion: { bg: 'rgba(232,89,60,.06)', border: 'rgba(232,89,60,.2)', label: 'Promotion', color: '#E8593C' }, 'ab-test': { bg: 'rgba(6,104,225,.06)', border: 'rgba(6,104,225,.2)', label: 'A/B Test', color: '#0668E1' } };
             const tc = typeColors[camp.type] || typeColors.promotion;
+            const campId = camp.metaCampaignId || camp.campaignId || camp.id || camp.localId;
+            const statusUpper = String(camp.status || 'PAUSED').toUpperCase();
+            const isCampActive = statusUpper === 'ACTIVE';
+            const isCampToggling = !!toggling[campId];
             return (
               <div key={camp.localId} style={{ background: tc.bg, border: '1px solid ' + tc.border, borderRadius: 12, marginBottom: 12, overflow: 'hidden' }}>
                 <div onClick={() => setExpandedCamps(s => ({...s, [camp.localId]: !s[camp.localId]}))} style={{ padding: '16px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -9069,7 +9036,35 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t3)' }}>{campCreatives.length} ads</span>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 4, background: camp.status === 'active' ? 'rgba(52,211,153,.1)' : 'rgba(255,180,0,.1)', color: camp.status === 'active' ? '#34d399' : '#ffb400' }}>{camp.status?.toUpperCase()}</span>
+                    <button
+                      type="button"
+                      disabled={!campId || isCampToggling}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!campId) return;
+                        const currentStatus = isCampActive ? 'ACTIVE' : 'PAUSED';
+                        if (currentStatus !== 'ACTIVE') {
+                          if (!confirm('Activate this campaign? Meta will start spending immediately.')) return;
+                        }
+                        const ok = await toggleCamp(campId, currentStatus);
+                        if (ok) setTimeout(() => window.location.reload(), 1000);
+                      }}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        background: isCampActive ? 'rgba(239,68,68,.08)' : 'rgba(52,211,153,.1)',
+                        color: isCampActive ? '#ef4444' : '#34d399',
+                        border: '1px solid ' + (isCampActive ? 'rgba(239,68,68,.2)' : 'rgba(52,211,153,.25)'),
+                        opacity: (!campId || isCampToggling) ? 0.6 : 1,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {(!campId || isCampToggling) ? '...' : isCampActive ? 'Pause' : 'Activate'}
+                    </button>
                   </div>
                 </div>
                 <div style={{ padding: '0 18px 12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontSize: 13 }}>
@@ -9200,6 +9195,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 const isCaiCamp = (camp.name || '').includes('[CAi]');
                 const isThisActive = camp.id === caiData?.campaign?.id;
                 if (isThisActive) return null;
+                const campId = camp.id || camp.campaignId;
+                const statusUpper = String(camp.status || 'PAUSED').toUpperCase();
+                const isCampActive = statusUpper === 'ACTIVE';
+                const isCampPaused = statusUpper === 'PAUSED';
+                const isCampToggling = !!toggling[campId];
                 return (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 10, marginBottom: 6 }}>
                     <div style={{ flex: 1 }}>
@@ -9209,7 +9209,34 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{camp.created_time ? new Date(camp.created_time).toLocaleDateString() : ''}</div>
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: camp.status === 'ACTIVE' ? 'rgba(52,211,153,.1)' : camp.status === 'PAUSED' ? 'rgba(255,180,0,.1)' : 'var(--cs-a06)', color: camp.status === 'ACTIVE' ? '#34d399' : camp.status === 'PAUSED' ? '#ffb400' : 'var(--cs-t4)' }}>{camp.status || 'unknown'}</span>
+                    <button
+                      type="button"
+                      disabled={!campId || (!isCampActive && !isCampPaused) || isCampToggling}
+                      onClick={async () => {
+                        if (!campId) return;
+                        const currentStatus = isCampActive ? 'ACTIVE' : 'PAUSED';
+                        if (currentStatus !== 'ACTIVE') {
+                          if (!confirm('Activate this campaign? Meta will start spending immediately.')) return;
+                        }
+                        const ok = await toggleCamp(campId, currentStatus);
+                        if (ok) setTimeout(() => window.location.reload(), 1000);
+                      }}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        background: isCampActive ? 'rgba(239,68,68,.08)' : 'rgba(52,211,153,.1)',
+                        color: isCampActive ? '#ef4444' : '#34d399',
+                        border: '1px solid ' + (isCampActive ? 'rgba(239,68,68,.2)' : 'rgba(52,211,153,.25)'),
+                        opacity: (!campId || isCampToggling) ? 0.6 : 1,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {!campId || isCampToggling ? '...' : isCampActive ? 'Pause' : 'Activate'}
+                    </button>
                   </div>
                 );
               })}
@@ -9475,7 +9502,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 6 }}>Re-run Analysis rebuilds your brand report. Deactivate pauses campaigns on Meta. Full Reset deletes everything.</div>
           </div>
         </>)}
-        <GoLiveModal />
       </div>
     );
   }
