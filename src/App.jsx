@@ -7753,20 +7753,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const dailyBudget = Math.round(monthlyBudget / 30);
   const a = deepDive?.analysis;
   const sa = a || {};
-  const caiInnerSubTabs = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'campaigns', label: 'Campaigns' },
-    { id: 'content', label: 'Content' },
-    { id: 'analysis', label: 'Analysis' },
-    { id: 'optimize', label: 'Optimize' },
-  ];
-  const renderCaiSubNav = () => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-      {caiInnerSubTabs.map(t => (
-        <button key={t.id} type="button" onClick={() => setCaiSubTab(t.id)} style={pillSt(caiSubTab === t.id)}>{t.label}</button>
-      ))}
-    </div>
-  );
 
   if (loading) return <div style={{ padding: '60px 0', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} /><div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Loading CAi...</div></div>;
 
@@ -7985,10 +7971,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginBottom: 12, lineHeight: 1.5 }}>
                       {unusedHighPerf.length} video{unusedHighPerf.length !== 1 ? 's' : ''} with 1M+ organic views sitting idle. These already proved they stop scrolls on TikTok — add them to your Meta campaigns to test with paid traffic.
                     </div>
-                    <div className="cai-untapped-grid" style={{ maxWidth: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+                    <div className="cai-untapped-grid" style={{ maxWidth: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
                       {unusedHighPerf.slice(0, 5).map(v => (
-                        <div key={v.id} onClick={() => setCaiSubTab('content')} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#111', height: 220, maxWidth: '100%' }}>
-                          {v.cover && <img src={v.cover} alt="" style={{ width: '100%', height: 220, maxHeight: 220, objectFit: 'cover', display: 'block' }} />}
+                        <div key={v.id} onClick={() => setCaiSubTab('content')} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: '#111', width: '100%', height: 200 }}>
+                          {v.cover && <img src={v.cover} alt="" style={{ width: '100%', height: 200, maxHeight: 200, objectFit: 'cover', display: 'block' }} />}
                           {/* Gradient overlay */}
                           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(0deg, rgba(0,0,0,.75) 0%, transparent 50%)' }} />
                           {/* View count */}
@@ -8937,7 +8923,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)', margin: '0 0 4px' }}>Active Campaigns</h3>
               <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>{(caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1} campaign{((caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1) !== 1 ? 's' : ''} · {creatives.length} ads · ${Math.round((caiData?.monthlyBudget || 0) / 30)}/day budget</div>
             </div>
-            <button onClick={async () => { const doPause = await showConfirm({ title: 'Pause All Campaigns', message: 'This will pause every active campaign on Meta. No ad spend will occur until you resume.', confirmText: 'Pause All', destructive: true }); if (!doPause) return; setPausingAll(true); try { const r = await fetch('/api/brand/campaigns/pause-all', { method: 'POST', headers }); const d = await r.json(); if (d.success) { toast.success('⏸ Paused ' + d.paused + ' campaign' + (d.paused !== 1 ? 's' : '')); setTimeout(() => window.location.reload(), 1000); } else toast.error(d.error || 'Something went wrong'); } catch (e) { toast.error(e.message); } setPausingAll(false); }} disabled={pausingAll} style={{ padding: '8px 16px', background: 'rgba(239,68,68,.06)', border: '1px solid rgba(239,68,68,.15)', borderRadius: 8, color: '#ef4444', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: pausingAll ? 0.5 : 1, whiteSpace: 'nowrap' }}>{pausingAll ? 'Pausing...' : '⏸ Pause All'}</button>
           </div>
 
           {/* CAi MAX header */}
