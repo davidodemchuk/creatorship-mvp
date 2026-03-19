@@ -792,6 +792,49 @@ async function syncCampaignWithMeta(brand) {
     }
   }
 
+  // Also reconcile against ALL ads currently in the CAi ad set (including orphaned ads not tracked locally)
+  if (!changed && cai.campaign?.adsetId) {
+    try {
+      const adsetAds = await apiFetch('https://graph.facebook.com/v22.0/' + cai.campaign.adsetId + '/ads?fields=id,status,effective_status&limit=200&access_token=' + token);
+      const metaAds = adsetAds?.data || [];
+      const activeMetaAds = metaAds.filter(a => {
+        const st = (a.effective_status || a.status || '').toUpperCase();
+        return st !== 'ARCHIVED' && st !== 'DELETED';
+      });
+      const localByAdId = new Map((cai.creatives || []).map(c => [String(c.adId || ''), c]));
+      let addedOrphans = 0;
+      for (const ad of activeMetaAds) {
+        const adId = String(ad.id || '');
+        if (!adId || localByAdId.has(adId)) continue;
+        cai.creatives.push({
+          videoId: null,
+          adId,
+          creativeId: null,
+          metaVideoId: null,
+          creator: 'meta-orphan',
+          hookScore: 0,
+          hookReason: 'Recovered from Meta sync',
+          tier: 'test',
+          dailyBudget: 0,
+          primaryText: '',
+          headline: ad.name || '[CAi] Recovered Ad',
+          status: (ad.effective_status || ad.status || 'active').toLowerCase(),
+          addedAt: new Date().toISOString(),
+          daysActive: 0,
+          lastMetrics: {},
+          recoveredFromMeta: true,
+        });
+        addedOrphans++;
+      }
+      if (addedOrphans > 0) {
+        log.push('Recovered ' + addedOrphans + ' orphaned active ads from Meta ad set');
+        changed = true;
+      }
+    } catch (e) {
+      log.push('Ad set reconciliation error: ' + e.message);
+    }
+  }
+
   if (changed) {
     cai.isActive = (cai.creatives || []).some(c => c.status === 'active') && cai.processingStatus === 'complete';
     cai.lastMetaSync = new Date().toISOString();
@@ -6822,22 +6865,43 @@ app.post('/api/cai/activate', authBrand, requireRole('editor'), async (req, res)
   if (!pageId) return res.status(400).json({ error: 'Select a Meta Page in Settings first' });
 
   // ═══ RECONNECTION: Check if Meta already has a [CAi] campaign for this brand ═══
-  let existingCampaignId = brand.cai?.campaign?.id || null;
-  let existingAdsetId = brand.cai?.campaign?.adsetId || null;
-  if (!existingCampaignId) {
+  let campaignId = brand.cai?.campaign?.id || brand.cai?.campaign?.metaCampaignId || null;
+  let adsetId = brand.cai?.campaign?.adsetId || null;
+  let reusingCampaign = false;
+  if (!campaignId) {
     try {
       const filtering = encodeURIComponent(JSON.stringify([{ field: 'name', operator: 'CONTAIN', value: '[CAi]' }]));
       const existingCamps = await apiFetch(`https://graph.facebook.com/v22.0/${adAccount}/campaigns?fields=id,name,status&filtering=${filtering}&limit=10&access_token=${metaToken}`);
       const found = (existingCamps.data || []).find(c => c.status === 'ACTIVE' || c.status === 'PAUSED');
       if (found) {
-        existingCampaignId = found.id;
+        campaignId = found.id;
         try {
           const asResp = await apiFetch(`https://graph.facebook.com/v22.0/${found.id}/adsets?fields=id,name,status&limit=1&access_token=${metaToken}`);
-          existingAdsetId = asResp.data?.[0]?.id || null;
+          adsetId = asResp.data?.[0]?.id || null;
         } catch (_) {}
-        console.log('[cai-activate] Reconnecting to existing campaign:', existingCampaignId, 'adset:', existingAdsetId);
+        console.log('[cai-activate] Reconnecting to existing campaign:', campaignId, 'adset:', adsetId);
       }
     } catch (e) { console.error('[cai-activate] Reconnection check failed:', e.message); }
+  }
+  if (campaignId) {
+    try {
+      const existing = await apiFetch('https://graph.facebook.com/v22.0/' + campaignId + '?fields=id,status,effective_status&access_token=' + metaToken);
+      if (existing && !existing.error && existing.effective_status !== 'DELETED') {
+        console.log('[cai-activate] Reusing existing campaign ' + campaignId + ' (status: ' + existing.effective_status + ')');
+        reusingCampaign = true;
+        if (existing.effective_status !== 'PAUSED') {
+          await metaPost(campaignId, { status: 'PAUSED', access_token: metaToken });
+        }
+      } else {
+        console.log('[cai-activate] Existing campaign ' + campaignId + ' is deleted/invalid — will create new');
+        campaignId = null;
+        adsetId = null;
+      }
+    } catch (e) {
+      console.log('[cai-activate] Could not verify campaign ' + campaignId + ': ' + e.message + ' — will create new');
+      campaignId = null;
+      adsetId = null;
+    }
   }
 
   const dailyBudget = Math.round(monthlyBudget / 30);
@@ -7034,9 +7098,9 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
 
     // Reuse existing campaign or create new one
     const campName = '[CAi] ' + (brand.brandName || brand.storeName || 'Brand') + ' — Always On';
-    if (existingCampaignId) {
-      ids.campaign = existingCampaignId;
-      try { await metaPost(existingCampaignId, { status: 'PAUSED', daily_budget: dailyBudget * 100, access_token: metaToken }); } catch (_) {}
+    if (reusingCampaign && campaignId) {
+      ids.campaign = campaignId;
+      try { await metaPost(campaignId, { status: 'PAUSED', daily_budget: dailyBudget * 100, access_token: metaToken }); } catch (_) {}
       steps.push({ step: 'campaign', status: 'reconnected', id: ids.campaign, name: campName });
       console.log('[cai-activate] Reusing existing campaign:', ids.campaign);
     } else {
@@ -7056,8 +7120,8 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
     }
 
     // Reuse existing adset or create new one
-    if (existingAdsetId) {
-      ids.adset = existingAdsetId;
+    if (adsetId) {
+      ids.adset = adsetId;
       steps.push({ step: 'adset', status: 'reconnected', id: ids.adset });
       console.log('[cai-activate] Reusing existing adset:', ids.adset);
     } else {
@@ -7082,6 +7146,43 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
       ids.adset = aset.id;
       steps.push({ step: 'adset', status: 'ok', id: ids.adset });
     }
+
+    // ═══ ARCHIVE OLD ADS — prevent duplicates across activations ═══
+    if (brand.cai?.creatives && brand.cai.creatives.length > 0) {
+      const oldAdIds = brand.cai.creatives.map(c => c.adId).filter(Boolean);
+      if (oldAdIds.length > 0) {
+        console.log('[cai-activate] Archiving ' + oldAdIds.length + ' old ads before creating new batch');
+        for (const oldAdId of oldAdIds) {
+          try {
+            await metaPost(oldAdId, { status: 'ARCHIVED', access_token: metaToken });
+          } catch (e) {
+            console.log('[cai-activate] Could not archive ad ' + oldAdId + ': ' + e.message);
+          }
+        }
+      }
+    }
+    // Also archive any orphaned ads in the ad set that Creatorship lost track of
+    if (ids.adset) {
+      try {
+        const existingAds = await apiFetch('https://graph.facebook.com/v22.0/' + ids.adset + '/ads?fields=id,name,status&limit=100&access_token=' + metaToken);
+        if (existingAds?.data?.length > 0) {
+          const activeOldAds = existingAds.data.filter(ad => ad.status !== 'ARCHIVED' && ad.status !== 'DELETED');
+          if (activeOldAds.length > 0) {
+            console.log('[cai-activate] Found ' + activeOldAds.length + ' orphaned ads in ad set — archiving');
+            for (const ad of activeOldAds) {
+              try {
+                await metaPost(ad.id, { status: 'ARCHIVED', access_token: metaToken });
+              } catch (e) {
+                console.log('[cai-activate] Could not archive orphan ad ' + ad.id + ': ' + e.message);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log('[cai-activate] Could not check for orphaned ads: ' + e.message);
+      }
+    }
+    if (brand.cai) brand.cai.creatives = [];
 
     // Add each video as an ad — ASYNC (background, after response)
     const creatives = [];
