@@ -860,6 +860,59 @@ function ForBrandsSection({ nav }) {
         </div>
       )}
     </div>
+
+    <div className="sec-pad section-glow" style={{ padding: '80px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ display: 'inline-block', padding: '6px 16px', borderRadius: 99, border: '1px solid var(--cs-a10)', fontSize: 13, color: 'var(--cs-t3)', marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' }}>Proven Results</div>
+        <h2 className="heading-h2" style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 12, lineHeight: 1.2 }}>Built by a brand that scaled with creators</h2>
+        <p style={{ color: 'var(--cs-t3)', fontSize: 16, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.7 }}>
+          Creatorship was born from running the exact playbook by hand - 6 people, 7 tools, weeks per campaign. Now CAi does it in 90 seconds.
+        </p>
+
+        <div className="gl" style={{ padding: 32, borderRadius: 16, maxWidth: 700, margin: '0 auto 32px', textAlign: 'left' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--cs-a06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#00C2FF' }}>IB</div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 16 }}>Intake Breathing</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 13 }}>Nasal breathing strips - Health & Wellness</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginBottom: 20 }}>
+            <div style={{ padding: 16, borderRadius: 12, background: 'var(--cs-a04)' }}>
+              <div className="mono" style={{ fontSize: 24, fontWeight: 700, color: '#34D399' }}>144K+</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Units sold on TikTok Shop</div>
+            </div>
+            <div style={{ padding: 16, borderRadius: 12, background: 'var(--cs-a04)' }}>
+              <div className="mono" style={{ fontSize: 24, fontWeight: 700, color: '#00C2FF' }}>32M+</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Creator content views</div>
+            </div>
+            <div style={{ padding: 16, borderRadius: 12, background: 'var(--cs-a04)' }}>
+              <div className="mono" style={{ fontSize: 24, fontWeight: 700, color: '#9b6dff' }}>10</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Products in TikTok Shop</div>
+            </div>
+          </div>
+          <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+            "We were spending 2-3 weeks to go from finding a creator video to running it as a Meta ad. Creatorship replaced our entire 6-person workflow with one button. The first campaign CAi built outperformed our manually-built campaigns on day one."
+          </p>
+          <div style={{ marginTop: 12, color: 'var(--cs-t4)', fontSize: 13, fontStyle: 'italic' }}>- David O., Founder, Intake Breathing</div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>~90s</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Average time to launch</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>$0</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Upfront cost for brands</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>24/7</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>CAi optimization</div>
+          </div>
+        </div>
+      </div>
+    </div>
     </div>
   );
 }
