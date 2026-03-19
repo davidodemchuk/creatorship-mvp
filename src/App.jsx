@@ -7769,12 +7769,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const hasAnySpend = today.spend > 0 || week.spend > 0;
     const totalViews = tiktokVideos.reduce((s, v) => s + (v.views || 0), 0);
     const viewsStr = totalViews >= 1e6 ? Math.round(totalViews / 1e6) + 'M' : totalViews.toLocaleString();
-    const pickIds = new Set((a.topPicks || []).map(p => String(p.videoId)));
+    const pickIds = new Set((a?.topPicks || []).map(p => String(p.videoId)));
     const pickMap = {};
-    (a.topPicks || []).forEach(p => { pickMap[String(p.videoId)] = p; });
+    (a?.topPicks || []).forEach(p => { pickMap[String(p.videoId)] = p; });
     const analysisMap = {};
-    (a.ownedContentAnalysis || []).forEach(oc => { analysisMap[String(oc.videoId)] = oc; });
-    (a.creatorContentAnalysis || []).forEach(cc => { analysisMap[String(cc.videoId)] = cc; });
+    (a?.ownedContentAnalysis || []).forEach(oc => { analysisMap[String(oc.videoId)] = oc; });
+    (a?.creatorContentAnalysis || []).forEach(cc => { analysisMap[String(cc.videoId)] = cc; });
 
     const pollNow = async () => {
       setPolling(true);
