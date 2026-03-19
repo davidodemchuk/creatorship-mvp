@@ -773,7 +773,7 @@ function TrustBar() {
 }
 
 function ForBrandsSection({ nav }) {
-  const [showCalc, setShowCalc] = useState(false);
+  const [roiSpend, setRoiSpend] = useState(5000);
   const [openFaq, setOpenFaq] = useState(null);
 
   const steps = [
@@ -849,17 +849,36 @@ function ForBrandsSection({ nav }) {
         <Link to="/brand?mode=signup" style={{ display: 'inline-block', background: '#0668E1', color: '#fff', fontWeight: 700, fontSize: 16, padding: '14px 36px', borderRadius: 10, textDecoration: 'none' }}>Start Free →</Link>
       </div>
 
-      {/* ROI Calculator — collapsible */}
-      <div style={{ textAlign: 'center' }}>
-        <button onClick={() => setShowCalc(!showCalc)} style={{ background: 'none', border: '1px solid var(--cs-a08)', borderRadius: 10, padding: '12px 24px', color: 'var(--cs-t4)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all .2s' }}>
-          {showCalc ? '▾' : '▸'} See what you'd keep — ROI Calculator
-        </button>
-      </div>
-      {showCalc && (
-        <div style={{ marginTop: 24, background: 'var(--cs-a02)', border: '1px solid var(--cs-a06)', borderRadius: 16, padding: '32px 28px', animation: 'fu .4s ease both' }}>
-          <ROICalculator nav={nav} embedded />
+      {/* ROI Calculator */}
+      <div style={{ maxWidth: 500, margin: '32px auto 0', padding: 24, borderRadius: 16, background: 'var(--cs-a04)', border: '1px solid var(--cs-a08)' }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t2)', marginBottom: 16, textAlign: 'center' }}>ROI Calculator — See what you keep</div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 12, color: 'var(--cs-t4)', marginBottom: 6 }}>Monthly ad spend</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="mono" style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)' }}>${roiSpend.toLocaleString()}</span>
+            <input
+              type="range"
+              min={500}
+              max={50000}
+              step={500}
+              value={roiSpend}
+              onChange={(e) => setRoiSpend(Number(e.target.value))}
+              style={{ flex: 1, accentColor: '#0668E1' }}
+            />
+          </div>
         </div>
-      )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ padding: 14, borderRadius: 10, background: 'var(--cs-a06)', textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: '#34D399' }}>${Math.round(roiSpend * 0.96).toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>You keep (96%)</div>
+          </div>
+          <div style={{ padding: 14, borderRadius: 10, background: 'var(--cs-a06)', textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--cs-t3)' }}>${Math.round(roiSpend * 0.04).toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>Creatorship fee (4%)</div>
+          </div>
+        </div>
+        <div style={{ marginTop: 12, fontSize: 11, color: 'var(--cs-t4)', textAlign: 'center' }}>No retainer. No minimum. Just 4% of ad spend when you're running campaigns.</div>
+      </div>
     </div>
 
     <div className="sec-pad section-glow" style={{ padding: '80px 24px' }}>
