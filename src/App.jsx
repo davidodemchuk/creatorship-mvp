@@ -159,9 +159,13 @@ const LOGO_CR={background:'linear-gradient(90deg, #9b6dff 0%, #c4a0ff 100%)',Web
 const CAI_BRAND = { background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' };
 // ═══ CAi VERSION — SINGLE SOURCE OF TRUTH ═══
 // Change these TWO values when shipping an update. Every badge on every page reads from here.
-const CAI_VERSION = 'v3.3';
-const CAI_VERSION_DATE = '2026-03-17';
+const CAI_VERSION = 'v3.4';
+const CAI_VERSION_DATE = '2026-03-09';
 const CAI_CHANGELOG = [
+  { version: 'v3.4', date: '2026-03-09', title: 'Metric card reasoning', changes: [
+    'Clickable Analysis metric cards expand CAi reasoning for each KPI',
+    'Deep dive output includes contentScoreReasoning, ROAS/CPA/reach explanations',
+  ]},
   { version: 'v3.3', date: '2026-03-17', title: 'Smart Estimation Engine', changes: [
     'Category-aware CPA/ROAS benchmarks — 8 product categories with real Meta ads data',
     'Business model detection — subscription vs one-time vs bundle adjustments',
@@ -7031,11 +7035,12 @@ function BrandContentTab({ brand, profile, setBrandTab, tiktokVideos: parentVide
 
 
 const BRAND_TAB_IDS = ['home','overview','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
-function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile }) {
+function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile }) {
   const [caiData, setCaiData] = useState(null);
   const [sysInfo, setSysInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deepDive, setDeepDive] = useState(null);
+  const [expandedMetric, setExpandedMetric] = useState(null);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(true);
   const [deepDivePhase, setDeepDivePhase] = useState(''); // 'scanning'|'analyzing'|'writing'
@@ -7093,6 +7098,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const [savingBudget, setSavingBudget] = useState(false);
   const [metaHealthIssues, setMetaHealthIssues] = useState(null);
   const [togglingAd, setTogglingAd] = useState({});
+  const [masterToggling, setMasterToggling] = useState(false);
+  const [showGoLiveModal, setShowGoLiveModal] = useState(false);
   const [pausingAll, setPausingAll] = useState(false);
   const [campSourceFilter, setCampSourceFilter] = useState('all');
   const [contentSection, setContentSection] = useState('creator');
@@ -7179,6 +7186,92 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const hasContent = tiktokVideos.length + uploads.length > 0;
   const token = localStorage.getItem('creatorship_brand_token');
   const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) };
+
+  const handleMasterToggle = async (action) => {
+    setMasterToggling(true);
+    try {
+      const r = await fetch('/api/brand/campaign-master-toggle', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (d.success) {
+        if (setCaiStatusActive) setCaiStatusActive(action === 'activate');
+        setShowGoLiveModal(false);
+        if (typeof refreshProfile === 'function') await refreshProfile();
+        try {
+          const status = await fetch('/api/cai/status?brandId=' + brand.id, { headers }).then(x => x.json());
+          if (status && !status.error) setCaiData(status);
+        } catch (_) {}
+      } else {
+        alert('Toggle failed: ' + (d.error || 'Unknown error'));
+      }
+    } catch (e) {
+      alert('Toggle failed: ' + (e.message || 'Unknown error'));
+    } finally {
+      setMasterToggling(false);
+    }
+  };
+
+  const MasterCampaignToggle = ({ compact }) => {
+    const hasCai = !!(brand?.cai?.campaign?.id || brand?.cai?.isActive || caiData?.campaign?.id);
+    if (!hasCai) return null;
+    const isLive = !!caiStatusActive;
+    return (
+      <div style={{ display: 'flex', alignItems: compact ? 'center' : 'flex-start', gap: compact ? 12 : 16, padding: compact ? '12px 16px' : '16px 20px', borderRadius: 10, border: '1px solid ' + (isLive ? 'rgba(52,211,153,.25)' : 'rgba(255,180,0,.25)'), background: isLive ? 'rgba(52,211,153,.04)' : 'rgba(255,180,0,.04)', ...(compact ? {} : { marginBottom: 16 }) }}>
+        <div style={{ display: 'flex', flexDirection: compact ? 'row' : 'column', alignItems: compact ? 'center' : 'flex-start', gap: compact ? 8 : 6, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: isLive ? '#34d399' : '#ffb400', boxShadow: isLive ? '0 0 8px rgba(52,211,153,.5)' : 'none' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: isLive ? '#34d399' : '#ffb400', letterSpacing: '.3px' }}>{isLive ? 'CAMPAIGNS LIVE' : 'CAMPAIGNS PAUSED'}</span>
+          </div>
+          {!compact && <span style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{isLive ? 'Meta is spending your daily budget' : 'No spend — flip the switch to go live'}</span>}
+        </div>
+        <button
+          type="button"
+          disabled={masterToggling}
+          onClick={() => { if (isLive) { handleMasterToggle('pause'); } else { setShowGoLiveModal(true); } }}
+          style={{
+            padding: compact ? '6px 16px' : '8px 20px',
+            borderRadius: 6,
+            border: 'none',
+            background: isLive ? 'rgba(239,68,68,.1)' : 'rgba(52,211,153,.15)',
+            color: isLive ? '#ef4444' : '#34d399',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: masterToggling ? 'wait' : 'pointer',
+            opacity: masterToggling ? 0.6 : 1,
+            fontFamily: 'inherit',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          {masterToggling ? 'Updating...' : isLive ? 'Pause All' : 'Go Live'}
+        </button>
+      </div>
+    );
+  };
+
+  const GoLiveModal = () => {
+    if (!showGoLiveModal) return null;
+    const budget = brand?.cai?.monthlyBudget ? '$' + Math.round(brand.cai.monthlyBudget / 30) + '/day' : 'your configured budget';
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowGoLiveModal(false)}>
+        <div style={{ background: 'var(--cs-bg2)', borderRadius: 12, padding: 28, maxWidth: 420, width: '90%', border: '1px solid var(--cs-a06)' }} onClick={e => e.stopPropagation()}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>Go Live?</div>
+          <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.5, marginBottom: 20 }}>
+            This will activate all your CAi campaigns on Meta. Ad spend begins immediately at {budget}. You can pause anytime.
+          </div>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setShowGoLiveModal(false)} style={{ padding: '8px 20px', borderRadius: 6, border: '1px solid var(--cs-a06)', background: 'none', color: 'var(--cs-t3)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+            <button type="button" disabled={masterToggling} onClick={() => handleMasterToggle('activate')} style={{ padding: '8px 20px', borderRadius: 6, border: 'none', background: '#34d399', color: '#000', fontSize: 13, fontWeight: 700, cursor: masterToggling ? 'wait' : 'pointer', opacity: masterToggling ? 0.6 : 1, fontFamily: 'inherit' }}>
+              {masterToggling ? 'Activating...' : 'Go Live'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Fetch CAi status + system info + existing deep dive
   useEffect(() => {
@@ -7454,7 +7547,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   }, [brand?.hasMetaToken, brand?.adAccount, brand?.pageId, brand?.id]);
 
   // Reset deep dive (testing)
-  const resetDeepDive = () => { setDeepDive(null); setMode(null); setActivationResult(null); setTerminalLines([]); };
+  const resetDeepDive = () => { setDeepDive(null); setExpandedMetric(null); setMode(null); setActivationResult(null); setTerminalLines([]); };
   const rerunDeepDive = () => {
     if (brand?.id) localStorage.removeItem('cai_dd_ran_' + brand.id);
     setDeepDiveLoading(true); setDeepDive(null); setMode(null); setActivationResult(null);
@@ -7728,6 +7821,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
+          <MasterCampaignToggle />
 
           {/* ─── ROW 1: Metric Cards ─── */}
           <div className="cai-metrics-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
@@ -8802,6 +8896,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ CAMPAIGNS TAB ═══ */}
         {caiSubTab === 'campaigns' && (<>
+          <MasterCampaignToggle compact />
           {/* ─── Campaign Command Center Hero ─── */}
           <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.05), rgba(6,104,225,.03))', border: '1px solid rgba(155,109,255,.12)', borderRadius: 14, padding: '20px 24px', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -9386,6 +9481,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 6 }}>Re-run Analysis rebuilds your brand report. Deactivate pauses campaigns on Meta. Full Reset deletes everything.</div>
           </div>
         </>)}
+        <GoLiveModal />
       </div>
     );
   }
@@ -9700,19 +9796,40 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
     return (
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        {/* Score cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10, marginBottom: 24 }}>
-          {[
-            { v: a.contentScore || '?', l: 'Content Score', c: (a.contentScore || 0) >= 70 ? '#34d399' : (a.contentScore || 0) >= 40 ? '#ffb400' : '#f87171', sub: '/100' },
-            { v: (a.estimatedRoas || '?') + 'x', l: a.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', c: '#9b6dff', sub: a.estimatedRoasRange ? ' · ' + a.estimatedRoasRange.low + '-' + a.estimatedRoasRange.high + 'x' : '' },
-            { v: '$' + (a.estimatedCpa || '?'), l: 'Est. CPA', c: (a.estimatedCpa || 0) <= (a.estimatedCpaRange?.low || 30) ? '#34d399' : '#ffb400', sub: a.estimatedCpaRange ? ' · $' + a.estimatedCpaRange.low + '-$' + a.estimatedCpaRange.high : '' },
-            { v: viewsStr, l: 'TikTok Reach', c: '#4da6ff', sub: '' },
-          ].map(s => (
-            <div key={s.l} style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 10, padding: '14px 8px', textAlign: 'center' }}>
-              <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: s.c }}>{s.v}<span style={{ fontSize: 12, color: 'var(--cs-t4)', fontWeight: 400 }}>{s.sub}</span></div>
-              <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>{s.l}</div>
-            </div>
-          ))}
+        {/* Score cards — v3.4 clickable + CAi reasoning */}
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: expandedMetric ? 0 : 24 }}>
+            {[
+              { k: 'contentScore', v: (a.contentScore || '') + '', l: 'Content Score', c: (a.contentScore || 0) >= 70 ? '#34d399' : (a.contentScore || 0) >= 40 ? '#ffb400' : '#f87171', sub: '/100', reasoning: a.contentScoreReasoning },
+              { k: 'roas', v: (a.estimatedRoas || '') + 'x', l: a.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', c: '#9b6dff', sub: a.estimatedRoasRange ? (a.estimatedRoasRange.low + '-' + a.estimatedRoasRange.high + 'x') : '', reasoning: a.estimatedRoasReasoning },
+              { k: 'cpa', v: '$' + (a.estimatedCpa || ''), l: 'Est. CPA', c: (a.estimatedCpa || 0) <= (a.estimatedCpaRange?.low || 25) ? '#34d399' : '#ffb400', sub: a.estimatedCpaRange ? ('$' + a.estimatedCpaRange.low + '-$' + a.estimatedCpaRange.high) : '', reasoning: a.estimatedCpaReasoning },
+              { k: 'reach', v: viewsStr, l: 'TikTok Reach', c: '#4da6ff', sub: '', reasoning: a.tiktokReachReasoning },
+            ].map(s =>
+              <div key={s.l} onClick={() => setExpandedMetric(expandedMetric === s.k ? null : s.k)} style={{ background: 'var(--cs-card)', border: '1px solid ' + (expandedMetric === s.k ? s.c + '44' : 'var(--cs-a06)'), borderRadius: 12, padding: '16px 12px', textAlign: 'center', cursor: s.reasoning ? 'pointer' : 'default', transition: 'border-color .2s', position: 'relative' }}>
+                <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: s.c }}>{s.v} <span style={{ fontSize: 13, color: 'var(--cs-t4)', fontWeight: 500 }}>{s.sub}</span></div>
+                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 4 }}>{s.l}</div>
+                {s.reasoning && <div style={{ position: 'absolute', bottom: 4, right: 8, fontSize: 10, color: 'var(--cs-t5)' }}>tap for details</div>}
+              </div>
+            )}
+          </div>
+          {expandedMetric && (() => {
+            const metricData = {
+              contentScore: { label: 'Content Score', reasoning: a.contentScoreReasoning, color: (a.contentScore || 0) >= 70 ? '#34d399' : (a.contentScore || 0) >= 40 ? '#ffb400' : '#f87171' },
+              roas: { label: a.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', reasoning: a.estimatedRoasReasoning, color: '#9b6dff' },
+              cpa: { label: 'Est. CPA', reasoning: a.estimatedCpaReasoning, color: '#ffb400' },
+              reach: { label: 'TikTok Reach', reasoning: a.tiktokReachReasoning, color: '#4da6ff' },
+            }[expandedMetric];
+            if (!metricData?.reasoning) return null;
+            return (
+              <div style={{ background: 'var(--cs-card)', border: '1px solid ' + metricData.color + '33', borderRadius: '0 0 12px 12px', padding: '14px 18px', marginBottom: 24, marginTop: -1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: metricData.color }}></div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: metricData.color, textTransform: 'uppercase', letterSpacing: '.5px' }}>CAi Reasoning — {metricData.label}</span>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6 }}>{metricData.reasoning}</div>
+              </div>
+            );
+          })()}
         </div>
             {a.ltvRoas && a.businessModel === 'subscription' && (
               <div style={{ padding: '10px 14px', background: 'rgba(155,109,255,.06)', border: '1px solid rgba(155,109,255,.12)', borderRadius: 8, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -11028,10 +11145,6 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
       </nav>
       {/* Status + Theme + Avatar — same dropdown as SiteNav (homepage) */}
       <div className="cai-header-right" style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:4,padding:'3px 8px',borderRadius:4,background:brandTab==='ai-plans'&&activeCaiTab?'rgba('+(caiStatusActive?'52,211,153':'255,180,0')+',.08)':'transparent',border:'1px solid rgba('+(caiStatusActive?'52,211,153':'255,180,0')+',.15)'}}>
-          <div style={{width:6,height:6,borderRadius:'50%',background:caiStatusActive?'#34d399':'#ffb400'}}></div>
-          <span style={{fontSize:11,fontWeight:600,color:caiStatusActive?'#34d399':'#ffb400',letterSpacing:'.3px'}}>{caiStatusActive?'ACTIVE':'PAUSED'}</span>
-        </div>
         <button type="button" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} style={{background:'none',border:'1px solid var(--cs-a08)',borderRadius:8,padding:'6px 8px',cursor:'pointer',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',color:'var(--cs-t3)'}}>{theme === 'dark' ? '☀️' : '🌙'}</button>
         <div ref={brandNavRef} style={{position:'relative'}}>
           <button type="button" onClick={()=>setBrandNavOpen(o=>!o)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',background:'var(--cs-a06)',border:'1px solid var(--cs-a08)',borderRadius:8,color:'var(--cs-t0)',fontFamily:'inherit',cursor:'pointer'}}>
@@ -11093,13 +11206,13 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         })()}
 
         {brandTab==="home"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandHomeTab brand={brand} profile={profile ?? brand} creatorsCount={creatorsCount} setBrandTab={setBrandTab} /></div>}
-        {brandTab==="overview"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} /></div>}
+        {brandTab==="overview"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} /></div>}
 
         {brandTab==="creators"&&<div style={{animation:'fadeIn 0.2s ease'}}>{loadingCreators ? <AILoader messages={['Scanning TikTok Shop creators...', 'Finding creators with your products...', 'Ranking by engagement score...', 'Calculating CAi performance index...', 'Building your creator pipeline...']} height={260} color="#EE1D52" /> : <ErrorBoundary><CreatorDiscoveryView brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} setMessagesThread={setMessagesThread} /></ErrorBoundary>}</div>}
 
         {brandTab==="content"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandContentTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} tiktokVideos={tiktokVideos} loadingTiktokVideos={loadingTiktokVideos} onLaunchVideo={onLaunchVideo} /></div>}
 
-        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} /></div>}
+        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} /></div>}
 
         {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
 

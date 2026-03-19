@@ -37,7 +37,7 @@ const TIKTOK_DL_HEADERS = {
 const JWT_EXPIRES_IN = '7d';
 
 // ═══ CAi VERSION ═══
-const CAI_VERSION = 'v3.3';
+const CAI_VERSION = 'v3.4';
 
 // ═══ CAi VIDEO QUALIFICATION PARAMETERS ═══
 // These thresholds determine which TikTok videos are worth running as Meta ads.
@@ -735,9 +735,10 @@ async function syncCampaignWithMeta(brand) {
           }
         }
         const before = cai.creatives.length;
-        cai.creatives = cai.creatives.filter(c => c.status !== 'deleted');
+        cai.creatives = cai.creatives.filter(c => c.status !== 'deleted' && c.status !== 'archived');
         if (cai.creatives.length < before) {
-          log.push('Removed ' + (before - cai.creatives.length) + ' deleted ads from local data');
+          log.push('Removed ' + (before - cai.creatives.length) + ' deleted/archived ads from local data');
+          changed = true;
         }
       } catch (e) {
         log.push('Ads batch check error: ' + e.message);
@@ -6524,6 +6525,10 @@ Return ONLY valid JSON. Keep ALL text fields to 1-2 sentences. Be specific to TH
   "estimatedCpaRange": { "low": ${estimates.cpa.low}, "high": ${estimates.cpa.high} },
   "estimatedRoas": ${estimates.firstPurchaseRoas.mid},
   "estimatedRoasRange": { "low": ${estimates.firstPurchaseRoas.low}, "high": ${estimates.firstPurchaseRoas.high} },
+  "contentScoreReasoning": "1-2 sentences. Why this brand scored at the contentScore above — cite specific numbers: video count, total views, engagement rate, share rate, recency",
+  "estimatedRoasReasoning": "1-2 sentences. Why ROAS is estimated at estimatedRoas — cite AOV, product price, content quality signals, comparable DTC benchmarks",
+  "estimatedCpaReasoning": "1-2 sentences. Why CPA is estimated at estimatedCpa — cite product price point, funnel assumptions, content engagement signals",
+  "tiktokReachReasoning": "1-2 sentences. Why this reach number matters — cite total views, growth trajectory, viral hits",
   "ltvRoas": { "low": ${estimates.ltvRoas.low}, "high": ${estimates.ltvRoas.high}, "period": "${estimates.ltvRoas.months}" },
   "businessModel": "${estimates.businessModel}",
   "category": "${detectedCategory}",
@@ -6605,6 +6610,10 @@ Include your top 15 videos in topPicks, ranked by ad potential. hero = strongest
       businessModel: estimates.businessModel,
       category: detectedCategory,
       estimateMethodology: estimates.methodology,
+      contentScoreReasoning: analysis.contentScoreReasoning || null,
+      estimatedRoasReasoning: analysis.estimatedRoasReasoning || null,
+      estimatedCpaReasoning: analysis.estimatedCpaReasoning || null,
+      tiktokReachReasoning: analysis.tiktokReachReasoning || null,
     });
 
     // Save analysis to brand
@@ -6979,7 +6988,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
         campaign_id: ids.campaign,
         billing_event: 'IMPRESSIONS',
         optimization_goal: hasPixel ? 'OFFSITE_CONVERSIONS' : 'LINK_CLICKS',
-        status: 'PAUSED',
+        status: 'ACTIVE',
         targeting: JSON.stringify({
           geo_locations: { countries: ['US'] },
           age_min: 18,
@@ -7203,7 +7212,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
           };
           const adName = '[CAi] ' + (pick.tier || 'ad') + ' — ' + (video.authorHandle || 'creator');
           const cr = await metaPost(adAccount + '/adcreatives', { name: adName, object_story_spec: JSON.stringify(spec), access_token: metaToken });
-          const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: ids.adset, creative: JSON.stringify({ creative_id: cr.id }), status: 'PAUSED', access_token: metaToken });
+          const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: ids.adset, creative: JSON.stringify({ creative_id: cr.id }), status: 'ACTIVE', access_token: metaToken });
           dbg('Ad created ' + video.id + ': adId=' + ad.id + ' creativeId=' + cr.id);
 
           // Save each creative immediately as it completes (guard against stale generation)
@@ -7575,7 +7584,7 @@ app.post('/api/cai/create-campaign', authBrand, async (req, res) => {
       bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
       targeting: JSON.stringify({ geo_locations: { countries: ['US'] }, age_min: 18, age_max: 65 }),
       promoted_object: JSON.stringify({ pixel_id: brand.pixelId || '', custom_event_type: 'PURCHASE' }),
-      status: 'PAUSED',
+      status: 'ACTIVE',
       access_token: metaToken,
     };
     if (dailyBudget) adsetParams.daily_budget = dailyBudget * 100;
@@ -7801,7 +7810,7 @@ async function caiAddCreativeToCampaign(brand, campaignLocalId, videoId, primary
     name: '[CAi] ' + (video.authorHandle || 'creator') + ' — ' + (video.desc || '').slice(0, 30),
     adset_id: adsetId,
     creative: JSON.stringify({ creative_id: cr.id }),
-    status: 'PAUSED',
+    status: 'ACTIVE',
     access_token: metaToken,
   });
 
@@ -8461,7 +8470,7 @@ async function caiAddCreativeToActiveCampaign(brand, videoId, primaryText, headl
   };
   const adName = '[CAi] ' + (video.authorHandle || 'creator');
   const cr = await metaPost(adAccount + '/adcreatives', { name: adName, object_story_spec: JSON.stringify(spec), access_token: metaToken });
-  const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: adsetId, creative: JSON.stringify({ creative_id: cr.id }), status: 'PAUSED', access_token: metaToken });
+  const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: adsetId, creative: JSON.stringify({ creative_id: cr.id }), status: 'ACTIVE', access_token: metaToken });
 
   // Update brand CAi state
   brand.cai.creatives = brand.cai.creatives || [];
@@ -9444,7 +9453,7 @@ app.post('/api/launch', authBrand, async (req, res) => {
       billing_event: 'IMPRESSIONS',
       optimization_goal: optimizationGoal,
       bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-      status: 'PAUSED',
+      status: 'ACTIVE',
       targeting: JSON.stringify(tgt),
       access_token: metaToken
     };
@@ -9487,7 +9496,7 @@ app.post('/api/launch', authBrand, async (req, res) => {
           const adName = campName + ' — Variant ' + (i + 1) + ' (' + creatorLabel + ')';
           const cr = await metaPost(adAccount + '/adcreatives', { name: adName, object_story_spec: JSON.stringify(spec), access_token: metaToken });
           steps.push({ step: 'creative_variant_' + (i + 1), status: 'ok', id: cr.id });
-          const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: ids.adset, creative: JSON.stringify({ creative_id: cr.id }), status: 'PAUSED', access_token: metaToken });
+          const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: ids.adset, creative: JSON.stringify({ creative_id: cr.id }), status: 'ACTIVE', access_token: metaToken });
           createdAdIds[i] = ad.id;
           steps.push({ step: 'ad_variant_' + (i + 1), status: 'ok', id: ad.id });
         } catch (e) { steps.push({ step: 'variant_' + (i + 1), status: 'error', error: e.message }); }
@@ -9499,7 +9508,7 @@ app.post('/api/launch', authBrand, async (req, res) => {
         const spec = { page_id: pageId, video_data: { video_id: ids.video, message: msg, title: headline || undefined, link_description: description || undefined, image_url: 'https://img.freepik.com/free-photo/abstract-surface-textures-white-concrete-stone-wall_1258-14525.jpg', call_to_action: { type: cta || 'SHOP_NOW', value: { link: linkUrl } } } };
         const cr = await metaPost(adAccount + '/adcreatives', { name: '[CS] ' + video.creator, object_story_spec: JSON.stringify(spec), access_token: metaToken });
         ids.creative = cr.id; steps.push({ step: 'creative', status: 'ok', id: ids.creative });
-        const ad = await metaPost(adAccount + '/ads', { name: '[CS] ' + video.creator + ' Ad', adset_id: ids.adset, creative: JSON.stringify({ creative_id: ids.creative }), status: 'PAUSED', access_token: metaToken });
+        const ad = await metaPost(adAccount + '/ads', { name: '[CS] ' + video.creator + ' Ad', adset_id: ids.adset, creative: JSON.stringify({ creative_id: ids.creative }), status: 'ACTIVE', access_token: metaToken });
         ids.ad = ad.id; steps.push({ step: 'ad', status: 'ok', id: ids.ad });
       } catch (e) { steps.push({ step: 'creative', status: 'error', error: e.message }); }
     }
@@ -9722,6 +9731,77 @@ app.post('/api/campaigns/toggle', async (req, res) => {
     const result = await metaPost(campaignId, { status: newStatus || 'PAUSED', access_token: metaToken });
     res.json({ success: true, ...result });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Master campaign toggle — flip ALL CAi / Creatorship campaigns at once ──
+app.post('/api/brand/campaign-master-toggle', async (req, res) => {
+  const brandId = req.brandAuth?.brandId;
+  const { action } = req.body;
+  if (!action || !['activate', 'pause'].includes(action)) {
+    return res.status(400).json({ error: 'action must be "activate" or "pause"' });
+  }
+  const brand = await getBrandById(brandId);
+  if (!brand) return res.status(404).json({ error: 'Brand not found' });
+
+  let metaToken;
+  try {
+    metaToken = getValidMetaToken(brand);
+  } catch (e) {
+    return res.status(400).json({ error: e.message || 'Meta not connected' });
+  }
+
+  const adAccountRaw = brand.adAccount;
+  if (!adAccountRaw) return res.status(400).json({ error: 'No ad account configured' });
+
+  const newStatus = action === 'activate' ? 'ACTIVE' : 'PAUSED';
+  const results = [];
+  const acct = String(adAccountRaw).startsWith('act_') ? String(adAccountRaw) : 'act_' + String(adAccountRaw);
+
+  try {
+    const campUrl = `https://graph.facebook.com/v22.0/${acct}/campaigns?fields=id,name,status&limit=100&access_token=${encodeURIComponent(metaToken)}`;
+    const campResp = await fetch(campUrl);
+    const campData = await campResp.json();
+
+    if (!campData.data) {
+      return res.status(500).json({ error: 'Failed to fetch campaigns from Meta', detail: campData.error?.message });
+    }
+
+    const caiCampaigns = campData.data.filter(c =>
+      c.name && (String(c.name).startsWith('[CAi]') || String(c.name).startsWith('[CS]'))
+    );
+
+    if (caiCampaigns.length === 0) {
+      return res.json({ success: true, toggled: 0, total: 0, message: 'No CAi campaigns found', results: [] });
+    }
+
+    for (const camp of caiCampaigns) {
+      if (camp.status === newStatus) {
+        results.push({ id: camp.id, name: camp.name, skipped: true });
+        continue;
+      }
+      try {
+        await metaPost(camp.id, { status: newStatus, access_token: metaToken });
+        results.push({ id: camp.id, name: camp.name, success: true });
+      } catch (e) {
+        results.push({ id: camp.id, name: camp.name, error: e.message });
+      }
+    }
+
+    if (!brand.cai) brand.cai = {};
+    brand.cai.masterStatus = newStatus;
+    await saveBrand(brand);
+
+    res.json({
+      success: true,
+      status: newStatus,
+      toggled: results.filter(r => r.success).length,
+      total: caiCampaigns.length,
+      results,
+    });
+  } catch (e) {
+    console.error('[master-toggle] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ═══ CAi Campaign Actions — pause, resume, update specific campaigns ═══
