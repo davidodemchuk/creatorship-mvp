@@ -7963,25 +7963,27 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     return (
       <div>
         {/* Compact toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
-          <button onClick={async () => {
-            try {
-              const token = localStorage.getItem('creatorship_brand_token');
-              const r = await fetch('/api/cai/sync-meta', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand?.id }) });
-              const d = await r.json().catch(() => ({}));
-              if (d.changed) {
-                window.location.reload();
-              } else if (d.error) {
-                alert(d.error);
-              } else {
-                alert('Everything is in sync with Meta.');
-              }
-            } catch (e) { console.error('Sync error:', e); alert(e?.message || 'Sync failed'); }
-          }} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--cs-a08)', background: 'var(--cs-a04)', color: 'var(--cs-t2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Sync with Meta
-          </button>
-          <button onClick={pollNow} disabled={polling} style={{ background: 'none', border: '1px solid rgba(155,109,255,.2)', borderRadius: 6, color: '#9b6dff', fontSize: 12, padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>{polling ? 'Polling...' : 'Refresh Metrics'}</button>
-        </div>
+        {brand?.hasMetaToken && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
+            <button onClick={async () => {
+              try {
+                const token = localStorage.getItem('creatorship_brand_token');
+                const r = await fetch('/api/cai/sync-meta', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand?.id }) });
+                const d = await r.json().catch(() => ({}));
+                if (d.changed) {
+                  window.location.reload();
+                } else if (d.error) {
+                  alert(d.error);
+                } else {
+                  alert('Everything is in sync with Meta.');
+                }
+              } catch (e) { console.error('Sync error:', e); alert(e?.message || 'Sync failed'); }
+            }} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--cs-a08)', background: 'var(--cs-a04)', color: 'var(--cs-t2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Sync with Meta
+            </button>
+            <button onClick={pollNow} disabled={polling} style={{ background: 'none', border: '1px solid rgba(155,109,255,.2)', borderRadius: 6, color: '#9b6dff', fontSize: 12, padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>{polling ? 'Polling...' : 'Refresh Metrics'}</button>
+          </div>
+        )}
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
