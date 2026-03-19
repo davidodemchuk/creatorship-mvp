@@ -49,6 +49,48 @@ async function resolveRoleByEmail(email) {
   return 'creator';
 }
 
+// ── Role-based access control (frontend helpers for UX) ──
+const ROLE_LEVEL = { owner: 4, admin: 3, editor: 2, viewer: 1 };
+
+function base64UrlDecode(input) {
+  const str = String(input || '')
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const pad = str.length % 4;
+  const padded = pad ? str + '='.repeat(4 - pad) : str;
+  return atob(padded);
+}
+
+function getBrandUserRole() {
+  if (typeof window === 'undefined') return 'owner';
+  const token = localStorage.getItem('creatorship_brand_token');
+  if (!token) return 'owner';
+  try {
+    const payload = JSON.parse(base64UrlDecode(token.split('.')[1]));
+    return payload?.role || 'owner';
+  } catch (_) {
+    return 'owner';
+  }
+}
+
+function canDo(userRole, action) {
+  const roleActions = {
+    view: 'viewer',
+    edit_campaigns: 'editor',
+    launch: 'editor',
+    toggle_campaign: 'editor',
+    run_deep_dive: 'editor',
+    upload_content: 'editor',
+    edit_settings: 'admin',
+    manage_team: 'admin',
+    manage_billing: 'admin',
+    connect_integrations: 'admin',
+    delete_brand: 'owner',
+  };
+  const required = roleActions[action] || 'owner';
+  return (ROLE_LEVEL[userRole] || 0) >= (ROLE_LEVEL[required] || 99);
+}
+
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
   static getDerivedStateFromError(error) { return { hasError: true, error }; }
@@ -912,6 +954,7 @@ function SiteNav({ nav }) {
   const brand = isLoggedIn.brand;
   const creator = isLoggedIn.creator;
   const loggedIn = brand || creator;
+  const userRole = brand ? getBrandUserRole() : 'owner';
   const dashboardUrl = brand ? '/brand' : '/creator';
   const displayName = brand ? (brand.storeName ? '@' + brand.storeName : brand.brandName || 'Dashboard') : creator ? (creator.displayName || creator.tiktokHandle || 'Dashboard') : '';
 
@@ -941,6 +984,22 @@ function SiteNav({ nav }) {
             <button type="button" onClick={() => setDropOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t0)', fontFamily: 'inherit', cursor: 'pointer' }}>
               {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid var(--cs-a15)' }} /> : <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>{initial}</div>}
               <span style={{ fontSize: 13, fontWeight: 600, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</span>
+              {brand && userRole !== 'owner' && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    padding: '3px 8px',
+                    borderRadius: 999,
+                    background: userRole === 'admin' ? 'rgba(6,104,225,.10)' : userRole === 'editor' ? 'rgba(52,211,153,.10)' : 'rgba(156,163,175,.10)',
+                    border: '1px solid ' + (userRole === 'admin' ? 'rgba(6,104,225,.25)' : userRole === 'editor' ? 'rgba(52,211,153,.25)' : 'rgba(156,163,175,.25)'),
+                    color: userRole === 'admin' ? '#0668E1' : userRole === 'editor' ? '#34d399' : 'var(--cs-t4)',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {userRole.charAt(0).toUpperCase() + userRole.slice(1)}
+                </span>
+              )}
               <span style={{ fontSize: 12, opacity: .7 }}>{'\u25BE'}</span>
             </button>
             {dropOpen && (
@@ -5356,6 +5415,13 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
 ══════════════════════════════════════════════════════*/
 function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile, setProfile, setBrand, brandTikTokPage }) {
   const toast = useToast();
+  const userRole = getBrandUserRole();
+  const canDoAction = (action) => canDo(userRole, action);
+  const canManageTeam = canDoAction('manage_team');
+  const canManageBilling = canDoAction('manage_billing');
+  const canConnectIntegrations = canDoAction('connect_integrations');
+  const canEditSettings = canDoAction('edit_settings');
+  const canDeleteBrand = canDoAction('delete_brand');
   const [metaMsg, setMetaMsg] = useState(null);
   const [tiktokMsg, setTiktokMsg] = useState(null);
   const [profileMsg, setProfileMsg] = useState(null);
@@ -5413,6 +5479,11 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
 
   const fetchBilling = useCallback(async () => {
     if (!brand?.id) return;
+    if (!canManageBilling) {
+      setBillingLoading(false);
+      setBillingMsg({ ok: false, text: 'Contact your account admin to manage billing.' });
+      return;
+    }
     const token = localStorage.getItem('creatorship_brand_token');
     if (!token) { setBillingLoading(false); return; }
     setBillingLoading(true);
@@ -5422,7 +5493,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
       if (d.success) setBilling(d);
     } catch (e) { console.error('Billing fetch error', e); }
     setBillingLoading(false);
-  }, [brand?.id]);
+  }, [brand?.id, canManageBilling]);
 
   useEffect(() => {
     if (settingsTab === 'billing') fetchBilling();
@@ -5452,6 +5523,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   }, []);
 
   const handleAddPayment = async () => {
+    if (!canManageBilling) {
+      setBillingMsg({ ok: false, text: 'Contact your account admin to manage billing.' });
+      return;
+    }
     setBillingAction('add');
     try {
       const res = await fetch('/api/billing/setup-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand.id }) });
@@ -5463,6 +5538,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   };
 
   const handleRemovePayment = async () => {
+    if (!canManageBilling) {
+      setBillingMsg({ ok: false, text: 'Contact your account admin to manage billing.' });
+      return;
+    }
     setBillingAction('remove');
     try {
       const res = await fetch('/api/billing/remove-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand.id }) });
@@ -5522,6 +5601,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   }, []);
 
   const handleMetaConnect = async () => {
+    if (!canConnectIntegrations) {
+      setMetaMsg({ ok: false, text: 'You need Admin access to connect Meta Ads.' });
+      return;
+    }
     setMetaMsg(null);
     if (!metaForm.adAccount.trim()) { setMetaMsg({ ok: false, text: 'Ad Account ID is required' }); return; }
     setSaving('meta');
@@ -5534,6 +5617,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     setSaving(null);
   };
   const handleTiktokConnect = async () => {
+    if (!canConnectIntegrations) {
+      setTiktokMsg({ ok: false, text: 'You need Admin access to connect TikTok Shop.' });
+      return;
+    }
     setTiktokMsg(null);
     const raw = tiktokForm.trim();
     if (!raw) { setTiktokMsg({ ok: false, text: 'Enter your TikTok Shop store URL' }); return; }
@@ -5549,6 +5636,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     setSaving(null);
   };
   const handleProfileSave = async () => {
+    if (!canEditSettings) {
+      setProfileMsg({ ok: false, text: 'View only — you need Admin access to change settings.' });
+      return;
+    }
     setProfileMsg(null); setSaving('profile');
     try {
       const res = await fetch('/api/brand/update-profile', {
@@ -5572,14 +5663,26 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     setSaving(null);
   };
   const handleTiktokDisconnect = async () => {
+    if (!canConnectIntegrations) {
+      setTiktokMsg({ ok: false, text: 'You need Admin access to disconnect TikTok.' });
+      return;
+    }
     setTiktokMsg(null);
     try { const res = await fetch('/api/brand/update-tiktok', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...brandIdPayload, storeUrl: '' }) }); const d = await res.json(); if (d.success) { updateState(d.brand); refreshProfile(); setTiktokMsg({ ok: true, text: 'Disconnected' }); } else { setTiktokMsg({ ok: false, text: d.error }); } } catch (e) { setTiktokMsg({ ok: false, text: 'Network error' }); }
   };
   const handleMetaDisconnect = async () => {
+    if (!canConnectIntegrations) {
+      setMetaMsg({ ok: false, text: 'You need Admin access to disconnect Meta Ads.' });
+      return;
+    }
     setMetaMsg(null);
     try { const res = await fetch('/api/brand/update-meta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...brandIdPayload, clearMeta: true }) }); const d = await res.json(); if (d.success) { updateState(d.brand); refreshProfile(); setMetaMsg({ ok: true, text: 'Meta Ads disconnected' }); } else { setMetaMsg({ ok: false, text: d.error }); } } catch (e) { setMetaMsg({ ok: false, text: 'Network error' }); }
   };
   const handleSavePageId = async () => {
+    if (!canEditSettings) {
+      setMetaMsg({ ok: false, text: 'View only — you need Admin access to save Page ID.' });
+      return;
+    }
     setMetaMsg(null);
     setSavingPageId(true);
     try {
@@ -5605,6 +5708,10 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     setSaving(null);
   };
   const handleDeleteAccount = async () => {
+    if (!canDeleteBrand) {
+      alert('You need Owner access to delete the account.');
+      return;
+    }
     const pw = prompt('Enter your password to confirm account deletion. This action is permanent and cannot be undone.');
     if (!pw) return;
     try {
@@ -5699,7 +5806,9 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
               <textarea rows={3} placeholder="What does your brand sell? Who is your audience?" value={brandSettings.brandDescription || ''} onChange={e => setBrandSettings(p => ({ ...p, brandDescription: e.target.value }))} style={{ ...S.inp, resize: 'vertical', minHeight: 72 }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button onClick={handleProfileSave} disabled={saving === 'profile'} style={{ ...btnStyle, background: '#0668E1', color: '#fff', padding: '10px 24px', opacity: saving === 'profile' ? .6 : 1 }}>{saving === 'profile' ? 'Saving...' : 'Save Changes'}</button>
+              <button onClick={handleProfileSave} disabled={!canEditSettings || saving === 'profile'} style={{ ...btnStyle, background: '#0668E1', color: '#fff', padding: '10px 24px', opacity: !canEditSettings ? 0.55 : saving === 'profile' ? .6 : 1 }}>
+                {saving === 'profile' ? 'Saving...' : 'Save Changes'}
+              </button>
               {profileMsg && <span style={{ fontSize: 13, color: profileMsg.ok ? '#34d399' : '#ef4444' }}>{profileMsg.text}</span>}
             </div>
           </>
@@ -5708,6 +5817,11 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
 
     {/* ═══ INTEGRATIONS TAB ═══ */}
     {settingsTab === 'integrations' && <>
+      {!canConnectIntegrations && (
+        <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(156,163,175,.06)', border: '1px solid rgba(156,163,175,.12)', borderRadius: 10, fontSize: 13, color: 'var(--cs-t4)' }}>
+          View only. Contact your Admin to connect Meta Ads or TikTok Shop.
+        </div>
+      )}
       {/* TikTok Shop */}
       <div style={S.card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -5951,7 +6065,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
           <div><div style={S.val}>Delete account</div><div style={{ fontSize: 14, color: 'var(--cs-t4)', marginTop: 2 }}>Permanently remove your account, campaigns, and all associated data. This cannot be undone.</div></div>
           {!showDeleteConfirm && (
-            <button onClick={() => setShowDeleteConfirm(true)} style={{ ...btnStyle, background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#fca5a5', padding: '8px 18px', fontSize: 14, flexShrink: 0 }}>Delete Account</button>
+            <button onClick={() => setShowDeleteConfirm(true)} disabled={!canDeleteBrand} style={{ ...btnStyle, background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#fca5a5', padding: '8px 18px', fontSize: 14, flexShrink: 0, opacity: !canDeleteBrand ? 0.55 : 1, cursor: !canDeleteBrand ? 'not-allowed' : 'pointer' }}>Delete Account</button>
           )}
         </div>
         {showDeleteConfirm && (
@@ -5961,7 +6075,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
             <input type="text" value={deleteConfirmText || ''} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="Type DELETE" style={{ width: '100%', maxWidth: 260, padding: '10px 12px', background: 'rgba(0,0,0,.3)', border: '1px solid rgba(239,68,68,.25)', borderRadius: 8, color: '#fca5a5', fontSize: 14, fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, letterSpacing: '0.1em' }} />
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(''); }} style={{ ...btnStyle, background: 'var(--cs-a04)', color: 'var(--cs-t3)', padding: '8px 14px', fontSize: 14, border: '1px solid var(--cs-a06)' }}>Cancel</button>
-              <button onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE'} style={{ ...btnStyle, background: deleteConfirmText === 'DELETE' ? '#ef4444' : 'rgba(239,68,68,.2)', color: deleteConfirmText === 'DELETE' ? '#fff' : '#fca5a5', padding: '8px 18px', fontSize: 14, cursor: deleteConfirmText === 'DELETE' ? 'pointer' : 'not-allowed', opacity: deleteConfirmText === 'DELETE' ? 1 : 0.5 }}>Permanently Delete My Account</button>
+              <button onClick={handleDeleteAccount} disabled={!canDeleteBrand || deleteConfirmText !== 'DELETE'} style={{ ...btnStyle, background: deleteConfirmText === 'DELETE' && canDeleteBrand ? '#ef4444' : 'rgba(239,68,68,.2)', color: deleteConfirmText === 'DELETE' && canDeleteBrand ? '#fff' : '#fca5a5', padding: '8px 18px', fontSize: 14, cursor: !canDeleteBrand || deleteConfirmText !== 'DELETE' ? 'not-allowed' : 'pointer', opacity: !canDeleteBrand ? 0.55 : deleteConfirmText === 'DELETE' ? 1 : 0.5 }}>Permanently Delete My Account</button>
             </div>
           </div>
         )}
@@ -5970,6 +6084,11 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
 
     {/* ═══ BILLING TAB ═══ */}
     {settingsTab === 'billing' && <>
+      {!canManageBilling && (
+        <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(156,163,175,.06)', border: '1px solid rgba(156,163,175,.12)', borderRadius: 10, fontSize: 13, color: 'var(--cs-t4)' }}>
+          View only. Contact your account admin to manage billing.
+        </div>
+      )}
       <div style={S.card}>
         <div style={S.sectionTitle}>Current Plan</div>
         {profile.billingEnabled ? (<>
@@ -6022,7 +6141,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
           {(profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) && (
             <div style={{ padding: 14, background: C.error + '0d', border: '1px solid ' + C.error + '25', borderRadius: 10, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontSize: 13, color: '#fca5a5' }}>You've used all free launches. Add a payment method to continue.</span>
-              <button onClick={handleAddPayment} disabled={billingAction === 'add'} style={{ ...btnStyle, background: C.blue, color: C.bg, padding: '8px 16px', fontSize: 14, flexShrink: 0, marginLeft: 12 }}>Add Payment Method</button>
+              <button onClick={handleAddPayment} disabled={!canManageBilling || billingAction === 'add'} style={{ ...btnStyle, background: C.blue, color: C.bg, padding: '8px 16px', fontSize: 14, flexShrink: 0, marginLeft: 12, opacity: !canManageBilling ? 0.55 : 1 }}>Add Payment Method</button>
             </div>
           )}
         </>)}
@@ -6046,7 +6165,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={S.badge(true)}><StatusDot ok={true} />Active</span>
-                <button onClick={handleRemovePayment} disabled={billingAction === 'remove'} style={{ ...btnStyle, background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#fca5a5', padding: '8px 16px', fontSize: 14, opacity: billingAction === 'remove' ? 0.5 : 1 }}>{billingAction === 'remove' ? '...' : 'Remove'}</button>
+                <button onClick={handleRemovePayment} disabled={!canManageBilling || billingAction === 'remove'} style={{ ...btnStyle, background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', color: '#fca5a5', padding: '8px 16px', fontSize: 14, opacity: !canManageBilling ? 0.55 : billingAction === 'remove' ? 0.5 : 1 }}>{billingAction === 'remove' ? '...' : 'Remove'}</button>
               </div>
             </div>
           );
@@ -6071,7 +6190,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
                     <span style={{ fontSize: 11, color: 'var(--cs-t4)' }}>256-bit encryption</span>
                   </div>
                 </div>
-                <button onClick={handleAddPayment} disabled={billingAction === 'add'} style={{ ...btnStyle, background: '#635BFF', color: '#fff', padding: '12px 28px', fontWeight: 700, fontSize: 14, borderRadius: 8, border: 'none', cursor: billingAction === 'add' ? 'not-allowed' : 'pointer', opacity: billingAction === 'add' ? 0.7 : 1 }}>
+                <button onClick={handleAddPayment} disabled={!canManageBilling || billingAction === 'add'} style={{ ...btnStyle, background: '#635BFF', color: '#fff', padding: '12px 28px', fontWeight: 700, fontSize: 14, borderRadius: 8, border: 'none', cursor: !canManageBilling ? 'not-allowed' : billingAction === 'add' ? 'not-allowed' : 'pointer', opacity: !canManageBilling ? 0.55 : billingAction === 'add' ? 0.7 : 1 }}>
                   {billingAction === 'add' ? 'Opening Stripe...' : 'Add Payment Method via Stripe'}
                 </button>
               </div>
@@ -6137,35 +6256,41 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
       {teamMsg && <FeedbackMsg msg={teamMsg} />}
 
       {/* Invite Form */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <input placeholder="Email address" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-          style={{ flex: 1, minWidth: 200, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--cs-a10)', background: 'var(--cs-a04)', color: 'var(--cs-t0)', fontSize: 13, outline: 'none' }} />
-        <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
-          style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--cs-a10)', background: 'var(--cs-card)', color: 'var(--cs-t0)', fontSize: 13 }}>
-          <option value="viewer">Viewer</option>
-          <option value="editor">Editor</option>
-          <option value="admin">Admin</option>
-        </select>
-        <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginTop: 6, lineHeight: 1.6 }}>
-          {inviteRole === 'viewer' && 'Can view campaigns and creators — no changes allowed'}
-          {inviteRole === 'editor' && 'Can manage creators and content — no billing or settings access'}
-          {inviteRole === 'admin' && 'Full access — cannot delete the account'}
+      {canManageTeam ? (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+          <input placeholder="Email address" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+            style={{ flex: 1, minWidth: 200, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--cs-a10)', background: 'var(--cs-a04)', color: 'var(--cs-t0)', fontSize: 13, outline: 'none' }} />
+          <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
+            style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--cs-a10)', background: 'var(--cs-card)', color: 'var(--cs-t0)', fontSize: 13 }}>
+            <option value="viewer">Viewer</option>
+            <option value="editor">Editor</option>
+            <option value="admin" disabled={userRole !== 'owner'}>Admin</option>
+          </select>
+          <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginTop: 6, lineHeight: 1.6 }}>
+            {inviteRole === 'viewer' && 'Can view campaigns and creators — no changes allowed'}
+            {inviteRole === 'editor' && 'Can manage creators and content — no billing or settings access'}
+            {inviteRole === 'admin' && 'Full access — cannot delete the account'}
+          </div>
+          <button onClick={async () => {
+            if (!inviteEmail) return;
+            setInviting(true);
+            try {
+              const r = await fetch('/api/brand/team/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: profile.id, email: inviteEmail, role: inviteRole }) });
+              const d = await r.json();
+              if (d.success) { fire('Invitation sent!'); setInviteEmail(''); loadTeamMembers(); }
+              else fire(d.error || 'Failed to invite');
+            } catch (e) { fire('Failed to invite'); }
+            setInviting(false);
+          }} disabled={inviting || !inviteEmail}
+            style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#0668E1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: inviting ? 0.6 : 1 }}>
+            {inviting ? 'Sending...' : 'Invite'}
+          </button>
         </div>
-        <button onClick={async () => {
-          if (!inviteEmail) return;
-          setInviting(true);
-          try {
-            const r = await fetch('/api/brand/team/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: profile.id, email: inviteEmail, role: inviteRole }) });
-            const d = await r.json();
-            if (d.success) { fire('Invitation sent!'); setInviteEmail(''); loadTeamMembers(); }
-            else fire(d.error || 'Failed to invite');
-          } catch (e) { fire('Failed to invite'); }
-          setInviting(false);
-        }} disabled={inviting || !inviteEmail}
-          style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: '#0668E1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: inviting ? 0.6 : 1 }}>
-          {inviting ? 'Sending...' : 'Invite'}
-        </button>
-      </div>
+      ) : (
+        <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginBottom: 20, padding: 12, background: 'rgba(156,163,175,.06)', border: '1px solid rgba(156,163,175,.12)', borderRadius: 10 }}>
+          View only. Contact your Admin to invite or remove team members.
+        </div>
+      )}
 
       {/* Owner */}
       <div style={{ padding: '12px 16px', background: 'rgba(6,104,225,.04)', border: '1px solid rgba(6,104,225,.1)', borderRadius: 10, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -6192,11 +6317,13 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
             ) : (
               <span style={{ fontSize: 13, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,180,0,.08)', border: '1px solid rgba(255,180,0,.15)', color: '#ffb400', fontWeight: 600 }}>Pending invite</span>
             )}
-          <button onClick={async () => {
-            const doRemove = await showConfirm({ title: 'Remove Team Member', message: 'Remove ' + m.email + ' from your team? They will lose access immediately.', confirmText: 'Remove', destructive: true }); if (!doRemove) return;
-            await fetch('/api/brand/team/' + m.id + '?brandId=' + profile.id, { method: 'DELETE' });
-            loadTeamMembers();
-          }} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 14, cursor: 'pointer' }}>Remove</button>
+          {canManageTeam && (
+            <button onClick={async () => {
+              const doRemove = await showConfirm({ title: 'Remove Team Member', message: 'Remove ' + m.email + ' from your team? They will lose access immediately.', confirmText: 'Remove', destructive: true }); if (!doRemove) return;
+              await fetch('/api/brand/team/' + m.id + '?brandId=' + profile.id, { method: 'DELETE' });
+              loadTeamMembers();
+            }} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: 14, cursor: 'pointer' }}>Remove</button>
+          )}
           </div>
         </div>
       ))}
@@ -7047,6 +7174,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(true);
   const [deepDivePhase, setDeepDivePhase] = useState(''); // 'scanning'|'analyzing'|'writing'
   const toast = useToast();
+  const userRole = getBrandUserRole();
+  const canDoAction = (action) => canDo(userRole, action);
   const [mode, setMode] = useState(() => {
     const h = (typeof window !== 'undefined' && (window.location.hash || '')).replace(/^#/, '');
     if (h === 'optimize') return 'auto';
@@ -7190,6 +7319,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   // Toggle a single Meta campaign (ACTIVE <-> PAUSED) for individual controls.
   const toggleCamp = async (campId, currentStatus) => {
     if (!campId) return false;
+    if (!canDoAction('toggle_campaign')) {
+      toast.error('You need Editor access to pause/activate campaigns.');
+      return false;
+    }
     const current = String(currentStatus || 'PAUSED').toUpperCase();
     const newStatus = current === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
     setToggling(t => ({ ...t, [campId]: true }));
@@ -7243,6 +7376,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   // Run deep dive with progressive terminal
   const runDeepDive = async () => {
     setDeepDiveLoading(true);
+    if (!canDoAction('run_deep_dive')) {
+      toast.error('You need Editor access to run deep dives.');
+      setDeepDiveLoading(false);
+      return;
+    }
     const lines = [];
     const add = (text, type = 'info') => { lines.push({ text, type, ts: Date.now() }); setTerminalLines([...lines]); };
     const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -7458,6 +7596,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const ddKey = 'cai_dd_ran_' + (brand?.id || '');
     if (ddKey && localStorage.getItem(ddKey)) return;
 
+    if (!canDoAction('run_deep_dive')) return;
     autoStarted.current = true;
     // Set the localStorage flag BEFORE running so it persists across navigations
     if (brand?.id) localStorage.setItem(ddKey, Date.now().toString());
@@ -7497,6 +7636,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   // Activate CAi (auto mode) — with live terminal
   const handleActivate = async () => {
     if (!brand?.id) return;
+    if (!canDoAction('launch')) {
+      setActivationResult({ error: 'You need Editor access to activate CAi.' });
+      return;
+    }
     if (!brand?.emailVerified && !profile?.emailVerified) {
       setActivationResult({ error: 'Please verify your email (Step 4) before activating CAi.' });
       setActivating(false);
@@ -8406,9 +8549,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
 
                 {loadingCreators ? (
-                  <div style={{ textAlign: 'center', padding: 40 }}>
-                    <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>Finding creators who made videos about this product...</div>
-                    <div style={{ marginTop: 6, fontSize: 12, color: 'var(--cs-t5)' }}>This may take 10-15 seconds</div>
+                  <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                    <div style={{ width: 32, height: 32, border: '3px solid var(--cs-a06)', borderTopColor: '#9b6dff', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px' }}></div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--cs-t2)', marginBottom: 6 }}>Finding creators who made videos about this product...</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t5)' }}>Scanning TikTok Shop affiliates. This may take 10-15 seconds.</div>
                   </div>
                 ) : productCreators.length === 0 ? (
                   <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '32px 24px', textAlign: 'center' }}>
@@ -8880,7 +9024,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
                 <button
                   type="button"
-                  disabled={!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId]}
+                  disabled={!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId] || !canDoAction('toggle_campaign')}
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!alwaysOnCampaignId) return;
@@ -8922,7 +9066,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       {savingBudget && <span style={{ fontSize: 11, color: '#9b6dff' }}>saving...</span>}
                     </div>
                   ) : (
-                    <span className="mono" onClick={() => { setTempBudget(Math.round((caiData?.monthlyBudget||0)/30)); setEditBudget(true); }} style={{ fontWeight: 700, color: 'var(--cs-t1)', cursor: 'pointer', borderBottom: '1px dashed var(--cs-a08)' }} title="Click to edit">${Math.round((caiData?.monthlyBudget||0)/30)}/day</span>
+                    <span className="mono" onClick={() => { if (!canDoAction('edit_campaigns')) { toast.error('You need Editor access to change budget/ROAS.'); return; } setTempBudget(Math.round((caiData?.monthlyBudget||0)/30)); setEditBudget(true); }} style={{ fontWeight: 700, color: 'var(--cs-t1)', cursor: 'pointer', borderBottom: '1px dashed var(--cs-a08)' }} title="Click to edit">${Math.round((caiData?.monthlyBudget||0)/30)}/day</span>
                   )}
                 </div>
                 {/* Ads count */}
@@ -8939,7 +9083,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       <span style={{ color: 'var(--cs-t4)', fontSize: 12 }}>x</span>
                     </div>
                   ) : (
-                    <span className="mono" onClick={() => { setTempRoas(caiData?.roasTarget || 3); setEditRoas(true); }} style={{ fontWeight: 700, color: '#9b6dff', cursor: 'pointer', borderBottom: '1px dashed rgba(155,109,255,.3)' }} title="Click to edit">{(caiData?.roasTarget||3).toFixed(1)}x</span>
+                    <span className="mono" onClick={() => { if (!canDoAction('edit_campaigns')) { toast.error('You need Editor access to change budget/ROAS.'); return; } setTempRoas(caiData?.roasTarget || 3); setEditRoas(true); }} style={{ fontWeight: 700, color: '#9b6dff', cursor: 'pointer', borderBottom: '1px dashed rgba(155,109,255,.3)' }} title="Click to edit">{(caiData?.roasTarget||3).toFixed(1)}x</span>
                   )}
                 </div>
               </div>
