@@ -8087,6 +8087,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const activity = caiData?.activityLog || [];
     const activeCount = creatives.filter(c => c.status === 'active').length;
     const pausedCount = creatives.filter(c => c.status === 'paused').length;
+    const libraryCount = (caiData?.creatives || []).filter(c => c.status !== 'deleted' && c.status !== 'archived').length;
     const totalAdSpend = creatives.reduce((s, c) => s + (c.lastMetrics?.spend || 0), 0);
     const hasAnySpend = today.spend > 0 || week.spend > 0;
     const totalViews = tiktokVideos.reduce((s, v) => s + (v.views || 0), 0);
@@ -8260,7 +8261,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   <div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>paused</div>
                 </div>
                 <div style={{ textAlign: 'center', padding: '8px 0', background: 'var(--cs-a04)', borderRadius: 6 }}>
-                  <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t3)' }}>{tiktokVideos.length + uploads.length}</div>
+                  <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t3)' }}>{libraryCount}</div>
                   <div style={{ fontSize: 10, color: 'var(--cs-t5)' }}>in library</div>
                 </div>
               </div>
@@ -8270,6 +8271,28 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             </div>
           </div>
+
+          {((!caiData?.creatives || caiData.creatives.length === 0) || caiData?.creatives?.every(c => c.status === 'deleted' || c.status === 'archived')) && (
+            <div className="gl" style={{ padding: 28, borderRadius: 16, textAlign: 'center', marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>&#128640;</div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Ready to launch</h3>
+              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+                CAi has analyzed your content and found {tiktokVideos?.length || 0} videos. Build a new campaign and CAi will select the best performers, write ad copy, and set up targeting automatically.
+              </p>
+              <button onClick={() => { if (typeof runDeepDive === 'function') runDeepDive(); }} style={{
+                padding: '14px 32px',
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
+                color: '#fff',
+                border: 'none',
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}>Build My Campaign</button>
+              <div style={{ marginTop: 10, fontSize: 12, color: 'var(--cs-t4)' }}>Takes ~90 seconds. Campaign lands in Meta paused — you approve before anything goes live.</div>
+            </div>
+          )}
 
           {/* ─── ROW 4: CAi Intelligence ─── */}
           {(() => {
@@ -9551,7 +9574,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           })}
 
           {/* ═══ NEW CAMPAIGN BUTTON + WIZARD ═══ */}
-          <button onClick={() => setShowNewCampaign(!showNewCampaign)} style={{ width: '100%', padding: '14px 0', background: showNewCampaign ? 'var(--cs-a06)' : 'linear-gradient(135deg, rgba(155,109,255,.06), rgba(6,104,225,.04))', border: '1px dashed ' + (showNewCampaign ? 'var(--cs-a08)' : 'rgba(155,109,255,.3)'), borderRadius: 12, color: showNewCampaign ? 'var(--cs-t3)' : '#9b6dff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 12 }}>{showNewCampaign ? 'Cancel' : '+ New Campaign'}</button>
+          <button onClick={() => setCaiSubTab('dashboard')} style={{ width: '100%', padding: '14px 0', background: showNewCampaign ? 'var(--cs-a06)' : 'linear-gradient(135deg, rgba(155,109,255,.06), rgba(6,104,225,.04))', border: '1px dashed ' + (showNewCampaign ? 'var(--cs-a08)' : 'rgba(155,109,255,.3)'), borderRadius: 12, color: showNewCampaign ? 'var(--cs-t3)' : '#9b6dff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 12 }}>{showNewCampaign ? 'Cancel' : '+ New Campaign'}</button>
 
           {showNewCampaign && (
             <div style={{ background: 'var(--cs-card)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, padding: '20px', marginBottom: 16 }}>
@@ -9687,7 +9710,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           )}
 
           {!caiData?.campaign?.id && campaigns.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--cs-t5)', fontSize: 13 }}>No campaigns yet. <button onClick={() => setCaiSubTab('content')} style={{ background: 'none', border: 'none', color: '#9b6dff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>Launch your first →</button></div>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--cs-t5)', fontSize: 13 }}>No campaigns yet. <button onClick={() => setCaiSubTab('dashboard')} style={{ background: 'none', border: 'none', color: '#9b6dff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>Launch your first →</button></div>
           )}
         </>)}
 
