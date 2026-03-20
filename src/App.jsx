@@ -6226,7 +6226,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
         ) : (
           <div>
             <p style={{ color: 'var(--cs-t3)', fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
-              Connect Stripe to enable campaign billing. Creatorship charges 4% of managed ad spend — no retainer, no minimums. First 3 campaigns are free.
+              Connect Stripe to enable campaign billing. Creatorship charges 4% of managed ad spend — no retainer, no minimums. First activation is free.
             </p>
             <button type="button" onClick={() => { setBrandTab('settings'); setSettingsTab('billing'); try { window.location.hash = 'account/billing'; } catch (_) {} }} style={{ padding: '10px 20px', borderRadius: 8, background: '#635BFF', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Set Up Billing</button>
           </div>
