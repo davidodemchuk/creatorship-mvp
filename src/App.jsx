@@ -7917,12 +7917,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     setDeepDiveLoading(false);
     setDeepDivePhase('');
     if (shouldNavigateToAnalysis) {
-      // Navigate to Analysis tab to show results
+      // Auto-navigate to Analysis to show results
       setTimeout(() => {
         if (typeof setCaiSubTab === 'function') {
           setCaiSubTab('analysis');
         }
-      }, 500);
+      }, 1000);
     }
     if (!chainedActivate) {
       if (setBuildInProgress) setBuildInProgress(false);
@@ -8764,11 +8764,26 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>Your Ad-Ready Videos</span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>These are your brand's TikTok videos — you own them. CAi will reformat and launch these as Meta ads.</div>
-              <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 20, marginTop: 4, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#9b6dff', marginBottom: 4 }}>You have {(sa.topPicks || []).length} proven videos ready for Meta ads. Build your campaign from the Dashboard.</div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 16 }}>
-                  {sa.modeReason || 'You already have the rights to your brand-owned content. No creator licensing needed — start running ads today.'}
+              <div style={{ padding: 24, borderRadius: 14, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)', marginBottom: 24 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#34D399', marginBottom: 8 }}>
+                  You have {(a?.topPicks || a?.ownedContent || []).length || tiktokVideos?.length || 0} proven videos ready for Meta ads
                 </div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.7, marginBottom: 16 }}>
+                  Advantage+ Sales with broad targeting and CBO will outperform manual — let the algorithm distribute budget to best-performing creative across all videos simultaneously.
+                </div>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <button onClick={() => { setCaiSubTab('dashboard'); setTimeout(() => { if (typeof runDeepDive === 'function') runDeepDive({ activateAfterSuccess: true }); }, 300); }} style={{ padding: '14px 28px', borderRadius: 10, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Let CAi Run
+                  </button>
+                  <button onClick={() => setCaiSubTab('dashboard')} style={{ padding: '14px 28px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Review on Dashboard
+                  </button>
+                </div>
+                {!brand?.hasMetaToken && (
+                  <div style={{ marginTop: 12, fontSize: 12, color: '#ffb400' }}>
+                    Connect Meta Ads in Account settings before launching campaigns.
+                  </div>
+                )}
               </div>
 
               {(sa.topPicks || []).map((pick, idx) => {
