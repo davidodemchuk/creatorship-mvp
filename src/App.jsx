@@ -11622,15 +11622,18 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
     } catch (_) { return 'ai-plans'; }
   })();
   const [brandTab, setBrandTabState] = useState(initialBrandTab);
+  const [buildInProgress, setBuildInProgress] = useState(false);
+  const [buildInfo, setBuildInfo] = useState(null); // { phase, videoCount, startedAt }
+  const deepDiveLoading = buildInProgress && buildInfo?.phase === 'deep-dive';
   useEffect(() => {
     if (!brand) return;
     // Setup gate: Meta must be connected and ad account selected.
     const hasCompletedSetup = brand.hasMetaToken && brand.adAccount;
-    if (!hasCompletedSetup && brandTab !== 'settings' && brandTab !== 'home') {
+    if (!hasCompletedSetup && brandTab !== 'settings' && brandTab !== 'home' && !deepDiveLoading) {
       setBrandTabState('home');
       try { window.location.hash = '#home'; } catch (_) {}
     }
-  }, [brand?.hasMetaToken, brand?.adAccount, brandTab]);
+  }, [brand?.hasMetaToken, brand?.adAccount, brandTab, deepDiveLoading]);
   useEffect(() => {
     if (brand?.hasMetaToken && brand?.adAccount && brandTab === 'home') {
       setBrandTabState('ai-plans');
@@ -11686,8 +11689,6 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const [aiPlanLoading, setAiPlanLoading] = useState(false);
   const [aiPlanStatus, setAiPlanStatus] = useState(null);
   const [caiData, setCaiDataParent] = useState(null);
-  const [buildInProgress, setBuildInProgress] = useState(false);
-  const [buildInfo, setBuildInfo] = useState(null); // { phase, videoCount, startedAt }
   const aiPlanCheckedRef = useRef(false);
 
   const onLaunchVideo = useCallback((video) => {
