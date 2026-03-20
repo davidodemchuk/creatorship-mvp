@@ -8767,21 +8767,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>These are your brand's TikTok videos — you own them. CAi will reformat and launch these as Meta ads.</div>
               <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 20, marginTop: 4, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#9b6dff', marginBottom: 4 }}>You own {(sa.topPicks || []).length} proven videos — launch them as Meta ads now</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#9b6dff', marginBottom: 4 }}>You have {(sa.topPicks || []).length} proven videos ready for Meta ads. Build your campaign from the Dashboard.</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 16 }}>
                   {sa.modeReason || 'You already have the rights to your brand-owned content. No creator licensing needed — start running ads today.'}
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <button type="button" onClick={() => { if (typeof startBuildFlow === 'function') startBuildFlow(); }} style={{ padding: '16px 14px', borderRadius: 12, border: (sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: (sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
-                    {(sa.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: (sa.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Let CAi Run</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
-                  </button>
-                  <button type="button" onClick={() => setMode('manual')} style={{ padding: '16px 14px', borderRadius: 12, border: !(sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: !(sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
-                    {!(sa.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: !(sa.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Manual + CAi Assist</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>You launch each video. CAi pre-fills copy.</div>
-                  </button>
                 </div>
               </div>
 
@@ -8814,18 +8802,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                         {pick.estimatedCpa && <><span style={{ color: 'var(--cs-a08)' }}>·</span><span className="mono" style={{ fontSize: 12, color: '#34d399', fontWeight: 600 }}>${pick.estimatedCpa} CPA</span></>}
                       </div>
                       {!inCamp && (
-                        <button onClick={async () => {
-                          try {
-                            const allCamps = (caiData?.allCampaigns || []).filter(c => c.status !== 'archived');
-                            if (allCamps.length === 1) {
-                              const r = await fetch('/api/cai/campaign/add-creative', { method: 'POST', headers, body: JSON.stringify({ brandId: brand.id, localId: allCamps[0].localId, videoId: pick.videoId }) });
-                              const d = await r.json();
-                              if (d.success) toast.success('Added to campaign!'); else toast.error(d.error || 'Failed');
-                            } else if (allCamps.length > 1) {
-                              setCaiSubTab('campaigns');
-                            }
-                          } catch (e) { toast.error(e.message); }
-                        }} style={{ padding: '6px 14px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{pick.tier === 'hero' ? 'Run as Hero Ad →' : pick.tier === 'proven' ? 'Add to Campaign →' : 'Test at $' + (pick.dailyBudget || 20) + '/day →'}</button>
+                        pick.tier === 'hero'
+                          ? <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(155,109,255,0.15)', color: '#9b6dff', fontSize: 11, fontWeight: 600 }}>Hero Pick</span>
+                          : <span style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(52,211,153,0.15)', color: '#34D399', fontSize: 11, fontWeight: 600 }}>CAi Pick</span>
                       )}
                     </div>
                   </div>
