@@ -12058,14 +12058,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           <button
             onClick={() => {
               setCaiTab('dashboard');
-              setTimeout(() => {
-                const terminal = document.querySelector('.cai-terminal');
-                if (terminal) {
-                  terminal.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                } else {
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-              }, 100);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(155,109,255,0.2)', border: '1px solid rgba(155,109,255,0.3)', color: '#b794ff', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
           >
