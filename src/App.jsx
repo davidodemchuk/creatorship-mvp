@@ -7705,6 +7705,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const runDeepDive = async (opts = {}) => {
     const { activateAfterSuccess = false } = opts || {};
     let chainedActivate = false;
+    let shouldNavigateToAnalysis = false;
     setDeepDiveLoading(true);
     setDeepDivePhase('scanning');
     setBuildPhase('deep-dive');
@@ -7906,6 +7907,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           setDeepDivePhase('');
           chainedActivate = true;
           setTimeout(() => { try { handleActivateRef.current(); } catch (err) { console.error(err); } }, 0);
+        } else {
+          shouldNavigateToAnalysis = true;
         }
       } else {
         add('✗ Analysis failed: ' + (d.error || 'Unknown error'), 'error');
@@ -7913,6 +7916,14 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     } catch (e) { clearInterval(waitTimer); add('✗ Network error: ' + e.message, 'error'); }
     setDeepDiveLoading(false);
     setDeepDivePhase('');
+    if (shouldNavigateToAnalysis) {
+      // Navigate to Analysis tab to show results
+      setTimeout(() => {
+        if (typeof setCaiSubTab === 'function') {
+          setCaiSubTab('analysis');
+        }
+      }, 500);
+    }
     if (!chainedActivate) {
       if (setBuildInProgress) setBuildInProgress(false);
       if (setBuildInfo) setBuildInfo(null);
