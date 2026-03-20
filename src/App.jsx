@@ -5,10 +5,10 @@ import { createClient } from "@supabase/supabase-js";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area } from 'recharts';
 
 // ═══ JWT AUTH INTERCEPTOR ═══
-// Automatically adds Authorization header to brand API calls
+// Automatically adds Authorization header to brand + CAi API calls (never use /api/brand/cai-activate — use /api/cai/activate)
 const _originalFetch = window.fetch;
 window.fetch = function(url, options = {}) {
-  if (typeof url === 'string' && (url.startsWith('/api/brand/') || url.startsWith('/api/launch') || url.startsWith('/api/billing/') || url.startsWith('/api/ai/'))) {
+  if (typeof url === 'string' && (url.startsWith('/api/brand/') || url.startsWith('/api/cai/') || url.startsWith('/api/launch') || url.startsWith('/api/billing/') || url.startsWith('/api/ai/'))) {
     const token = localStorage.getItem('creatorship_brand_token');
     if (token) {
       const headers = options.headers instanceof Headers ? Object.fromEntries(options.headers.entries()) : { ...(options.headers || {}) };
@@ -17,8 +17,9 @@ window.fetch = function(url, options = {}) {
     }
   }
   return _originalFetch.call(this, url, options).then(response => {
-    // Auto-logout on 401 (expired/invalid token) for brand API calls
-    if (response.status === 401 && typeof url === 'string' && url.startsWith('/api/brand/') && !url.includes('/api/brand/login') && !url.includes('/api/brand/signup')) {
+    // Auto-logout on 401 (expired/invalid token) for brand + CAi API calls
+    const isProtectedCai = typeof url === 'string' && url.startsWith('/api/cai/') && !url.includes('/api/cai/system-info');
+    if (response.status === 401 && typeof url === 'string' && ((url.startsWith('/api/brand/') && !url.includes('/api/brand/login') && !url.includes('/api/brand/signup')) || isProtectedCai)) {
       const clone = response.clone();
       clone.json().then(d => {
         if (d.code === 'TOKEN_EXPIRED' || d.code === 'INVALID_TOKEN' || d.code === 'NO_TOKEN') {
@@ -7684,8 +7685,13 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     else if (activeCaiTab === 'analysis') setMode(null);
   }, [activeCaiTab]);
 
+  // Latest handleActivate — runDeepDive can chain activation after deep dive (build flow)
+  const handleActivateRef = useRef(() => Promise.resolve());
+
   // Run deep dive with progressive terminal
-  const runDeepDive = async () => {
+  const runDeepDive = async (opts = {}) => {
+    const { activateAfterSuccess = false } = opts || {};
+    let chainedActivate = false;
     setDeepDiveLoading(true);
     setDeepDivePhase('scanning');
     setBuildPhase('deep-dive');
@@ -7878,14 +7884,26 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         await wait(1200);
         const dive = { analysis: d.analysis, generatedAt: d.meta?.generatedAt, videosAnalyzed: d.meta?.videosAnalyzed, version: d.meta?.version };
         setDeepDive(dive);
+        if (activateAfterSuccess) {
+          add('', 'spacer');
+          add('━━━ LAUNCHING ON META ━━━', 'phase');
+          add('  Deep dive complete — starting campaign activation (POST /api/cai/activate)...', 'system');
+          await wait(400);
+          setDeepDiveLoading(false);
+          setDeepDivePhase('');
+          chainedActivate = true;
+          setTimeout(() => { try { handleActivateRef.current(); } catch (err) { console.error(err); } }, 0);
+        }
       } else {
         add('✗ Analysis failed: ' + (d.error || 'Unknown error'), 'error');
       }
     } catch (e) { clearInterval(waitTimer); add('✗ Network error: ' + e.message, 'error'); }
     setDeepDiveLoading(false);
     setDeepDivePhase('');
-    if (setBuildInProgress) setBuildInProgress(false);
-    if (setBuildInfo) setBuildInfo(null);
+    if (!chainedActivate) {
+      if (setBuildInProgress) setBuildInProgress(false);
+      if (setBuildInfo) setBuildInfo(null);
+    }
   };
 
   // ═══ AUTO-START DEEP DIVE — runs ONCE for genuinely new brands only ═══
@@ -7954,7 +7972,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     setActivationResult(null);
     setActivationLines([]);
     setBuildPhase('deep-dive');
-    setTimeout(() => { runDeepDive(); }, 0);
+    setTimeout(() => { runDeepDive({ activateAfterSuccess: true }); }, 0);
   };
   const rerunDeepDive = () => {
     if (brand?.id) localStorage.removeItem('cai_dd_ran_' + brand.id);
@@ -8180,6 +8198,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     if (setBuildInProgress) setBuildInProgress(false);
     if (setBuildInfo) setBuildInfo(null);
   };
+  handleActivateRef.current = handleActivate;
 
   // Deactivate
   const handleDeactivate = async () => {
