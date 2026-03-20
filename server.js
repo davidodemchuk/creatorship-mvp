@@ -1211,6 +1211,12 @@ async function caiDigestCheck() {
       const eligible = brands.filter(b => b.cai?.campaign?.id && b.email);
       for (const brand of eligible) {
         try {
+          // Skip if already sent this week
+          const lastDigest = brand.cai?.lastDigestSentAt;
+          if (lastDigest) {
+            const daysSince = (now.getTime() - new Date(lastDigest).getTime()) / 86400000;
+            if (daysSince < 5) continue;
+          }
           const perf = brand.cai?.performance || {};
           const week = perf.week || {};
           const creatives = brand.cai?.creatives || [];
@@ -1244,6 +1250,7 @@ async function caiDigestCheck() {
               ctaText: 'View Dashboard', ctaUrl: 'https://www.creatorship.app/brand#ai-plans',
             })
           );
+          if (brand.cai) { brand.cai.lastDigestSentAt = now.toISOString(); await saveBrand(brand); }
           console.log('[cai-cron-digest] Sent to', brand.email);
         } catch (e) { console.error('[cai-cron-digest] Error for', brand.email, ':', e.message); }
       }
@@ -11762,104 +11769,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }
   console.log('');
 
-  // ═══ CAi DAILY CRON — Poll performance for all active brands every 6 hours ═══
-  const CAI_POLL_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
-  setInterval(async () => {
-    try {
-      const brands = await loadBrands();
-      const active = brands.filter(b => b.cai?.isActive && b.metaToken);
-      if (active.length === 0) return;
-      console.log('[cai-cron] Polling ' + active.length + ' active brands...');
-      for (const brand of active) {
-        try {
-          const result = await caiPollPerformance(brand);
-          console.log('[cai-cron] ' + (brand.brandName || brand.storeName || brand.id) + ': ' + (result.success ? result.adsPolled + ' ads polled' : result.error));
-        } catch (e) { console.error('[cai-cron] Error for ' + brand.id + ':', e.message); }
-      }
-    } catch (e) { console.error('[cai-cron] Fatal:', e.message); }
-  }, CAI_POLL_INTERVAL);
-  console.log('  [cai-cron] Performance polling active (every 6h)');
 
-  // ═══ CAi WEEKLY DIGEST — Send email summary every Monday at 9am EST ═══
-  const checkWeeklyDigest = async () => {
-    const now = new Date();
-    const estHour = (now.getUTCHours() - 5 + 24) % 24; // EST offset
-    const isMonday = now.getUTCDay() === 1;
-    if (!isMonday || estHour !== 14) return; // 9am EST = 14 UTC
-
-    try {
-      const brands = await loadBrands();
-      const active = brands.filter(b => b.cai?.isActive && b.email);
-      for (const brand of active) {
-        const perf = brand.cai?.performance || {};
-        const today = perf.today || {};
-        const week = perf.week || {};
-        const creatives = brand.cai?.creatives || [];
-        const activeCount = creatives.filter(c => c.status === 'active').length;
-        const pausedCount = creatives.filter(c => c.status === 'paused').length;
-        const activity = brand.cai?.activityLog || [];
-        const recentActivity = activity.slice(-5);
-
-        // Build activity lines for email
-        const activityHtml = recentActivity.length > 0
-          ? recentActivity.map(a => {
-              if (a.type === 'auto_pause') return `<p style="color:#ef4444;font-size:13px;margin:4px 0;">⏸ Paused @${a.creator} — ${a.reason || 'CPA too high'}</p>`;
-              if (a.type === 'auto_scale') return `<p style="color:#34d399;font-size:13px;margin:4px 0;">📈 Scaled budget $${a.from} → $${a.to}/day — @${a.creator} winning</p>`;
-              if (a.type === 'fatigue_flag') return `<p style="color:#ffb400;font-size:13px;margin:4px 0;">⚠ @${a.creator} — creative fatigue after ${a.daysActive} days</p>`;
-              return '';
-            }).join('')
-          : '<p style="color:#6b7280;font-size:13px;">No automated actions this week.</p>';
-
-        const weekSpend = week.spend || 0;
-        const weekRevenue = week.revenue || 0;
-        const weekRoas = week.roas || 0;
-        const brandName = brand.brandName || brand.storeName || 'Your brand';
-
-        // Don't send if no spend data
-        if (weekSpend === 0 && !recentActivity.length) continue;
-
-        // Check if we already sent this week
-        const lastDigest = brand.cai?.lastDigestSentAt;
-        if (lastDigest) {
-          const daysSince = (now.getTime() - new Date(lastDigest).getTime()) / 86400000;
-          if (daysSince < 5) continue; // Don't double-send
-        }
-
-        await sendEmail(
-          brand.email,
-          'CAi Weekly: ' + (weekSpend > 0 ? '$' + weekSpend.toFixed(0) + ' spent · ' + weekRoas.toFixed(1) + 'x ROAS' : 'Status update'),
-          emailBase({
-            title: brandName + ' — CAi Weekly Digest',
-            preheader: weekSpend > 0 ? '$' + weekRevenue.toFixed(0) + ' revenue this week' : 'Your CAi status update',
-            headerEmoji: '🧠',
-            accentColor: '#9b6dff',
-            accentGradient: 'linear-gradient(135deg,#9b6dff,#0668E1)',
-            bodyHtml: `
-              <div style="background:#111827;border-radius:12px;padding:20px;margin-bottom:16px;">
-                <p style="color:#9b6dff;font-weight:700;font-size:12px;margin:0 0 12px;">THIS WEEK</p>
-                <div style="display:flex;gap:24px;">
-                  <div><p style="color:#e0e4ed;font-size:22px;font-weight:800;margin:0;">$${weekSpend.toFixed(0)}</p><p style="color:#6b7280;font-size:11px;margin:2px 0 0;">spent</p></div>
-                  <div><p style="color:#34d399;font-size:22px;font-weight:800;margin:0;">$${weekRevenue.toFixed(0)}</p><p style="color:#6b7280;font-size:11px;margin:2px 0 0;">revenue</p></div>
-                  <div><p style="color:#9b6dff;font-size:22px;font-weight:800;margin:0;">${weekRoas.toFixed(1)}x</p><p style="color:#6b7280;font-size:11px;margin:2px 0 0;">ROAS</p></div>
-                </div>
-              </div>
-              <p style="color:#e0e4ed;font-size:14px;font-weight:700;margin:16px 0 8px;">Campaign Status</p>
-              <p style="color:#8b95a8;font-size:13px;margin:4px 0;">${activeCount} active ads · ${pausedCount} paused · ${creatives.length} total creatives</p>
-              ${recentActivity.length > 0 ? '<p style="color:#e0e4ed;font-size:14px;font-weight:700;margin:16px 0 8px;">CAi Actions This Week</p>' + activityHtml : ''}
-            `,
-            ctaText: 'View CAi Dashboard',
-            ctaUrl: 'https://www.creatorship.app/brand#ai-plans',
-          })
-        ).catch(() => {});
-
-        brand.cai.lastDigestSentAt = now.toISOString();
-        await saveBrand(brand);
-        console.log('[cai-digest] Sent weekly digest to ' + brand.email);
-      }
-    } catch (e) { console.error('[cai-digest] Error:', e.message); }
-  };
-  setInterval(checkWeeklyDigest, 60 * 60 * 1000);
-  console.log('  [cai-digest] Weekly digest check active (Mondays 9am EST)');
 });
 server.on('error', (err) => {
   console.error('[fatal] Server listen error:', err.message);

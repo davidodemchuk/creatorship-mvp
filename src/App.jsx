@@ -5250,7 +5250,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:4,marginTop:6}} onClick={e=>e.stopPropagation()}>
                 {hasAccount ? (
-                  <button onClick={()=>{setBrandTab("messages");setMessagesThread&&setMessagesThread({brandId:brand?.id,creatorHandle:handleNorm})}} style={{padding:"6px 12px",background:"#06B6D4",border:"none",borderRadius:6,color:"#0b0f1a",fontSize: 14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Message</button>
+                  <button onClick={()=>{setMessagesThread&&setMessagesThread({brandId:brand?.id,creatorHandle:handleNorm})}} style={{padding:"6px 12px",background:"#06B6D4",border:"none",borderRadius:6,color:"#0b0f1a",fontSize: 14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Message</button>
                 ) : invitedCreators[handleNorm] ? (
                   <div>
                     <div style={{padding:"6px 12px",borderRadius:6,background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.2)",color:"#10b981",fontSize: 14,fontWeight:600}}>Invited ✓</div>
