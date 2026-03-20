@@ -8262,8 +8262,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
     return (
       <div>
-        {/* Compact toolbar */}
-        {brand?.hasMetaToken && (
+        {/* Dashboard-only utility actions */}
+        {caiSubTab === 'dashboard' && brand?.hasMetaToken && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
             <button onClick={async () => {
               try {
@@ -8284,10 +8284,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   alert('Everything is in sync with Meta.');
                 }
               } catch (e) { console.error('Sync error:', e); alert(e?.message || 'Sync failed'); }
-            }} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--cs-a08)', background: 'var(--cs-a04)', color: 'var(--cs-t2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            }} style={{ background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px' }}>
               Sync with Meta
             </button>
-            <button onClick={pollNow} disabled={polling} style={{ background: 'none', border: '1px solid rgba(155,109,255,.2)', borderRadius: 6, color: '#9b6dff', fontSize: 12, padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>{polling ? 'Polling...' : 'Refresh Metrics'}</button>
+            <button onClick={pollNow} disabled={polling} style={{ background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: '4px 8px' }}>{polling ? 'Polling...' : 'Refresh Metrics'}</button>
           </div>
         )}
 
