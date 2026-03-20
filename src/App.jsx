@@ -8240,7 +8240,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
 
   // ═══ CAi DASHBOARD — shows when active OR when paused with existing campaign data ═══
-  if (showCampaignWorkspace || deepDiveLoading || terminalLines.length || deepDive) {
+  // When deep dive terminal is active (loading + lines + no result yet), skip this block so full-screen terminal renders below.
+  if ((showCampaignWorkspace || deepDive) && !(deepDiveLoading && terminalLines.length && !deepDive)) {
     const creatives = caiData?.creatives || [];
     const activeCreativeCount = (caiData?.creatives || []).filter(c => c.status !== 'deleted' && c.status !== 'archived').length;
     const noCampaignOrCreatives = (!caiData?.campaign?.id || creatives.length === 0);
@@ -8309,24 +8310,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
-          {(deepDiveLoading || activating) && (
-            <div className="gl" style={{ padding: 24, borderRadius: 14, marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, animation: 'spin 2s linear infinite', display: 'inline-block' }}>C</span>
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--cs-t0)', marginBottom: 2 }}>
-                    {activating ? 'Creating campaign on Meta...' : 'CAi is analyzing your content...'}
-                  </div>
-                  <div style={{ fontSize: 13, color: 'var(--cs-t3)' }}>
-                    {activating ? 'Uploading videos and creating ads. Takes 1-2 minutes.' : 'Analyzing videos and writing ad copy. Takes about 60 seconds.'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {activationResult && !deepDiveLoading && !activating && (
             <div className="gl" style={{ padding: 28, borderRadius: 14, marginBottom: 24, textAlign: 'center', background: activationResult.error ? 'rgba(239,68,68,0.06)' : 'linear-gradient(135deg, rgba(52,211,153,0.08), rgba(6,104,225,0.08))', border: '1px solid ' + (activationResult.error ? 'rgba(239,68,68,0.2)' : 'rgba(52,211,153,0.2)') }}>
               {activationResult.error ? (
@@ -12068,7 +12051,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         </div>
       </div>
     </header>
-    {buildInProgress && activeCaiTab !== 'dashboard' && (
+    {buildInProgress && activeCaiTab !== 'dashboard' && buildInfo?.phase !== 'deep-dive' && (
       <div style={{ position: 'sticky', top: 56, zIndex: 80, margin: '0 auto', maxWidth: 900, padding: '0 16px', animation: 'fadeUp 0.3s ease' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(155,109,255,0.12), rgba(6,104,225,0.12))', border: '1px solid rgba(155,109,255,0.25)', backdropFilter: 'blur(12px)', marginBottom: 16 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'spin 2s linear infinite' }}>
