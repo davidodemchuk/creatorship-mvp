@@ -12010,23 +12010,21 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <span style={LOGO_CR}>Creatorship</span>
       </div>
       {/* Main Nav */}
-      {!(deepDiveLoading && !deepDive) && (
-        <nav className="cai-header-nav" style={{display:'flex',alignItems:'center',gap:2,flex:1,justifyContent:'center'}}>
-          {[
-            { id: 'dashboard', label: 'Dashboard' },
-            { id: 'campaigns', label: 'Campaigns' },
-            { id: 'content', label: 'Content' },
-            { id: 'analysis', label: 'Analysis' },
-            { id: 'optimize', label: 'Optimize' },
-            { id: null, label: 'Account', isAccount: true },
-          ].map(t => {
-            const isActive = t.isAccount ? brandTab === 'settings' : activeCaiTab === t.id;
-            return (
-              <button key={t.id ?? 'account'} onClick={() => t.isAccount ? setCaiTab(null) : setCaiTab(t.id)} style={{padding:'8px 14px',background:isActive?'rgba(155,109,255,.12)':'transparent',border:'none',borderRadius:6,color:isActive?'#fff':'var(--cs-t4)',fontSize:13,fontWeight:isActive?600:500,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>{t.label}</button>
-            );
-          })}
-        </nav>
-      )}
+      <nav className="cai-header-nav" style={{display:'flex',alignItems:'center',gap:2,flex:1,justifyContent:'center'}}>
+        {[
+          { id: 'dashboard', label: 'Dashboard' },
+          { id: 'campaigns', label: 'Campaigns' },
+          { id: 'content', label: 'Content' },
+          { id: 'analysis', label: 'Analysis' },
+          { id: 'optimize', label: 'Optimize' },
+          { id: null, label: 'Account', isAccount: true },
+        ].map(t => {
+          const isActive = t.isAccount ? brandTab === 'settings' : activeCaiTab === t.id;
+          return (
+            <button key={t.id ?? 'account'} onClick={() => t.isAccount ? setCaiTab(null) : setCaiTab(t.id)} style={{padding:'8px 14px',background:isActive?'rgba(155,109,255,.12)':'transparent',border:'none',borderRadius:6,color:isActive?'#fff':'var(--cs-t4)',fontSize:13,fontWeight:isActive?600:500,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>{t.label}</button>
+          );
+        })}
+      </nav>
       {/* Status + Theme + Avatar — same dropdown as SiteNav (homepage) */}
       <div className="cai-header-right" style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
         <button type="button" onClick={toggleTheme} title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} style={{background:'none',border:'1px solid var(--cs-a08)',borderRadius:8,padding:'6px 8px',cursor:'pointer',fontSize:16,lineHeight:1,display:'flex',alignItems:'center',color:'var(--cs-t3)'}}>{theme === 'dark' ? '☀️' : '🌙'}</button>
