@@ -3,3 +3,5 @@ videos/
 data/latest_scan.json
 .env
 node_modules/
+.claude/
+.DS_Store
