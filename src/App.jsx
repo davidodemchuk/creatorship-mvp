@@ -830,7 +830,7 @@ function ForBrandsSection({ nav }) {
       {/* Pricing — folded into For Brands */}
       <div style={{ background: 'rgba(6,104,225,.04)', border: '1px solid rgba(6,104,225,.12)', borderRadius: 16, padding: '48px 40px', textAlign: 'center', marginBottom: 32 }}>
         <h3 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 12, lineHeight: 1.2 }}>
-          Your first 3 campaigns are free.<br /><span style={{ color: '#0668E1' }}>You only pay when sales come in.</span>
+          Build unlimited. Your first activation is free.<br /><span style={{ color: '#0668E1' }}>You only pay when ads run.</span>
         </h3>
         <p style={{ fontSize: 15, color: 'var(--cs-t4)', maxWidth: 500, margin: '0 auto 32px', lineHeight: 1.7 }}>
           No credit card. No retainer. Campaigns land in your Meta Ads Manager paused — you approve before anything goes live.
@@ -841,8 +841,8 @@ function ForBrandsSection({ nav }) {
             <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>Upfront cost. Ever.</div>
           </div>
           <div style={{ background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '20px 16px' }}>
-            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 4 }}>3 free</div>
-            <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>Campaigns to start.</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 4 }}>1 free</div>
+            <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>Campaign activation.</div>
           </div>
           <div style={{ background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '20px 16px' }}>
             <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 4 }}>4%</div>
@@ -1286,11 +1286,13 @@ function BrandDashboard({nav}){
 
   const toggleCamp=async(campId,currentStatus)=>{
     const newStatus=currentStatus==="ACTIVE"?"PAUSED":"ACTIVE";
+    const token=localStorage.getItem("creatorship_brand_token");
     setToggling(t=>({...t,[campId]:true}));
     try{
-      const r=await fetch("/api/campaigns/toggle",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metaToken,campaignId:campId,newStatus})});
-      const d=await r.json();
+      const r=await fetch("/api/campaigns/toggle",{method:"POST",headers:{"Content-Type":"application/json",...(token?{"Authorization":"Bearer "+token}:{})},body:JSON.stringify({metaToken:metaToken||"fromJWT",campaignId:campId,newStatus})});
+      const d=await r.json().catch(()=>({}));
       if(d.success){setCamps(c=>c.map(x=>x.id===campId?{...x,status:newStatus}:x));fire(newStatus==="ACTIVE"?"▶ Campaign activated":"⏸ Campaign paused")}
+      else if(d.needsBilling||r.status===402){fire(d.error||"Connect Stripe to activate campaigns.")}
       else fire("Error: "+(d.error||"Unknown"));
     }catch(e){fire(e.message)}
     setToggling(t=>({...t,[campId]:false}));
@@ -5185,15 +5187,15 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
       {selectedCreator && <button onClick={()=>setSelectedCreator(null)} style={{background:"none",border:"1px solid "+C.border,borderRadius:6,color:C.blue,fontSize: 14,padding:"4px 10px",cursor:"pointer",fontFamily:"inherit"}}>Show All Videos</button>}
     </div>
 
-    {/* Free launch counter */}
+    {/* Free activation counter */}
     {!profile.billingEnabled && <div style={{padding:'12px 20px',background:'rgba(255,159,67,0.08)',border:'1px solid rgba(255,159,67,0.2)',borderRadius:10,marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
       <div>
         <span style={{fontSize:13,fontWeight:700,color:'#ffb400'}}>Free Plan</span>
         <span style={{fontSize:13,color:'var(--cs-t3)',marginLeft:8}}>
-          {Math.max(0, (profile.freeLaunchLimit || 3) - (profile.freeLaunchesUsed || 0))} of {profile.freeLaunchLimit || 3} free launches remaining
+          {Math.max(0, 1 - (profile.activationCount || 0))} of 1 free activation remaining
         </span>
       </div>
-      {(profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) ? (
+      {(profile.activationCount || 0) >= 1 ? (
         <button onClick={()=>setBrandTab('settings')} style={{padding:'8px 16px',background:'#0668E1',border:'none',borderRadius:8,color:'#fff',fontSize: 14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Add Payment Method →</button>
       ) : (
         <button onClick={()=>setBrandTab('settings')} style={{padding:'8px 16px',background:'transparent',border:'1px solid var(--cs-a06)',borderRadius:8,color:'var(--cs-t3)',fontSize: 13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Upgrade</button>
@@ -5338,7 +5340,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
                   {/* Row 4: Action buttons */}
                   <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:4}}>
                     {v?.url ? <a href={v.url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{...outlineBtn,fontSize: 12,padding:"6px 2px"}}>TikTok ↗</a> : <span style={{...outlineBtn,opacity:.4,cursor:"default",fontSize: 12,padding:"6px 2px"}}>No link</span>}
-                    {!profile.billingEnabled && (profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) ? (
+                    {!profile.billingEnabled && (profile.activationCount || 0) >= 1 ? (
                       <button onClick={e=>{e.stopPropagation();setBrandTab('settings')}} style={{...outlineBtn,background:OB.orange,color:"#0b0f1a",border:"none",fontWeight:700,fontSize: 12,padding:"6px 2px"}}>Upgrade →</button>
                     ) : (
                       <button onClick={e=>{e.stopPropagation();openLaunch(v)}} style={{...outlineBtn,background:OB.accent,color:"#0b0f1a",border:"none",fontWeight:700,fontSize: 12,padding:"6px 2px"}}>Launch Meta Ad →</button>
@@ -6365,7 +6367,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <div>
               <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)' }}>Free Plan</div>
-              <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginTop: 4 }}>3 free campaign launches to get started</div>
+              <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginTop: 4 }}>1 free campaign activation to get started</div>
             </div>
             <span style={{ ...S.badge(false), background: 'rgba(255,180,0,.1)', color: '#ffb400' }}>Free Tier</span>
           </div>
@@ -6375,20 +6377,20 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
               <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginTop: 4 }}>4%</div>
             </div>
             <div style={{ padding: 14, background: 'var(--cs-bg2)', borderRadius: 10, border: '1px solid var(--cs-a04)' }}>
-              <div style={S.dim}>Free Launches</div>
-              <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: (profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) ? C.error : 'var(--cs-t0)', marginTop: 4 }}>{profile.freeLaunchesUsed || 0} / {profile.freeLaunchLimit || 3}</div>
+              <div style={S.dim}>Activations used</div>
+              <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: (profile.activationCount || 0) >= 1 ? C.error : 'var(--cs-t0)', marginTop: 4 }}>{profile.activationCount || 0} / 1</div>
             </div>
             <div style={{ padding: 14, background: 'var(--cs-bg2)', borderRadius: 10, border: '1px solid var(--cs-a04)' }}>
               <div style={S.dim}>Remaining</div>
-              <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: (profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) ? C.error : C.success, marginTop: 4 }}>{Math.max(0, (profile.freeLaunchLimit || 3) - (profile.freeLaunchesUsed || 0))}</div>
+              <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: (profile.activationCount || 0) >= 1 ? C.error : C.success, marginTop: 4 }}>{Math.max(0, 1 - (profile.activationCount || 0))}</div>
             </div>
           </div>
           <div style={{ marginTop: 12, padding: '12px 16px', background: 'rgba(6,104,225,.04)', border: '1px solid rgba(6,104,225,.1)', borderRadius: 8, fontSize: 13, color: '#7d8aaa', lineHeight: 1.6 }}>
-            After your 3 free launches, add a payment method to continue. You'll be charged 4% of managed ad spend, invoiced monthly. No surprises.
+            After your free activation, add a payment method to run more campaigns. You'll be charged 4% of managed ad spend, invoiced monthly. No surprises.
           </div>
-          {(profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) && (
+          {(profile.activationCount || 0) >= 1 && (
             <div style={{ padding: 14, background: C.error + '0d', border: '1px solid ' + C.error + '25', borderRadius: 10, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: '#fca5a5' }}>You've used all free launches. Add a payment method to continue.</span>
+              <span style={{ fontSize: 13, color: '#fca5a5' }}>You've used your free activation. Add a payment method to continue.</span>
               <button onClick={handleAddPayment} disabled={!canManageBilling || billingAction === 'add'} style={{ ...btnStyle, background: C.blue, color: C.bg, padding: '8px 16px', fontSize: 14, flexShrink: 0, marginLeft: 12, opacity: !canManageBilling ? 0.55 : 1 }}>Add Payment Method</button>
             </div>
           )}
@@ -6425,7 +6427,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
                   <span style={{ fontSize: 12, color: 'var(--cs-t4)' }}>Powered by Stripe</span>
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 14 }}>
-                  Add a payment method to continue after your free launches. You'll only be charged <strong>4% of managed ad spend</strong>, invoiced monthly. Your card is stored securely by Stripe — Creatorship never sees your full card number.
+                  Add a payment method to continue after your free activation. You'll only be charged <strong>4% of managed ad spend</strong>, invoiced monthly. Your card is stored securely by Stripe — Creatorship never sees your full card number.
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -7603,6 +7605,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const hasContent = tiktokVideos.length + uploads.length > 0;
   const token = localStorage.getItem('creatorship_brand_token');
   const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) };
+  const needsStripeToActivate = (brand?.activationCount || 0) >= 1 && !brand?.billingEnabled;
 
   // Toggle a single Meta campaign (ACTIVE <-> PAUSED) for individual controls.
   const toggleCamp = async (campId, currentStatus) => {
@@ -7613,6 +7616,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     }
     const current = String(currentStatus || 'PAUSED').toUpperCase();
     const newStatus = current === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+    if (newStatus === 'ACTIVE' && needsStripeToActivate) {
+      toast.error('Connect Stripe to activate campaigns.');
+      setBrandTab('settings');
+      try { window.location.hash = 'account/billing'; } catch (_) {}
+      return false;
+    }
     setToggling(t => ({ ...t, [campId]: true }));
     try {
       const r = await fetch('/api/campaigns/toggle', {
@@ -7620,8 +7629,14 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         headers,
         body: JSON.stringify({ metaToken: 'fromJWT', campaignId: campId, newStatus }),
       });
-      const d = await r.json();
+      const d = await r.json().catch(() => ({}));
       if (d.success) return true;
+      if (d.needsBilling || r.status === 402) {
+        toast.error(d.error || 'Connect Stripe to activate campaigns.');
+        setBrandTab('settings');
+        try { window.location.hash = 'account/billing'; } catch (_) {}
+        return false;
+      }
       toast.error(d.error || 'Something went wrong');
       return false;
     } catch (e) {
@@ -7943,8 +7958,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       if (setBuildInfo) setBuildInfo(null);
       return;
     }
-    if ((brand.launchCount || 0) >= 3 && !brand.stripeCustomerId && !brand.billingConnected && !brand.billingEnabled) {
-      setActivationResult({ error: 'Please connect billing to continue. You have used all 3 free launches.' });
+    const hasStripeOk = !!(brand.stripeCustomerId && brand.billingEnabled);
+    if ((brand.activationCount || 0) >= 1 && !hasStripeOk) {
+      setActivationResult({ error: 'Connect Stripe to continue launching campaigns. Your first campaign was free!' });
       setActivating(false);
       if (setBuildInProgress) setBuildInProgress(false);
       if (setBuildInfo) setBuildInfo(null);
@@ -8018,7 +8034,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
     try {
       const r = await fetch('/api/cai/activate', { method: 'POST', headers, body: JSON.stringify({ brandId: brand.id, monthlyBudget, roasTarget }) });
-      const d = await r.json();
+      let d = {};
+      try { d = await r.json(); } catch (_) {}
 
       if (d.success) {
         for (const step of (d.steps || [])) {
@@ -8112,9 +8129,16 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         }
 
         setActivationResult(d);
+        if (typeof refreshProfile === 'function') refreshProfile();
       } else {
-        addLine('  ✗ ' + (d.error || 'Activation failed'), 'error');
-        setActivationResult(d);
+        if (d.needsBilling || r.status === 402) {
+          addLine('  ✗ ' + (d.error || 'Connect Stripe to continue'), 'error');
+          setActivationResult({ error: d.error || 'Connect Stripe to continue launching campaigns. Your first campaign was free!' });
+          try { setBrandTab('settings'); window.location.hash = 'account/billing'; } catch (_) {}
+        } else {
+          addLine('  ✗ ' + (d.error || 'Activation failed'), 'error');
+          setActivationResult(d.error ? { error: d.error } : d);
+        }
       }
     } catch (e) {
       addLine('  ✗ Network error: ' + e.message, 'error');
@@ -8346,6 +8370,15 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 cursor: 'pointer',
                 fontFamily: 'inherit',
               }}>Build My Campaign</button>
+              <div style={{ marginTop: 12, fontSize: 12, color: 'var(--cs-t4)', textAlign: 'center' }}>
+                {brand?.billingEnabled ? (
+                  <span style={{ color: '#34D399' }}>Stripe connected — unlimited campaigns</span>
+                ) : (brand?.activationCount || 0) === 0 ? (
+                  <span>First campaign activation is free — no credit card needed</span>
+                ) : (
+                  <span style={{ color: '#ffb400' }}>Connect <span onClick={() => { if (setBrandTab) { setBrandTab('settings'); try { window.location.hash = 'account/billing'; } catch (_) {} } }} style={{ color: '#635BFF', cursor: 'pointer', textDecoration: 'underline' }}>Stripe</span> to launch more campaigns</span>
+                )}
+              </div>
               <div style={{ marginTop: 10, fontSize: 12, color: 'var(--cs-t4)' }}>Takes ~90 seconds. Campaign lands in Meta paused — you approve before anything goes live.</div>
             </div>
           )}
@@ -8769,7 +8802,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
                 <div style={{ padding: '16px', background: 'rgba(155,109,255,.04)', border: '1px solid rgba(155,109,255,.12)', borderRadius: 10 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#9b6dff', marginBottom: 6 }}>How Creatorship Gets Paid</div>
-                  <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6 }}>4% of managed Meta ad spend + creator commission. You only pay for performance. If the ads don't spend, you don't pay. Your first 3 campaigns are free.</div>
+                  <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6 }}>4% of managed Meta ad spend + creator commission. You only pay for performance. If the ads don't spend, you don't pay. Your first activation is free.</div>
                 </div>
               </div>
 
@@ -9404,6 +9437,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!alwaysOnCampaignId) return;
+                    if (!isActive && needsStripeToActivate) {
+                      toast.error('Connect Stripe to activate campaigns.');
+                      setBrandTab('settings');
+                      try { window.location.hash = 'account/billing'; } catch (_) {}
+                      return;
+                    }
                     const currentStatus = isActive ? 'ACTIVE' : 'PAUSED';
                     if (currentStatus !== 'ACTIVE') {
                       if (!confirm('Activate this campaign? Meta will start spending immediately.')) return;
@@ -9425,7 +9464,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId] ? '...' : isActive ? 'Pause' : 'Activate'}
+                  {!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId] ? '...' : isActive ? 'Pause' : (needsStripeToActivate ? 'Connect Stripe to Activate' : 'Activate')}
                 </button>
               </div>
 
@@ -9521,7 +9560,29 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                           <div style={{ width: 1, height: 24, background: 'var(--cs-a06)' }} />
                           {/* Meta link + Pause */}
                           {c.adId && <a href={'https://www.facebook.com/adsmanager/manage/ads?act=' + (brand.adAccount || '').replace('act_', '') + '&selected_ad_ids=' + c.adId} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: '#0668E1', textDecoration: 'none', fontWeight: 600, flexShrink: 0 }}>Meta ↗</a>}
-                          <button onClick={async (e) => { e.stopPropagation(); if (!c.adId) return; setTogglingAd(t => ({...t, [c.adId]: true})); const newStatus = c.status === 'active' ? 'PAUSED' : 'ACTIVE'; try { const r = await fetch('/api/campaigns/toggle', { method: 'POST', headers, body: JSON.stringify({ metaToken: 'fromJWT', campaignId: c.adId, newStatus }) }); const d = await r.json(); if (d.success) window.location.reload(); else toast.error(d.error || 'Something went wrong'); } catch (err) { toast.error(err.message); } setTogglingAd(t => ({...t, [c.adId]: false})); }} disabled={isToggling || !c.adId} style={{ padding: '4px 10px', background: c.status === 'active' ? 'rgba(255,180,0,.06)' : 'rgba(52,211,153,.06)', border: '1px solid ' + (c.status === 'active' ? 'rgba(255,180,0,.15)' : 'rgba(52,211,153,.15)'), borderRadius: 6, color: c.status === 'active' ? '#ffb400' : '#34d399', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: isToggling ? 0.5 : 1, flexShrink: 0 }}>{isToggling ? '...' : c.status === 'active' ? '⏸' : '▶'}</button>
+                          <button onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!c.adId) return;
+                            const newStatus = c.status === 'active' ? 'PAUSED' : 'ACTIVE';
+                            if (newStatus === 'ACTIVE' && needsStripeToActivate) {
+                              toast.error('Connect Stripe to activate campaigns.');
+                              setBrandTab('settings');
+                              try { window.location.hash = 'account/billing'; } catch (_) {}
+                              return;
+                            }
+                            setTogglingAd(t => ({...t, [c.adId]: true}));
+                            try {
+                              const r = await fetch('/api/campaigns/toggle', { method: 'POST', headers, body: JSON.stringify({ metaToken: 'fromJWT', campaignId: c.adId, newStatus }) });
+                              const d = await r.json().catch(() => ({}));
+                              if (d.success) window.location.reload();
+                              else if (d.needsBilling || r.status === 402) {
+                                toast.error(d.error || 'Connect Stripe to activate campaigns.');
+                                setBrandTab('settings');
+                                try { window.location.hash = 'account/billing'; } catch (_) {}
+                              } else toast.error(d.error || 'Something went wrong');
+                            } catch (err) { toast.error(err.message); }
+                            setTogglingAd(t => ({...t, [c.adId]: false}));
+                          }} disabled={isToggling || !c.adId} style={{ padding: '4px 10px', background: c.status === 'active' ? 'rgba(255,180,0,.06)' : 'rgba(52,211,153,.06)', border: '1px solid ' + (c.status === 'active' ? 'rgba(255,180,0,.15)' : 'rgba(52,211,153,.15)'), borderRadius: 6, color: c.status === 'active' ? '#ffb400' : '#34d399', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: isToggling ? 0.5 : 1, flexShrink: 0 }} title={!isToggling && c.status !== 'active' && needsStripeToActivate ? 'Connect Stripe in Account → Billing to activate' : ''}>{isToggling ? '...' : c.status === 'active' ? '⏸' : '▶'}</button>
                         </div>
                       </div>
                     );
@@ -9564,6 +9625,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (!campId) return;
+                        if (!isCampActive && needsStripeToActivate) {
+                          toast.error('Connect Stripe to activate campaigns.');
+                          setBrandTab('settings');
+                          try { window.location.hash = 'account/billing'; } catch (_) {}
+                          return;
+                        }
                         const currentStatus = isCampActive ? 'ACTIVE' : 'PAUSED';
                         if (currentStatus !== 'ACTIVE') {
                           if (!confirm('Activate this campaign? Meta will start spending immediately.')) return;
@@ -9585,7 +9652,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {(!campId || isCampToggling) ? '...' : isCampActive ? 'Pause' : 'Activate'}
+                      {(!campId || isCampToggling) ? '...' : isCampActive ? 'Pause' : (needsStripeToActivate ? 'Connect Stripe to Activate' : 'Activate')}
                     </button>
                   </div>
                 </div>
@@ -9619,7 +9686,19 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     {camp.status === 'active' ? (
                       <button onClick={async () => { const r = await fetch('/api/cai/campaign/pause', { method: 'POST', headers, body: JSON.stringify({ localId: camp.localId }) }); const d = await r.json(); if (d.success) { toast.success('Campaign paused'); setTimeout(() => window.location.reload(), 1000); } else toast.error(d.error || 'Failed to pause'); }} style={{ fontSize: 11, padding: '4px 12px', background: 'rgba(255,180,0,.06)', border: '1px solid rgba(255,180,0,.15)', borderRadius: 6, color: '#ffb400', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>⏸ Pause</button>
                     ) : camp.status === 'paused' ? (
-                      <button onClick={async () => { const r = await fetch('/api/cai/campaign/resume', { method: 'POST', headers, body: JSON.stringify({ localId: camp.localId }) }); const d = await r.json(); if (d.success) { toast.success('Campaign resumed'); setTimeout(() => window.location.reload(), 1000); } else toast.error(d.error || 'Failed to resume'); }} style={{ fontSize: 11, padding: '4px 12px', background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)', borderRadius: 6, color: '#34d399', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>▶ Resume</button>
+                      <button onClick={async () => {
+                        if (needsStripeToActivate) {
+                          toast.error('Connect Stripe to activate campaigns.');
+                          setBrandTab('settings');
+                          try { window.location.hash = 'account/billing'; } catch (_) {}
+                          return;
+                        }
+                        const r = await fetch('/api/cai/campaign/resume', { method: 'POST', headers, body: JSON.stringify({ localId: camp.localId }) });
+                        const d = await r.json().catch(() => ({}));
+                        if (d.success) { toast.success('Campaign resumed'); setTimeout(() => window.location.reload(), 1000); }
+                        else if (d.needsBilling || r.status === 402) { toast.error(d.error || 'Connect Stripe to activate campaigns.'); setBrandTab('settings'); try { window.location.hash = 'account/billing'; } catch (_) {} }
+                        else toast.error(d.error || 'Failed to resume');
+                      }} style={{ fontSize: 11, padding: '4px 12px', background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)', borderRadius: 6, color: '#34d399', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{needsStripeToActivate ? 'Connect Stripe to Resume' : '▶ Resume'}</button>
                     ) : null}
                     <button onClick={async () => { const doArchive = await showConfirm({ title: 'Archive Campaign', message: 'This campaign will be paused on Meta and archived. You can view it in Campaign History.', confirmText: 'Archive' }); if (!doArchive) return; const r = await fetch('/api/cai/campaign/archive', { method: 'POST', headers, body: JSON.stringify({ localId: camp.localId }) }); const d = await r.json(); if (d.success) { toast.success('Campaign archived'); setTimeout(() => window.location.reload(), 1000); } else toast.error(d.error || 'Archive failed'); }} style={{ fontSize: 11, padding: '4px 12px', background: 'rgba(239,68,68,.04)', border: '1px solid rgba(239,68,68,.1)', borderRadius: 6, color: '#ef4444', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Archive</button>
                   </div>
@@ -9736,6 +9815,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       disabled={!campId || (!isCampActive && !isCampPaused) || isCampToggling}
                       onClick={async () => {
                         if (!campId) return;
+                        if (!isCampActive && needsStripeToActivate) {
+                          toast.error('Connect Stripe to activate campaigns.');
+                          setBrandTab('settings');
+                          try { window.location.hash = 'account/billing'; } catch (_) {}
+                          return;
+                        }
                         const currentStatus = isCampActive ? 'ACTIVE' : 'PAUSED';
                         if (currentStatus !== 'ACTIVE') {
                           if (!confirm('Activate this campaign? Meta will start spending immediately.')) return;
@@ -9757,7 +9842,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      {!campId || isCampToggling ? '...' : isCampActive ? 'Pause' : 'Activate'}
+                      {!campId || isCampToggling ? '...' : isCampActive ? 'Pause' : (needsStripeToActivate ? 'Connect Stripe to Activate' : 'Activate')}
                     </button>
                   </div>
                 );
@@ -11176,14 +11261,14 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* Activate or Connect Meta or Billing gate */}
         {(() => {
-          const launchCount = brand?.launchCount || 0;
-          const hasStripe = !!(brand?.stripeCustomerId || brand?.billingConnected || brand?.billingEnabled);
-          const needsBilling = launchCount >= 3 && !hasStripe;
+          const activationCount = brand?.activationCount || 0;
+          const hasStripe = !!(brand?.stripeCustomerId && brand?.billingEnabled);
+          const needsBilling = activationCount >= 1 && !hasStripe;
           if (!hasMetaFull) return null; // will render Connect Meta block below
           if (needsBilling) {
             return (
               <div style={{ padding: '20px', background: 'rgba(155,109,255,.04)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, textAlign: 'center', marginBottom: 16 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>You've used your 3 free launches!</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>Connect Stripe to run more activations</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginBottom: 16, lineHeight: 1.6 }}>
                   To continue running campaigns, connect your billing. You'll only be charged 4% of managed ad spend — nothing until your ads actually run.
                 </div>
@@ -11240,9 +11325,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <button onClick={handleActivate} style={{ width: '100%', padding: '16px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 24px rgba(155,109,255,.2)' }}>
                 Activate CAi — ${db}/day
               </button>
-              {launchCount < 3 && (
+              {activationCount < 1 && (
                 <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 8, textAlign: 'center' }}>
-                  {3 - launchCount} free campaign{3 - launchCount !== 1 ? 's' : ''} remaining — no billing needed
+                  First activation is free — no billing needed
                 </div>
               )}
             </>
@@ -12673,7 +12758,7 @@ function AdminBrandsTab({ stats }) {
             <th style={{padding:12,textAlign:"center",color:C.sub,fontWeight:600}}>Meta</th>
             <th style={{padding:12,textAlign:"center",color:C.sub,fontWeight:600}}>TikTok</th>
             <th style={{padding:12,textAlign:"center",color:C.sub,fontWeight:600}}>Stripe</th>
-            <th style={{padding:12,textAlign:"center",color:C.sub,fontWeight:600}}>Launches</th>
+            <th style={{padding:12,textAlign:"center",color:C.sub,fontWeight:600}}>Act. / Launch</th>
             <th style={{padding:12,textAlign:"left",color:C.sub,fontWeight:600}}>Signup</th>
             <th style={{padding:12,textAlign:"center",color:C.sub,fontWeight:600}}>Status</th>
           </tr></thead>
@@ -12702,8 +12787,8 @@ function AdminBrandsTab({ stats }) {
                     {dot(b.billingEnabled, '#34d399', b.billingEnabled ? 'Stripe billing active' : 'No billing')}
                   </td>
                   <td style={{padding:'10px 12px',textAlign:'center'}}>
-                    <span className="mono" style={{fontSize:13,fontWeight:700,color:b.launchCount>0?C.text:C.dim}}>{b.launchCount||0}</span>
-                    <span style={{fontSize: 12,color:C.dim,marginLeft:3}}>/ {b.freeLaunchesUsed||0}f</span>
+                    <span className="mono" style={{fontSize:13,fontWeight:700,color:(b.activationCount||0)>0?'#34d399':C.dim}}>{b.activationCount||0}</span>
+                    <span style={{fontSize: 12,color:C.dim,marginLeft:3}}>/ {b.launchCount||0}</span>
                   </td>
                   <td style={{padding:'10px 12px',color:C.sub,fontSize: 14}}>{b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '—'}</td>
                   <td style={{padding:'10px 12px',textAlign:'center'}}>
@@ -13740,7 +13825,7 @@ function AdminRoadmapTab() {
     {openPhase==='s4'&&<div style={{border:'1px solid #9b6dff30',borderTop:'none',borderRadius:'0 0 14px 14px',overflow:'hidden',marginBottom:10}}>
       {S.sub('s4-auto','Zero-Touch Brand Experience',<>{S.item('s4-onboard-90s','90-second onboarding','Signup > OAuth > budget > AI takes over.','UI')}{S.item('s4-ai-welcome','AI welcome analysis','"47 creators, 312 videos, 23 high-potential."','AI')}{S.item('s4-auto-outreach','Auto outreach pipeline','Day 1/3/7 licensing invite sequence.','AI')}{S.item('s4-continuous','24/7 campaign management','Scan > plan > launch > optimize > report.','AI')}</>)}
       {S.sub('s4-ml','ML Model: CAi v2',<>{S.item('s4-ml-roas','Custom ROAS prediction','After 100+ campaigns. Video features > ROAS.','AI')}{S.item('s4-ml-copy','Ad copy optimization','A/B feedback loop. Better per category.','AI')}{S.item('s4-ml-audience','Audience prediction','TikTok followers > best Meta audience.','AI')}</>)}
-      {S.sub('s4-scale','Scale to 50 Brands',<>{S.item('s4-self-serve','Self-serve funnel','Zero sales calls. Signup to live in 24hrs.','BIZ')}{S.item('s4-pricing','$0 upfront, 4% of spend','First 3 free.','BIZ')}{S.item('s4-first10','First 10 via outreach','DM DTC brands with 10+ creators.','BIZ')}{S.item('s4-scale50','Scale to 50 via referrals','Case studies, communities.','BIZ')}</>)}
+      {S.sub('s4-scale','Scale to 50 Brands',<>{S.item('s4-self-serve','Self-serve funnel','Zero sales calls. Signup to live in 24hrs.','BIZ')}{S.item('s4-pricing','$0 upfront, 4% of spend','First activation free.','BIZ')}{S.item('s4-first10','First 10 via outreach','DM DTC brands with 10+ creators.','BIZ')}{S.item('s4-scale50','Scale to 50 via referrals','Case studies, communities.','BIZ')}</>)}
       {S.sub('s4-tax','Tax & Compliance',<>{S.item('s4-1099-annual','Annual 1099-NEC filing','Stripe Connect 1099. ~$3/form.','PAY','https://stripe.com/docs/connect/1099-tax-reporting')}{S.item('s4-accounting','QuickBooks integration','Sync Stripe revenue + expenses.','PAY','https://quickbooks.intuit.com')}</>)}
       {S.sub('s4-infra','Infrastructure for Scale',<>{S.item('s4-supa-pro','Supabase Pro ($25/mo)','8GB database, daily backups.','API','https://supabase.com/pricing')}{S.item('s4-redis','Redis via Upstash','Free: 10K commands/day.','API','https://upstash.com')}{S.item('s4-job-queue','Background job queue','BullMQ. Prevent timeouts.','API')}{S.item('s4-aws-eval','Evaluate AWS/GCP','Railway for 50. AWS for 200+.','API','https://aws.amazon.com')}{S.item('s4-soc2','SOC 2 compliance docs','Enterprise will ask.','BIZ','https://vanta.com')}</>)}
     </div>}

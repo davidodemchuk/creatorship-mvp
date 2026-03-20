@@ -2499,6 +2499,7 @@ function brandResponse(b) {
     billingCardExpYear: b.billingCardExpYear || null,
     billingPaymentFailed: !!b.billingPaymentFailed,
     launchCount: b.launchCount || 0,
+    activationCount: b.activationCount || 0,
     freeLaunchesUsed: b.freeLaunchesUsed || 0,
     freeLaunchLimit: 3,
     defaultCommission: b.defaultCommission || 10,
@@ -4600,7 +4601,7 @@ app.get('/api/admin/stats', checkAdmin, async (req, res) => {
     res.json({
       brands: { total: brands.length, list: brands.map(b => {
         const campaignCount = Object.values(registry).filter(c => c.brandId === b.id).length;
-        return { id: b.id, brandName: b.brandName, email: b.email, createdAt: b.createdAt, storeName: b.storeName, banned: !!b.banned, billingEnabled: !!b.billingEnabled, hasMetaToken: !!b.metaToken, hasTikTok: !!(b.storeName || b.storeUrl || b.tikTokStorePageUrl), adAccount: b.adAccount || '', pageId: b.pageId || '', pageName: b.pageName || '', campaignCount, launchCount: b.launchCount || 0, lastActive: b.lastActive || b.createdAt, emailVerified: !!b.emailVerified, metaTokenExpiresAt: b.metaTokenExpiresAt || null, freeLaunchesUsed: b.freeLaunchesUsed || 0, freeLaunchLimit: b.freeLaunchLimit || 3 };
+        return { id: b.id, brandName: b.brandName, email: b.email, createdAt: b.createdAt, storeName: b.storeName, banned: !!b.banned, billingEnabled: !!b.billingEnabled, hasMetaToken: !!b.metaToken, hasTikTok: !!(b.storeName || b.storeUrl || b.tikTokStorePageUrl), adAccount: b.adAccount || '', pageId: b.pageId || '', pageName: b.pageName || '', campaignCount, launchCount: b.launchCount || 0, activationCount: b.activationCount || 0, lastActive: b.lastActive || b.createdAt, emailVerified: !!b.emailVerified, metaTokenExpiresAt: b.metaTokenExpiresAt || null, freeLaunchesUsed: b.freeLaunchesUsed || 0, freeLaunchLimit: b.freeLaunchLimit || 3 };
       })},
       creators: { total: creators.length, list: creators.map(c => ({ id: c.id, email: c.email, tiktokHandle: c.tiktokHandle, displayName: c.displayName, createdAt: c.createdAt, tiktokConnected: !!(c.tiktokConnected || c.tiktokHandle || c.tiktokOpenId), banned: !!c.banned, dealCount: c.dealCount || 0, emailVerified: !!c.emailVerified, termsAccepted: !!(c.termsAccepted || c.termsAcceptedAt), stripeConnected: !!c.stripeAccountId, tiktokFollowers: c.tiktokFollowers || 0, tiktokVideos: c.tiktokVideos || 0 })) },
       campaigns: { total: Object.keys(registry).length },
@@ -6856,10 +6857,6 @@ app.post('/api/cai/activate', authBrand, requireRole('owner', 'admin'), async (r
   if (!brand) return res.status(404).json({ error: 'Brand not found' });
   if (brand.billingSuspended) return res.status(403).json({ error: 'Billing suspended — update your payment method at Account → Billing to reactivate', suspended: true, reason: brand.billingSuspendReason });
   if (brand.isBadActor) return res.status(403).json({ error: 'Account suspended — contact support@creatorship.app', suspended: true });
-  // Billing gate: after 3 free launches, require Stripe
-  const launchCount = brand.launchCount || 0;
-  const hasStripe = !!(brand.stripeCustomerId || brand.billingEnabled);
-  if (launchCount >= 3 && !hasStripe) return res.status(403).json({ error: 'Connect billing to continue. You have used all 3 free launches.', needsBilling: true });
 
   const monthlyBudget = Math.max(Number(req.body.monthlyBudget) || 300, 30);
   const roasTarget = Math.max(Number(req.body.roasTarget) || 3.0, 1.0);
@@ -6885,6 +6882,19 @@ app.post('/api/cai/activate', authBrand, requireRole('owner', 'admin'), async (r
       console.error('[cai-adjust] Failed:', err.message);
       return res.status(500).json({ error: 'Failed to update Meta budget: ' + err.message });
     }
+  }
+
+  // Billing gate: first activation free; further activations require Stripe (not for budget-only adjust above)
+  const activationCount = brand.activationCount || 0;
+  const hasStripe = !!(brand.stripeCustomerId && brand.billingEnabled);
+  const freeActivations = 1;
+  if (activationCount >= freeActivations && !hasStripe) {
+    return res.status(402).json({
+      error: 'Connect Stripe to launch more campaigns. Your first campaign was free — to keep running ads, connect billing.',
+      needsBilling: true,
+      activationCount,
+      freeActivations,
+    });
   }
 
   if (!metaToken || !adAccount) return res.status(400).json({ error: 'Connect Meta Ads in Settings first' });
@@ -7239,6 +7249,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
     brand.caiMonthlyBudget = monthlyBudget;
     brand.caiMinRoas = roasTarget;
     brand.launchCount = (brand.launchCount || 0) + 1;
+    brand.activationCount = (brand.activationCount || 0) + 1;
     await saveBrand(brand);
 
     await auditLogAction('campaign_activated', brandId, { monthlyBudget, roasTarget, videosCount: topPicks.length });
@@ -9720,6 +9731,7 @@ app.post('/api/launch', authBrand, requireRole('editor'), async (req, res) => {
       const brandForCount = await getBrandById(brandId);
       if (brandForCount) {
         brandForCount.launchCount = (brandForCount.launchCount || 0) + 1;
+        brandForCount.activationCount = (brandForCount.activationCount || 0) + 1;
         if (!brandForCount.billingEnabled) {
           brandForCount.freeLaunchesUsed = (brandForCount.freeLaunchesUsed || 0) + 1;
         }
@@ -9927,10 +9939,24 @@ app.get('/api/campaigns', async (req, res) => {
 });
 
 app.post('/api/campaigns/toggle', authBrand, requireRole('editor'), async (req, res) => {
-  const { metaToken, campaignId, newStatus } = req.body;
-  if (!metaToken || !campaignId) return res.status(400).json({ error: 'metaToken and campaignId required' });
+  const brandId = req.brandAuth?.brandId;
+  const { campaignId, newStatus } = req.body;
+  if (!campaignId) return res.status(400).json({ error: 'campaignId required' });
+  const brand = await getBrandById(brandId);
+  if (!brand) return res.status(404).json({ error: 'Brand not found' });
+  const ns = String(newStatus || 'PAUSED').toUpperCase();
+  if (ns === 'ACTIVE') {
+    const activationCount = brand.activationCount || 0;
+    const hasStripe = !!(brand.stripeCustomerId && brand.billingEnabled);
+    if (activationCount >= 1 && !hasStripe) {
+      return res.status(402).json({ error: 'Connect Stripe to activate campaigns.', needsBilling: true });
+    }
+  }
+  let metaToken;
+  try { metaToken = getValidMetaToken(brand); }
+  catch (e) { return res.status(400).json({ error: e.message, metaExpired: true }); }
   try {
-    const result = await metaPost(campaignId, { status: newStatus || 'PAUSED', access_token: metaToken });
+    const result = await metaPost(campaignId, { status: ns, access_token: metaToken });
     res.json({ success: true, ...result });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -9963,9 +9989,16 @@ app.post('/api/cai/campaign/resume', authBrand, requireRole('editor'), async (re
   const campaigns = getCaiCampaigns(brand);
   const camp = campaigns.find(c => c.localId === localId);
   if (!camp) return res.status(404).json({ error: 'Campaign not found' });
-  if (!brand.metaToken) return res.status(400).json({ error: 'No Meta token' });
+  const activationCount = brand.activationCount || 0;
+  const hasStripe = !!(brand.stripeCustomerId && brand.billingEnabled);
+  if (activationCount >= 1 && !hasStripe) {
+    return res.status(402).json({ error: 'Connect Stripe to activate campaigns.', needsBilling: true });
+  }
+  let metaToken;
+  try { metaToken = getValidMetaToken(brand); }
+  catch (e) { return res.status(400).json({ error: e.message, metaExpired: true }); }
   try {
-    await metaPost(camp.metaCampaignId, { status: 'ACTIVE', access_token: brand.metaToken });
+    await metaPost(camp.metaCampaignId, { status: 'ACTIVE', access_token: metaToken });
     camp.status = 'active';
     camp.activatedAt = camp.activatedAt || new Date().toISOString();
     camp.activityLog.push({ type: 'resumed', ts: new Date().toISOString(), msg: 'Campaign resumed' });
