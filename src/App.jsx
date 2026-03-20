@@ -1101,10 +1101,12 @@ function SiteNav({ nav }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [dropOpen]);
 
-  const avatarUrl = brand?.shopLogo
-    ? '/api/proxy-image?url=' + encodeURIComponent(brand.shopLogo)
-    : brand?.enrichedShop?.shopLogo
-      ? '/api/proxy-image?url=' + encodeURIComponent(brand.enrichedShop.shopLogo)
+  const shopLogoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo || '';
+  const storeHandle = brand ? (brand.storeName || brand.brandName || '').toLowerCase().replace(/[\s_\-.]+/g, '') : '';
+  const avatarUrl = shopLogoRaw && shopLogoRaw.startsWith('http')
+    ? '/api/proxy-image?url=' + encodeURIComponent(shopLogoRaw)
+    : (brand && storeHandle)
+      ? 'https://unavatar.io/tiktok/' + storeHandle
       : null;
   const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
 
@@ -1123,9 +1125,9 @@ function SiteNav({ nav }) {
           <div ref={dropRef} style={{ position: 'relative' }}>
             <button type="button" onClick={() => setDropOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t0)', fontFamily: 'inherit', cursor: 'pointer' }}>
               <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', border: '1.5px solid var(--cs-a15)', overflow: 'hidden', flexShrink: 0 }}>
-                {(brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? (
+                {(brand && avatarUrl) ? (
                   <img
-                    src={avatarUrl || ''}
+                    src={avatarUrl}
                     alt=""
                     style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }}
                     onError={(e) => {
@@ -1134,7 +1136,7 @@ function SiteNav({ nav }) {
                     }}
                   />
                 ) : null}
-                <div style={{ display: (brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
+                <div style={{ display: (brand && avatarUrl) ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
                   {initial}
                 </div>
               </div>
@@ -11787,14 +11789,17 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           <button type="button" onClick={()=>setBrandNavOpen(o=>!o)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',background:'var(--cs-a06)',border:'1px solid var(--cs-a08)',borderRadius:8,color:'var(--cs-t0)',fontFamily:'inherit',cursor:'pointer'}}>
             {(() => {
               const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo || '';
-              const avatarUrl = logoRaw ? '/api/proxy-image?url=' + encodeURIComponent(logoRaw) : '';
+              const bpHandle = (brand?.storeName || brand?.brandName || '').toLowerCase().replace(/[\s_\-.]+/g, '');
+              const bpAvatarUrl = logoRaw && logoRaw.startsWith('http')
+                ? '/api/proxy-image?url=' + encodeURIComponent(logoRaw)
+                : bpHandle ? 'https://unavatar.io/tiktok/' + bpHandle : '';
               const displayName = brand?.storeName ? '@' + brand.storeName : brand?.brandName || 'Dashboard';
               const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
               return (
                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', border: '1.5px solid var(--cs-a15)', overflow: 'hidden', flexShrink: 0 }}>
-                  {logoRaw ? (
+                  {bpAvatarUrl ? (
                     <img
-                      src={avatarUrl}
+                      src={bpAvatarUrl}
                       alt=""
                       style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }}
                       onError={(e) => {
@@ -11803,7 +11808,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
                       }}
                     />
                   ) : null}
-                  <div style={{ display: logoRaw ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
+                  <div style={{ display: bpAvatarUrl ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
                     {initial}
                   </div>
                 </div>
