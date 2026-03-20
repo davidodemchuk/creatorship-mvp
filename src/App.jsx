@@ -7457,7 +7457,7 @@ function BrandContentTab({ brand, profile, setBrandTab, tiktokVideos: parentVide
 }
 
 
-const BRAND_TAB_IDS = ['home','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
+const BRAND_TAB_IDS = ['creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
 let _deepDiveCache = null;
 let _deepDiveCacheBrandId = null;
 function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo, buildInProgress = false }) {
@@ -11613,6 +11613,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
       const caiHashes = ['dashboard','campaigns','content','analysis','optimize'];
       if (typeof window === 'undefined') return 'ai-plans';
       const h = (window.location.hash || '').replace(/^#/, '');
+      if (h === 'home') return 'ai-plans';
       if (caiHashes.includes(h)) return 'ai-plans';
       if (h === 'account' || (h && h.startsWith('account/'))) return 'settings';
       if (h && BRAND_TAB_IDS.includes(h)) return h;
@@ -12137,7 +12138,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           </div>;
         })()}
 
-        {brandTab==="home"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandHomeTab brand={brand} profile={profile ?? brand} creatorsCount={creatorsCount} setBrandTab={setBrandTab} /></div>}
+        {false && brandTab==="home"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandHomeTab brand={brand} profile={profile ?? brand} creatorsCount={creatorsCount} setBrandTab={setBrandTab} /></div>}
 
         {brandTab==="creators"&&<div style={{animation:'fadeIn 0.2s ease'}}>{loadingCreators ? <AILoader messages={['Scanning TikTok Shop creators...', 'Finding creators with your products...', 'Ranking by engagement score...', 'Calculating CAi performance index...', 'Building your creator pipeline...']} height={260} color="#EE1D52" /> : <ErrorBoundary><CreatorDiscoveryView brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} setMessagesThread={setMessagesThread} /></ErrorBoundary>}</div>}
 
