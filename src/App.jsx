@@ -11611,8 +11611,6 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const initialBrandTab = (() => {
     try {
       const caiHashes = ['dashboard','campaigns','content','analysis','optimize'];
-      // Override: new brands always start on home.
-      if (brand && !brand.hasMetaToken && !brand.adAccount) return 'home';
       if (typeof window === 'undefined') return 'ai-plans';
       const h = (window.location.hash || '').replace(/^#/, '');
       if (caiHashes.includes(h)) return 'ai-plans';
@@ -11624,23 +11622,6 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const [brandTab, setBrandTabState] = useState(initialBrandTab);
   const [buildInProgress, setBuildInProgress] = useState(false);
   const [buildInfo, setBuildInfo] = useState(null); // { phase, videoCount, startedAt }
-  const deepDiveLoading = buildInProgress && buildInfo?.phase === 'deep-dive';
-  useEffect(() => {
-    if (!brand) return;
-    // Setup gate: Meta must be connected and ad account selected.
-    const hasCompletedSetup = brand.hasMetaToken && brand.adAccount;
-    if (!hasCompletedSetup && brandTab !== 'settings' && brandTab !== 'home' && !deepDiveLoading) {
-      setBrandTabState('home');
-      try { window.location.hash = '#home'; } catch (_) {}
-    }
-  }, [brand?.hasMetaToken, brand?.adAccount, brandTab, deepDiveLoading]);
-  useEffect(() => {
-    if (brand?.hasMetaToken && brand?.adAccount && brandTab === 'home') {
-      setBrandTabState('ai-plans');
-      setActiveCaiTab('dashboard');
-      window.location.hash = 'dashboard';
-    }
-  }, [brand?.hasMetaToken, brand?.adAccount, brandTab]);
   const setBrandTab = useCallback((tabId) => {
     setBrandTabState(tabId);
     window.location.hash = '#' + tabId;
@@ -12027,10 +12008,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           { id: 'analysis', label: 'Analysis' },
           { id: 'optimize', label: 'Optimize' },
           { id: null, label: 'Account', isAccount: true },
-        ].filter(t => {
-          if (t.id === 'dashboard' || t.isAccount) return true;
-          return !!(brand?.hasMetaToken && brand?.adAccount);
-        }).map(t => {
+        ].map(t => {
           const isActive = t.isAccount ? brandTab === 'settings' : activeCaiTab === t.id;
           return (
             <button key={t.id ?? 'account'} onClick={() => t.isAccount ? setCaiTab(null) : setCaiTab(t.id)} style={{padding:'8px 14px',background:isActive?'rgba(155,109,255,.12)':'transparent',border:'none',borderRadius:6,color:isActive?'#fff':'var(--cs-t4)',fontSize:13,fontWeight:isActive?600:500,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>{t.label}</button>
