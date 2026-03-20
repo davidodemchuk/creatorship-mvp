@@ -1273,6 +1273,8 @@ function BrandDashboard({nav}){
     setLoadingCamps(false);
   },[]);
 
+  useEffect(()=>{if(tab==="campaigns"&&!camps&&!loadingCamps)fetchCamps();},[tab,camps,loadingCamps,fetchCamps]);
+
   const archiveCamp=async(campId)=>{
     const doArchive = await showConfirm({ title: 'Archive Campaign', message: 'This campaign will be archived on Meta and removed from Creatorship.', confirmText: 'Archive', destructive: true }); if (!doArchive) return;
     try{
@@ -1900,7 +1902,6 @@ function BrandDashboard({nav}){
       const totalCreatorPayout=camps?camps.reduce((s,c)=>s+(c.payouts?.creatorPayout||0),0):0;
       const totalCreatorshipFee=camps?camps.reduce((s,c)=>s+(c.payouts?.creatorshipFee||0),0):0;
 
-      if(!camps&&!loadingCamps)fetchCamps();
 
       const updateBudget=async(adsetId,newBudget)=>{
         try{

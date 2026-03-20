@@ -2274,6 +2274,11 @@ app.post('/api/brand/login', authLimiter, async (req, res) => {
 app.get('/api/brand/me', async (req, res) => {
   const brand = await getBrand(req.brandAuth?.brandId, req.query.email);
   if (!brand) return res.json({ error: 'Not found' });
+  // One-time backfill: token exists but hasMetaToken flag missing/false
+  if (brand.metaToken && !brand.hasMetaToken) {
+    brand.hasMetaToken = true;
+    try { await saveBrand(brand); } catch (_) {}
+  }
   // Auto-recover adAccount if token exists but account missing
   if (brand.metaToken && !brand.adAccount) {
     try {
@@ -5214,6 +5219,7 @@ app.get('/auth/meta/callback', async (req, res) => {
       const brand = await getBrandByEmail(brandEmail);
       if (brand) {
         brand.metaToken = longToken;
+        brand.hasMetaToken = true;
         brand.metaTokenType = 'oauth';
         brand.metaTokenExpiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
         brand.metaUserId = meData.id;
@@ -7503,6 +7509,12 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
   } catch (e) {
     console.log = originalConsoleLog;
     console.error('[cai-activate]', e.message);
+    try {
+      brand.cai = brand.cai || {};
+      brand.cai.lastActivationError = e.message;
+      brand.cai.lastActivationErrorAt = new Date().toISOString();
+      await saveBrand(brand);
+    } catch (_) {}
     res.status(500).json({ error: e.message, steps: healEvents.length > 0 ? [{ step: 'self_heal', fixes: healEvents }, ...steps] : steps });
   }
 });
