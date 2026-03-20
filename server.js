@@ -4453,7 +4453,7 @@ app.get('/api/creator/tiktok-videos', async (req, res) => {
 app.get('/api/proxy-image', async (req, res) => {
   const url = req.query.url;
   const download = req.query.download === 'true';
-  if (!url || (!url.includes('tiktokcdn') && !url.includes('tiktok') && !url.includes('byteoversea'))) {
+  if (!url || (!url.includes('tiktokcdn') && !url.includes('tiktok') && !url.includes('byteoversea') && !url.includes('ibyteimg') && !url.includes('byteimg') && !url.includes('pstatp'))) {
     return res.status(400).send('Invalid URL');
   }
   try {
