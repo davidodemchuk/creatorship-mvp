@@ -7942,8 +7942,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     // Returning from a redirect (Meta OAuth, email verify, billing, etc.)
     const params = new URLSearchParams(window.location.search);
     if (params.get('meta_connected') || params.get('meta_error') || params.get('billing') || params.get('email_verified')) return;
-    // Never auto-start deep dive before Meta is connected.
-    if (!brand?.hasMetaToken) return;
+    // Auto-start deep dive only after TikTok Shop/store is connected.
+    const hasShop = !!(brand?.enrichedShop || brand?.storeName || brand?.tikTokShopUrl || brand?.tikTokStorePageUrl);
+    if (!hasShop) return;
     // Not on the right page — only auto-start on dashboard or analysis
     const hash = (window.location.hash || '').replace('#', '');
     if (hash === 'optimize' || hash === 'campaigns' || hash === 'content' || hash === 'account') return;
