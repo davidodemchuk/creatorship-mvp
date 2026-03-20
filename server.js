@@ -6306,6 +6306,8 @@ app.post('/api/download', async (req, res) => {
     res.setHeader('Content-Type', 'video/mp4');
     const stream = fs.createReadStream(fp);
     stream.pipe(res);
+    stream.on('end', () => { fs.unlink(fp, () => {}); });
+    stream.on('error', () => { fs.unlink(fp, () => {}); });
   } catch (e) { res.status(500).json({ error: 'Download failed: ' + e.message }); }
 });
 
@@ -7382,7 +7384,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
           let videoUrl = cleanResult.url || freshVideosMap[String(video.id)];
           if (!videoUrl) {
             console.log('[cai-activate] SKIPPED video ' + video.id + ' — no watermark-free URL (' + cleanResult.source + ')');
-            if (cai.activityLog) cai.activityLog.push({ type: 'video_skipped', videoId: video.id, reason: 'watermark', ts: new Date().toISOString() });
+            if (brand.cai?.activityLog) brand.cai.activityLog.push({ type: 'video_skipped', videoId: video.id, reason: 'watermark', ts: new Date().toISOString() });
             dbg('SKIP ' + video.id + ': no clean download URL');
             errors++;
             done++;
@@ -10107,7 +10109,7 @@ app.post('/api/payouts/run-weekly', async (req, res) => {
   const MIN_PAYOUT_CENTS = 2500; // $25 minimum
   const registry = await loadCampaignRegistry();
   const brands = await loadBrands();
-  const creators = (() => { try { return loadJson(CREATORS_FILE) || []; } catch (_) { return []; } })();
+  const creators = await loadCreators();
 
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 86400000);
@@ -11583,6 +11585,7 @@ app.post('/api/brand/authorize-outreach', authBrand, requireRole('admin'), async
 });
 
 app.get('/api/brand/licenses', authBrand, async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: 'Database not configured' });
   const brandId = req.brandAuth?.brandId || req.query.brandId;
   const { data, error } = await supabase.from('content_licenses').select('*').eq('brand_id', brandId).order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
@@ -11590,6 +11593,7 @@ app.get('/api/brand/licenses', authBrand, async (req, res) => {
 });
 
 app.post('/api/brand/request-content-license', authBrand, async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: 'Database not configured' });
   const { brandId, creatorHandle, creatorEmail, videoId, videoUrl, videoDesc, videoCover, productId, productName, revenueSharePct } = req.body;
   const brand = await getBrandById(brandId || req.brandAuth?.brandId);
   if (!brand) return res.status(404).json({ error: 'Brand not found' });
@@ -11654,6 +11658,7 @@ app.post('/api/brand/request-content-license', authBrand, async (req, res) => {
 });
 
 app.get('/approve/:token', async (req, res) => {
+  if (!supabase) return res.status(503).send('Database not configured');
   const { token } = req.params;
   const { data, error } = await supabase.from('content_licenses').select('*').eq('outreach_token', token).single();
   if (error || !data) return res.status(404).send('<html><body style="background:#0a0e16;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh"><h1>Link expired or invalid</h1></body></html>');
@@ -11700,6 +11705,7 @@ app.get('/approve/:token', async (req, res) => {
 });
 
 app.post('/api/approve/:token', async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: 'Database not configured' });
   const { token } = req.params;
   const { action, reason } = req.body;
   const { data, error } = await supabase.from('content_licenses').select('*').eq('outreach_token', token).single();
@@ -11733,6 +11739,7 @@ app.post('/api/approve/:token', async (req, res) => {
 });
 
 app.post('/api/license/revoke', async (req, res) => {
+  if (!supabase) return res.status(503).json({ error: 'Database not configured' });
   const { licenseId, revokedBy, reason } = req.body;
   if (!licenseId) return res.status(400).json({ error: 'licenseId required' });
   const { data, error } = await supabase.from('content_licenses').select('*').eq('id', licenseId).single();

@@ -1260,6 +1260,7 @@ function BrandDashboard({nav}){
   const[deepMaxPages,setDeepMaxPages]=useState(50);
   const[connectedCreators,setConnectedCreators]=useState([]);
   const deepAbort=useRef(null);
+  useEffect(()=>()=>{if(deepAbort.current){deepAbort.current.close();deepAbort.current=null;}},[]);
   const fire=useCallback(m=>{setToast(m);setTimeout(()=>setToast(null),4000)},[]);
 
   const fetchCamps=useCallback(async()=>{
