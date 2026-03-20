@@ -7679,6 +7679,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   // Run deep dive with progressive terminal
   const runDeepDive = async () => {
     setDeepDiveLoading(true);
+    setDeepDivePhase('scanning');
     if (!canDoAction('run_deep_dive')) {
       toast.error('You need Editor access to run deep dives.');
       setDeepDiveLoading(false);
@@ -7763,6 +7764,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     await wait(400);
 
     // ═══ PHASE 3: REVENUE FORECAST ═══
+    setDeepDivePhase('analyzing');
     add('', 'spacer');
     add('━━━ 3. REVENUE FORECAST ━━━', 'phase');
     add('  Building projections at multiple spend levels...', 'system');
@@ -7799,6 +7801,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     await wait(400);
 
     // ═══ PHASE 5: CREATIVE BRIEF ═══
+    setDeepDivePhase('writing');
     add('', 'spacer');
     add('━━━ 5. BUILDING CREATIVE BRIEF ━━━', 'phase');
     add('  Ranking all ' + tiktokVideos.length + ' videos by conversion potential...', 'system');
@@ -7871,6 +7874,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       }
     } catch (e) { clearInterval(waitTimer); add('✗ Network error: ' + e.message, 'error'); }
     setDeepDiveLoading(false);
+    setDeepDivePhase('');
     if (setBuildInProgress) setBuildInProgress(false);
     if (setBuildInfo) setBuildInfo(null);
   };
@@ -8246,13 +8250,62 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
-          {!deepDiveLoading && !activating && (setBuildInProgress ? buildInProgress : false) && (
-            <div className="gl" style={{ padding: 24, borderRadius: 14, textAlign: 'center', marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
-              <div style={{ animation: 'spin 2s linear infinite', display: 'inline-block', fontSize: 24, marginBottom: 12 }}>&#9881;</div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>CAi is building in the background</h3>
-              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto' }}>
-                Your campaign build is still running. The terminal view was interrupted but the build continues on the server. You'll see results when it completes.
-              </p>
+          {(deepDiveLoading || activating) && (
+            <div className="gl" style={{ padding: 28, borderRadius: 16, marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'spin 2s linear infinite' }}>
+                  <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>C</span>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--cs-t0)', marginBottom: 4 }}>
+                    {deepDivePhase === 'scanning' ? 'Scanning your TikTok content...' :
+                     deepDivePhase === 'analyzing' ? 'CAi is analyzing your videos...' :
+                     deepDivePhase === 'writing' ? 'Writing ad copy and building campaign...' :
+                     activating ? 'Creating campaign on Meta...' :
+                     'CAi is working...'}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--cs-t3)' }}>
+                    {activating ? 'Uploading videos and creating ads. This takes 1-2 minutes.' : 'Analyzing ' + (tiktokVideos?.length || 0) + ' videos. Takes about 60 seconds.'}
+                  </div>
+                </div>
+              </div>
+              {terminalLines && terminalLines.length > 0 && (
+                <div className="cai-terminal" style={{ marginTop: 16, maxHeight: 200, overflowY: 'auto', padding: 12, borderRadius: 8, background: 'rgba(0,0,0,0.3)', fontFamily: "'JetBrains Mono', monospace", fontSize: 12, lineHeight: 1.6 }}>
+                  {terminalLines.slice(-10).map((line, i) => (
+                    <div key={i} style={{ color: line.type === 'error' ? '#ef4444' : line.type === 'success' ? '#34D399' : line.type === 'phase' ? '#9b6dff' : 'var(--cs-t3)' }}>{line.text}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activationResult && !deepDiveLoading && !activating && (
+            <div className="gl" style={{ padding: 28, borderRadius: 16, marginBottom: 24, textAlign: 'center', background: activationResult.error ? 'rgba(239,68,68,0.08)' : 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(6,104,225,0.1))', border: '1px solid ' + (activationResult.error ? 'rgba(239,68,68,0.25)' : 'rgba(52,211,153,0.25)') }}>
+              {activationResult.error ? (
+                <>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>&#9888;</div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#ef4444', marginBottom: 8 }}>Build Failed</h3>
+                  <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+                    {activationResult.message || activationResult.error || 'Something went wrong. Your analysis was saved.'}
+                  </p>
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={() => { setActivationResult(null); setActivationLines([]); if (typeof runDeepDive === 'function') runDeepDive(); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
+                    <button onClick={() => setCaiSubTab('account')} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Check Settings</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 36, marginBottom: 12 }}>&#10003;</div>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#34D399', marginBottom: 8 }}>Campaign Built</h3>
+                  <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+                    Your ads are being uploaded to Meta now. The campaign will appear paused — review it and activate when ready.
+                  </p>
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button onClick={() => { setActivationResult(null); setCaiSubTab('campaigns'); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>View Campaign</button>
+                    <button onClick={() => { setActivationResult(null); setCaiSubTab('optimize'); }} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Set Budget & ROAS</button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -8356,7 +8409,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           </div>
 
-          {!caiData?.campaign?.id && caiData?.processingStatus !== 'processing' && !deepDiveLoading && !activating && (
+          {!caiData?.campaign?.id && !deepDiveLoading && !activating && caiData?.processingStatus !== 'processing' && (
             <div className="gl" style={{ padding: 28, borderRadius: 16, textAlign: 'center', marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>&#128640;</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Ready to launch</h3>
@@ -10271,7 +10324,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   }
 
   // ═══ ACTIVATING ═══
-  if (activating || (activationResult && activationLines.length > 0)) {
+  if ((activating || (activationResult && activationLines.length > 0)) && caiSubTab !== 'dashboard') {
     const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: 'var(--cs-t1)', dim: 'var(--cs-t5)', spacer: 'transparent' };
     return (
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
