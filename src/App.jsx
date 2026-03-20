@@ -7942,6 +7942,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     // Returning from a redirect (Meta OAuth, email verify, billing, etc.)
     const params = new URLSearchParams(window.location.search);
     if (params.get('meta_connected') || params.get('meta_error') || params.get('billing') || params.get('email_verified')) return;
+    // Never auto-start deep dive before Meta is connected.
+    if (!brand?.hasMetaToken) return;
     // Not on the right page — only auto-start on dashboard or analysis
     const hash = (window.location.hash || '').replace('#', '');
     if (hash === 'optimize' || hash === 'campaigns' || hash === 'content' || hash === 'account') return;
@@ -11609,13 +11611,13 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const [brandTab, setBrandTabState] = useState(initialBrandTab);
   useEffect(() => {
     if (!brand) return;
-    // Brand needs onboarding if they haven't connected Meta and haven't run deep dive.
-    const hasCompletedSetup = brand.hasMetaToken && brand.adAccount && (brand.caiDeepDive || brand.cai?.deepDive);
+    // Setup gate: Meta must be connected and ad account selected.
+    const hasCompletedSetup = brand.hasMetaToken && brand.adAccount;
     if (!hasCompletedSetup && brandTab !== 'settings' && brandTab !== 'home') {
       setBrandTabState('home');
       try { window.location.hash = '#home'; } catch (_) {}
     }
-  }, [brand?.hasMetaToken, brand?.adAccount, brand?.caiDeepDive, brand?.cai?.deepDive, brandTab]);
+  }, [brand?.hasMetaToken, brand?.adAccount, brandTab]);
   const setBrandTab = useCallback((tabId) => {
     setBrandTabState(tabId);
     window.location.hash = '#' + tabId;
