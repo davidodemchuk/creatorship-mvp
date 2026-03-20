@@ -1644,7 +1644,7 @@ function BrandDashboard({nav}){
                   <span style={{fontSize:14,fontWeight:700,color:C.green}}>Your net revenue per sale</span>
                   <span style={{fontSize: 13,color:C.dim,marginLeft:8}}>{netMarginPct}% margin</span>
                 </div>
-                <span className="mono" style={{fontSize:18,fontWeight:800,color:C.green}}>$${netPerUnit}</span>
+                <span className="mono" style={{fontSize:18,fontWeight:800,color:C.green}}>{'$'}{netPerUnit}</span>
               </div>
             </div>
           </div>
@@ -3469,7 +3469,7 @@ function CreatorPortal({ nav, onLogout, creator, setCreator }) {
     if (!creator?.id || !setCreator) return;
     const params = new URLSearchParams(location.search || '');
     const fromOAuth = params.get('connected') === 'true';
-    if (!fromOAuth && tab !== 'home') return;
+    if (!fromOAuth && tab !== 'dashboard') return;
     fetch('/api/creator/me', { headers: getCreatorAuthHeaders() })
       .then(r => r.ok ? r.json() : null)
       .then(me => {
@@ -3482,11 +3482,11 @@ function CreatorPortal({ nav, onLogout, creator, setCreator }) {
   }, [creator?.id, tab, location.search, setCreator]);
 
   useEffect(()=>{
-    if(tab==='home'){ try{ localStorage.setItem('creatorship_visited','true'); }catch(_){} }
+    if(tab==='dashboard'){ try{ localStorage.setItem('creatorship_visited','true'); }catch(_){} }
   },[tab]);
 
   useEffect(()=>{
-    if(!ttStatus.connected||(tab!=="deals"&&tab!=="earnings"&&tab!=="home"))return;
+    if(!ttStatus.connected||(tab!=="campaigns"&&tab!=="earnings"&&tab!=="dashboard"))return;
     setLoadingDeals(true);
     fetch("/api/creator/deals",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>{setDeals(d&&!d.error?d:null);setLoadingDeals(false)}).catch(()=>setLoadingDeals(false));
   },[ttStatus.connected,tab]);
@@ -3498,7 +3498,7 @@ function CreatorPortal({ nav, onLogout, creator, setCreator }) {
   },[ttStatus.connected,tab]);
 
   useEffect(()=>{
-    if(!ttStatus.connected||(tab!=="earnings"&&tab!=="home"))return;
+    if(!ttStatus.connected||(tab!=="earnings"&&tab!=="dashboard"))return;
     fetch("/api/creator/stripe-status",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>setStripeStatus(prev=>((d&&d.connected===true)?d:(prev&&prev.connected===true?prev:(d||null))))).catch(()=>setStripeStatus(prev=>prev&&prev.connected===true?prev:null));
   },[ttStatus.connected,tab]);
 

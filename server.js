@@ -1939,8 +1939,7 @@ app.get('/api/creator/stripe-status', async (req, res) => {
   const connected = getConnectedCreators();
   const creator = connected[0]?.display_name || connected[0]?.open_id;
   if (!creator) return res.json({ connected: false });
-  let creators = [];
-  try { creators = loadJson(CREATORS_FILE) || []; } catch (_) {}
+  const creators = await loadCreators();
   const rec = creators.find(c => creatorNameMatches(c.display_name || c.open_id, creator));
   if (!rec?.stripeAccountId) return res.json({ connected: false });
   try {
@@ -1961,8 +1960,7 @@ app.get('/api/creator/stripe-dashboard', async (req, res) => {
   const connected = getConnectedCreators();
   const creator = connected[0]?.display_name || connected[0]?.open_id;
   if (!creator) return res.redirect((process.env.FRONTEND_URL || 'http://localhost:5173') + '/creator');
-  let creators = [];
-  try { creators = loadJson(CREATORS_FILE) || []; } catch (_) {}
+  const creators = await loadCreators();
   const rec = creators.find(c => creatorNameMatches(c.display_name || c.open_id, creator));
   if (!rec?.stripeAccountId) return res.redirect((process.env.FRONTEND_URL || 'http://localhost:5173') + '/creator');
   try {
@@ -1980,8 +1978,7 @@ app.post('/api/creator/payout', async (req, res) => {
   if (!creatorId || amount == null) return res.status(400).json({ error: 'creatorId and amount (cents) required' });
   const amountCents = Math.round(Number(amount));
   if (amountCents < 1) return res.status(400).json({ error: 'amount must be positive' });
-  let creators = [];
-  try { creators = loadJson(CREATORS_FILE) || []; } catch (_) {}
+  const creators = await loadCreators();
   const creator = creators.find(c => (c.open_id && c.open_id === creatorId) || (c.display_name && creatorNameMatches(c.display_name, creatorId)) || c.id === creatorId);
   if (!creator?.stripeAccountId) return res.status(400).json({ error: 'Creator has no Stripe account' });
   try {
@@ -2134,7 +2131,7 @@ app.post('/api/auth/reset-password', authLimiter, async (req, res) => {
   }
 
   const creators = await loadCreators();
-  const cIdx = creators.findIndex(c => c.resetToken === token && Number(c.resetTokenExpiry || 0) > now);
+  const cIdx = creators.findIndex(c => c.resetToken === token && Number(c.resetTokenExpiry || 0) > Date.now());
   if (cIdx !== -1) {
     creators[cIdx].password = await bcrypt.hash(newPassword, SALT_ROUNDS);
     delete creators[cIdx].resetToken;
@@ -2968,7 +2965,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 app.get('/api/billing/status', authBrand, requireRole('admin'), async (req, res) => {
   const brand = await getBrandById(req.brandAuth.brandId);
   if (!brand) return res.json({ error: 'Brand not found' });
-  const records = loadBillingRecords(brand.id);
+  const records = await loadBillingRecords(brand.id);
   const registry = await loadCampaignRegistry();
   const brandCampaigns = Object.entries(registry).filter(([_, meta]) => meta.brandId === brand.id);
   let currentPeriodSpend = 0;
