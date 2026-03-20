@@ -11958,7 +11958,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         </div>
       </div>
     </header>
-    {buildInProgress && (
+    {buildInProgress && activeCaiTab !== 'dashboard' && (
       <div style={{ position: 'sticky', top: 56, zIndex: 80, margin: '0 auto', maxWidth: 900, padding: '0 16px', animation: 'fadeUp 0.3s ease' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(155,109,255,0.12), rgba(6,104,225,0.12))', border: '1px solid rgba(155,109,255,0.25)', backdropFilter: 'blur(12px)', marginBottom: 16 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'spin 2s linear infinite' }}>
