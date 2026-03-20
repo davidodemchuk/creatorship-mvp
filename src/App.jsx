@@ -5970,23 +5970,23 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div>
                 <label style={S.label}>Website URL</label>
-                <input autoComplete="off" placeholder="https://yourstore.com" value={brandSettings.websiteUrl || ''} onChange={e => setBrandSettings(p => ({ ...p, websiteUrl: e.target.value }))} style={S.inp} />
+                <input autoComplete="off" placeholder="https://yourstore.com" value={brandSettings.websiteUrl ?? brand?.websiteUrl ?? ''} onChange={e => setBrandSettings(p => ({ ...p, websiteUrl: e.target.value }))} style={S.inp} />
               </div>
               <div>
                 <label style={S.label}>TikTok Handle</label>
-                <input autoComplete="off" placeholder="@intakebreathing" value={brandSettings.storeName || ''} onChange={e => setBrandSettings(p => ({ ...p, storeName: e.target.value }))} style={S.inp} />
+                <input autoComplete="off" placeholder="@intakebreathing" value={brandSettings.storeName ?? brand?.tikTokHandle ?? brand?.storeName ?? ''} onChange={e => setBrandSettings(p => ({ ...p, storeName: e.target.value }))} style={S.inp} />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div>
                 <label style={S.label}>Instagram Handle</label>
-                <input autoComplete="off" placeholder="@yourbrand" value={brandSettings.instagramHandle || ''} onChange={e => setBrandSettings(p => ({ ...p, instagramHandle: e.target.value }))} style={S.inp} />
+                <input autoComplete="off" placeholder="@yourbrand" value={brandSettings.instagramHandle ?? brand?.instagramHandle ?? ''} onChange={e => setBrandSettings(p => ({ ...p, instagramHandle: e.target.value }))} style={S.inp} />
               </div>
               <div />
             </div>
             <div style={{ marginBottom: 16 }}>
               <label style={S.label}>Brand Description</label>
-              <textarea rows={3} placeholder="What does your brand sell? Who is your audience?" value={brandSettings.brandDescription || ''} onChange={e => setBrandSettings(p => ({ ...p, brandDescription: e.target.value }))} style={{ ...S.inp, resize: 'vertical', minHeight: 72 }} />
+              <textarea rows={3} placeholder="What does your brand sell? Who is your audience?" value={brandSettings.brandDescription ?? brand?.brandDescription ?? ''} onChange={e => setBrandSettings(p => ({ ...p, brandDescription: e.target.value }))} style={{ ...S.inp, resize: 'vertical', minHeight: 72 }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <button onClick={handleProfileSave} disabled={!canEditSettings || saving === 'profile'} style={{ ...btnStyle, background: '#0668E1', color: '#fff', padding: '10px 24px', opacity: !canEditSettings ? 0.55 : saving === 'profile' ? .6 : 1 }}>
@@ -12121,7 +12121,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
 
         {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
 
-        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>setBrandTab('ai-plans')} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to Dashboard</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} setBrandTab={setBrandTab} />}</div>}
+        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>{ setBrandTab('ai-plans'); try { window.location.hash = 'dashboard'; } catch (_) {} }} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to Dashboard</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} setBrandTab={setBrandTab} />}</div>}
 
         {/* Launch Campaign Modal — standalone, renders from any tab */}
         {pendingLaunchVideo && <LaunchCampaignModal video={pendingLaunchVideo} brand={brand} profile={profile ?? brand} onClose={() => setPendingLaunchVideo(null)} setBrandTab={setBrandTab} />}
