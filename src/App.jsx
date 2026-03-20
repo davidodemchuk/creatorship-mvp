@@ -8352,7 +8352,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           </div>
 
-          {((!caiData?.creatives || caiData.creatives.length === 0) || caiData?.creatives?.every(c => c.status === 'deleted' || c.status === 'archived')) && (
+          {!caiData?.campaign?.id && caiData?.processingStatus !== 'processing' && !deepDiveLoading && !activating && (
             <div className="gl" style={{ padding: 28, borderRadius: 16, textAlign: 'center', marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>&#128640;</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Ready to launch</h3>
