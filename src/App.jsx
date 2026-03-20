@@ -7458,6 +7458,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(true);
   const [deepDivePhase, setDeepDivePhase] = useState(''); // 'scanning'|'analyzing'|'writing'
+  const [buildPhase, setBuildPhase] = useState(null); // null | 'deep-dive' | 'activating' | 'uploading' | 'complete' | 'failed'
   const toast = useToast();
   const userRole = getBrandUserRole();
   const canDoAction = (action) => canDo(userRole, action);
@@ -7498,6 +7499,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const [showContentLib, setShowContentLib] = useState(false);
   const caiSubTab = activeCaiTab || 'dashboard';
   const setCaiSubTab = setCaiTab || (() => {});
+  useEffect(() => {
+    if (caiSubTab !== 'dashboard' && (buildPhase === 'complete' || buildPhase === 'failed')) {
+      setBuildPhase(null);
+      setActivationResult(null);
+    }
+  }, [caiSubTab, buildPhase]);
   const [expandedCamp, setExpandedCamp] = useState(false);
   const [expandedCamps, setExpandedCamps] = useState({});
   const [showNewCampaign, setShowNewCampaign] = useState(false);
@@ -7681,6 +7688,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const runDeepDive = async () => {
     setDeepDiveLoading(true);
     setDeepDivePhase('scanning');
+    setBuildPhase('deep-dive');
     if (!canDoAction('run_deep_dive')) {
       toast.error('You need Editor access to run deep dives.');
       setDeepDiveLoading(false);
@@ -7941,10 +7949,19 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
   // Reset deep dive (testing)
   const resetDeepDive = () => { setDeepDive(null); setExpandedMetric(null); setMode(null); setActivationResult(null); setTerminalLines([]); };
+  const startBuildFlow = () => {
+    setCaiSubTab('dashboard');
+    setActivationResult(null);
+    setActivationLines([]);
+    setBuildPhase('deep-dive');
+    setTimeout(() => { runDeepDive(); }, 0);
+  };
   const rerunDeepDive = () => {
     if (brand?.id) localStorage.removeItem('cai_dd_ran_' + brand.id);
     setDeepDiveLoading(true); setDeepDive(null); setMode(null); setActivationResult(null);
-    runDeepDive();
+    setCaiSubTab('dashboard');
+    setBuildPhase('deep-dive');
+    setTimeout(() => { runDeepDive(); }, 0);
   };
 
   // Activate CAi (auto mode) — with live terminal
@@ -7995,6 +8012,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       console.log('[activate] Health check failed, proceeding anyway:', hcErr.message);
     }
     setActivating(true);
+    setBuildPhase('activating');
     if (setBuildInProgress) setBuildInProgress(true);
     if (setBuildInfo) setBuildInfo({ phase: 'activating', videoCount: (deepDive?.analysis?.topPicks || []).length || (tiktokVideos?.length || 0), startedAt: Date.now() });
     setActivationLines([]);
@@ -8043,6 +8061,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       try { d = await r.json(); } catch (_) {}
 
       if (d.success) {
+        setBuildPhase('uploading');
         for (const step of (d.steps || [])) {
           if (step.step === 'campaign') addLine('  ✓ Campaign created: ' + (step.name || ''), 'success');
           else if (step.step === 'adset') addLine('  ✓ Ad set: Advantage+ broad targeting (US 18-65)', 'success');
@@ -8134,6 +8153,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         }
 
         setActivationResult(d);
+        setBuildPhase('complete');
         // Auto-navigate to campaigns after showing completion state
         setTimeout(() => {
           if (typeof setCaiSubTab === 'function') setCaiSubTab('campaigns');
@@ -8143,15 +8163,18 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         if (d.needsBilling || r.status === 402) {
           addLine('  ✗ ' + (d.error || 'Connect Stripe to continue'), 'error');
           setActivationResult({ error: d.error || 'Connect Stripe to continue launching campaigns. Your first campaign was free!' });
+          setBuildPhase('failed');
           try { setBrandTab('settings'); window.location.hash = 'account/billing'; } catch (_) {}
         } else {
           addLine('  ✗ ' + (d.error || 'Activation failed'), 'error');
           setActivationResult(d.error ? { error: d.error } : d);
+          setBuildPhase('failed');
         }
       }
     } catch (e) {
       addLine('  ✗ Network error: ' + e.message, 'error');
       setActivationResult({ error: e.message });
+      setBuildPhase('failed');
     }
     setActivating(false);
     if (setBuildInProgress) setBuildInProgress(false);
@@ -8251,7 +8274,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ DASHBOARD TAB ═══ */}
         {caiSubTab === 'dashboard' && (<>
-          {(deepDiveLoading || activating) && (
+          {buildPhase && buildPhase !== 'complete' && buildPhase !== 'failed' && (
             <div className="gl" style={{ padding: 28, borderRadius: 16, marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'spin 2s linear infinite' }}>
@@ -8259,10 +8282,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--cs-t0)', marginBottom: 4 }}>
-                    {deepDivePhase === 'scanning' ? 'Scanning your TikTok content...' :
-                     deepDivePhase === 'analyzing' ? 'CAi is analyzing your videos...' :
-                     deepDivePhase === 'writing' ? 'Writing ad copy and building campaign...' :
-                     activating ? 'Creating campaign on Meta...' :
+                    {buildPhase === 'deep-dive' ? 'Scanning your TikTok content and analyzing videos...' :
+                     buildPhase === 'activating' ? 'Creating campaign on Meta and uploading videos...' :
+                     buildPhase === 'uploading' ? 'Videos are uploading to Meta. This takes 1-2 minutes...' :
                      'CAi is working...'}
                   </div>
                   <div style={{ fontSize: 13, color: 'var(--cs-t3)' }}>
@@ -8280,7 +8302,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           )}
 
-          {activationResult && !deepDiveLoading && !activating && (
+          {activationResult && (buildPhase === 'complete' || buildPhase === 'failed') && (
             <div className="gl" style={{ padding: 28, borderRadius: 16, marginBottom: 24, textAlign: 'center', background: activationResult.error ? 'rgba(239,68,68,0.08)' : 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(6,104,225,0.1))', border: '1px solid ' + (activationResult.error ? 'rgba(239,68,68,0.25)' : 'rgba(52,211,153,0.25)') }}>
               {activationResult.error ? (
                 <>
@@ -8290,7 +8312,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     {activationResult.message || activationResult.error || 'Something went wrong. Your analysis was saved.'}
                   </p>
                   <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <button onClick={() => { setActivationResult(null); setActivationLines([]); if (typeof runDeepDive === 'function') runDeepDive(); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
+                    <button onClick={() => { setActivationResult(null); setActivationLines([]); setBuildPhase(null); if (typeof startBuildFlow === 'function') startBuildFlow(); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
                     <button onClick={() => setCaiSubTab('account')} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Check Settings</button>
                   </div>
                 </>
@@ -8302,8 +8324,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     Your ads are being uploaded to Meta now. The campaign will appear paused — review it and activate when ready.
                   </p>
                   <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <button onClick={() => { setActivationResult(null); setCaiSubTab('campaigns'); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>View Campaign</button>
-                    <button onClick={() => { setActivationResult(null); setCaiSubTab('optimize'); }} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Set Budget & ROAS</button>
+                    <button onClick={() => { setActivationResult(null); setBuildPhase(null); setCaiSubTab('campaigns'); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>View Campaign</button>
+                    <button onClick={() => { setActivationResult(null); setBuildPhase(null); setCaiSubTab('optimize'); }} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Set Budget & ROAS</button>
                   </div>
                 </>
               )}
@@ -8410,14 +8432,14 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           </div>
 
-          {!caiData?.campaign?.id && !deepDiveLoading && !activating && caiData?.processingStatus !== 'processing' && (
+          {!caiData?.campaign?.id && !buildPhase && caiData?.processingStatus !== 'processing' && (
             <div className="gl" style={{ padding: 28, borderRadius: 16, textAlign: 'center', marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>&#128640;</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Ready to launch</h3>
               <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
                 CAi has analyzed your content and found {tiktokVideos?.length || 0} videos. Build a new campaign and CAi will select the best performers, write ad copy, and set up targeting automatically.
               </p>
-              <button onClick={() => { if (typeof runDeepDive === 'function') runDeepDive(); }} style={{
+              <button onClick={() => { if (typeof startBuildFlow === 'function') startBuildFlow(); }} style={{
                 padding: '14px 32px',
                 borderRadius: 12,
                 background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
@@ -8731,7 +8753,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   {sa.modeReason || 'You already have the rights to your brand-owned content. No creator licensing needed — start running ads today.'}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ padding: '16px 14px', borderRadius: 12, border: (sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: (sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
+                  <button type="button" onClick={() => { if (typeof startBuildFlow === 'function') startBuildFlow(); }} style={{ padding: '16px 14px', borderRadius: 12, border: (sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: (sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
                     {(sa.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
                     <div style={{ fontSize: 15, fontWeight: 800, color: (sa.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Let CAi Run</div>
                     <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
@@ -10435,7 +10457,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               {activationResult.message || activationResult.error || 'Something went wrong. Your analysis was saved — try building again.'}
             </p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => { setActivationResult(null); setActivationLines([]); if (typeof runDeepDive === 'function') runDeepDive(); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
+              <button onClick={() => { setActivationResult(null); setActivationLines([]); setBuildPhase(null); if (typeof startBuildFlow === 'function') startBuildFlow(); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
               <button onClick={() => setCaiSubTab('account')} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Check Settings</button>
             </div>
           </div>
@@ -10572,7 +10594,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   <div style={{ textAlign: 'center', marginBottom: 32 }}>
                     <button
                       type="button"
-                      onClick={runDeepDive}
+                      onClick={startBuildFlow}
                       disabled={!canDoAction('run_deep_dive')}
                       style={{ padding: '18px 48px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 17, fontWeight: 800, cursor: !canDoAction('run_deep_dive') ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(155,109,255,.3)', opacity: !canDoAction('run_deep_dive') ? 0.55 : 1 }}
                     >Build My Report + Ad Campaign</button>
@@ -10748,7 +10770,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>CAi found {(sa.topPicks || []).length} creator videos for your products</div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>Your brand doesn't post its own TikTok videos — but creators already are. CAi ranked these by ad potential and can launch them as Meta ads.</div>
               <div style={{ textAlign: 'center' }}>
-                <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 10, border: '2px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 360 }}>
+                <button type="button" onClick={() => { if (typeof startBuildFlow === 'function') startBuildFlow(); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 10, border: '2px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 360 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
                   <div style={{ fontSize: 12, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
                 </button>
@@ -10792,7 +10814,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <div style={{ fontSize: 16, fontWeight: 800, color: '#c4a0ff', marginBottom: 6 }}>You own these videos — launch them as Meta ads now</div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>{sa.modeReason || 'No creator licensing needed. Start running ads on your own content today.'}</div>
               <div style={{ textAlign: 'center' }}>
-                  <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 10, border: '2px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 360 }}>
+                  <button type="button" onClick={() => { if (typeof startBuildFlow === 'function') startBuildFlow(); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 10, border: '2px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 360 }}>
                     <div style={{ fontSize: 16, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
                     <div style={{ fontSize: 12, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
                   </button>
