@@ -1611,10 +1611,6 @@ app.get('/auth/tiktok/callback', async (req, res) => {
               await saveCreators(creators);
             }
 
-            try {
-              if (res.cookie) res.cookie('creatorship_creator_id', creator.id, { httpOnly: true, sameSite: 'none', secure: process.env.NODE_ENV === 'production' });
-            } catch (_) {}
-
             const front = process.env.FRONTEND_URL || 'http://localhost:5173';
             return res.redirect(front + '/creator#home');
           }
@@ -1692,7 +1688,7 @@ function creatorNameMatches(a, b) {
 // ═══════════════════════════════════════════════════════════
 async function getCreatorFromAuth(req) {
   const auth = req.headers.authorization || '';
-  const token = (auth.match(/^\s*Bearer\s+(.+)$/i) || [])[1] || req.cookies?.creatorship_creator_id || req.query.creatorId;
+  const token = (auth.match(/^\s*Bearer\s+(.+)$/i) || [])[1] || req.query.creatorId;
   if (!token) return null;
   const creators = await loadCreators();
   return creators.find(c => c.id === token) || null;

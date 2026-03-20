@@ -1230,6 +1230,8 @@ function Homepage({ nav }) {
   BRAND DASHBOARD — Full working product
 ══════════════════════════════════════════════════════*/
 function BrandDashboard({nav}){
+  const batchTimersRef=useRef([]);
+  useEffect(()=>()=>{batchTimersRef.current.forEach(t=>clearTimeout(t));batchTimersRef.current=[];},[]);
   const[tab,setTab]=useState("scan");
   const[metaToken,setMetaToken]=useState(KEYS.metaToken);
   const[brandName,setBrandName]=useState("");
@@ -1812,7 +1814,7 @@ function BrandDashboard({nav}){
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             <button onClick={()=>{const s={};q.forEach(v=>{s[v.id]=true});setSelected(s)}} style={{padding:"5px 12px",background:C.blue+"10",border:"1px solid "+C.blue+"18",borderRadius:6,color:C.text,fontSize: 13,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}>Select All</button>
             <span style={{fontSize: 13,color:C.dim}}>{Object.values(selected).filter(Boolean).length} selected</span>
-            {Object.values(selected).filter(Boolean).length>0&&metaToken&&<button onClick={()=>{Object.keys(selected).filter(k=>selected[k]).forEach((id,i)=>{const v=q.find(x=>x.id===id);if(v&&!launched[id])setTimeout(()=>launchDeal(v),i*5000)})}} style={{padding:"7px 18px",background:C.blue,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Launch {Object.values(selected).filter(Boolean).length}</button>}
+            {Object.values(selected).filter(Boolean).length>0&&metaToken&&<button onClick={()=>{batchTimersRef.current.forEach(t=>clearTimeout(t));batchTimersRef.current=[];Object.keys(selected).filter(k=>selected[k]).forEach((id,i)=>{const v=q.find(x=>x.id===id);if(v&&!launched[id]){const t=setTimeout(()=>launchDeal(v),i*5000);batchTimersRef.current.push(t)}})}} style={{padding:"7px 18px",background:C.blue,color:C.bg,border:"none",borderRadius:8,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Launch {Object.values(selected).filter(Boolean).length}</button>}
           </div>
         </div>}
         {q.length>0&&<div style={{fontSize: 14,fontWeight:700,color:C.green,letterSpacing:".05em",marginBottom:10}}>QUALIFIED — {q.length} videos (views ≥ {fN(minV)} · CAi Score ≥ 40)</div>}
@@ -3487,21 +3489,27 @@ function CreatorPortal({ nav, onLogout, creator, setCreator }) {
     if(tab==='dashboard'){ try{ localStorage.setItem('creatorship_visited','true'); }catch(_){} }
   },[tab]);
 
+  const dealsFetchedRef=useRef(false);
+  const earningsFetchedRef=useRef(false);
+  const stripeFetchedRef=useRef(false);
   useEffect(()=>{
     if(!ttStatus.connected||(tab!=="campaigns"&&tab!=="earnings"&&tab!=="dashboard"))return;
+    if(dealsFetchedRef.current&&deals)return;
     setLoadingDeals(true);
-    fetch("/api/creator/deals",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>{setDeals(d&&!d.error?d:null);setLoadingDeals(false)}).catch(()=>setLoadingDeals(false));
+    fetch("/api/creator/deals",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>{setDeals(d&&!d.error?d:null);dealsFetchedRef.current=true;setLoadingDeals(false)}).catch(()=>setLoadingDeals(false));
   },[ttStatus.connected,tab]);
 
   useEffect(()=>{
     if(!ttStatus.connected||tab!=="earnings")return;
+    if(earningsFetchedRef.current&&earnings)return;
     setLoadingEarnings(true);
-    fetch("/api/creator/earnings",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>{setEarnings(d&&!d.error?d:null);setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
+    fetch("/api/creator/earnings",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>{setEarnings(d&&!d.error?d:null);earningsFetchedRef.current=true;setLoadingEarnings(false)}).catch(()=>setLoadingEarnings(false));
   },[ttStatus.connected,tab]);
 
   useEffect(()=>{
     if(!ttStatus.connected||(tab!=="earnings"&&tab!=="dashboard"))return;
-    fetch("/api/creator/stripe-status",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>setStripeStatus(prev=>((d&&d.connected===true)?d:(prev&&prev.connected===true?prev:(d||null))))).catch(()=>setStripeStatus(prev=>prev&&prev.connected===true?prev:null));
+    if(stripeFetchedRef.current&&stripeStatus)return;
+    fetch("/api/creator/stripe-status",{headers:getCreatorAuthHeaders()}).then(r=>r.json()).then(d=>{setStripeStatus(prev=>((d&&d.connected===true)?d:(prev&&prev.connected===true?prev:(d||null))));stripeFetchedRef.current=true;}).catch(()=>setStripeStatus(prev=>prev&&prev.connected===true?prev:null));
   },[ttStatus.connected,tab]);
 
   useEffect(()=>{
@@ -6805,6 +6813,8 @@ function BrandMessagesTab({ brandId, brand, messagesThread, setMessagesThread })
 
 
 function LaunchCampaignModal({ video, brand, profile, onClose, setBrandTab, initialCopy, initialBudget }) {
+  const msgTimerRef = useRef(null);
+  useEffect(() => () => { if (msgTimerRef.current) clearInterval(msgTimerRef.current); }, []);
   // === STATE ===
   const [phase, setPhase] = useState('building'); // 'building' | 'ready' | 'launching' | 'done' | 'error'
   const [campaign, setCampaign] = useState(null); // AI-built campaign config
@@ -6956,9 +6966,11 @@ function LaunchCampaignModal({ video, brand, profile, onClose, setBrandTab, init
       { text: '  Attaching ad to campaign...', delay: 2000 },
     ];
     let msgIdx = 0;
+    if (msgTimerRef.current) clearInterval(msgTimerRef.current);
     const msgTimer = setInterval(() => {
       if (msgIdx < progressMsgs.length) { add(progressMsgs[msgIdx].text, 'data'); msgIdx++; }
     }, 2500);
+    msgTimerRef.current = msgTimer;
 
     try {
       const storeDomain = (profile?.storeName || brand?.storeName || 'your-store').toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
