@@ -3082,7 +3082,7 @@ function CreatorHomeTab({ creator, ttStatus, stripeStatus, deals, setTab, fire, 
             )}
           </div>
           <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>Welcome back, {displayName} 👋</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>Welcome, {displayName} 👋</h1>
             <div style={{ fontSize: 14, color: '#0668E1', fontWeight: 600 }}>@{displayHandle}</div>
           </div>
         </div>
@@ -4385,7 +4385,7 @@ function BrandHomeTab({ brand, profile, creatorsCount, setBrandTab }) {
             {(brand?.brandName || 'B').charAt(0).toUpperCase()}
           </div>
           <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>Welcome back, {brand?.brandName || 'Brand'} 👋</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>Welcome, {brand?.brandName || 'Brand'} 👋</h1>
             <div style={{ fontSize: 13, color: C.sub }}>
               {hasTiktokShop ? (
                 <>{brand?.email || ''} · TikTok Shop connected</>
@@ -4606,7 +4606,7 @@ function BrandOverviewOnboarding({ brand, profile, storeDisplay, creatorsCount, 
               onError={e => { e.target.style.display='none'; }}
             />
           )}
-          <h1 className="heading-h3" style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.text }}>Welcome back, {(profile?.brandName || brand?.brandName || 'there').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</h1>
+          <h1 className="heading-h3" style={{ fontSize: 22, fontWeight: 800, margin: 0, color: C.text }}>Welcome, {(profile?.brandName || brand?.brandName || 'there').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</h1>
           <div style={{ fontSize: 13, color: C.sub, marginTop: 4 }}>{activeCampaignsCount > 0 ? activeCampaignsCount + ' active campaign' + (activeCampaignsCount !== 1 ? 's' : '') + ' · ' : ''}{creatorsCount > 0 ? creatorsCount + ' creators discovered' : 'Discover creators making content about your products.'}</div>
         </div>
       </div>
@@ -11607,7 +11607,19 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 }
 
 function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
-  const initialBrandTab = (() => { try { const caiHashes = ['dashboard','campaigns','content','analysis','optimize']; if (typeof window === 'undefined') return 'ai-plans'; const h = (window.location.hash || '').replace(/^#/, ''); if (caiHashes.includes(h)) return 'ai-plans'; if (h === 'account' || (h && h.startsWith('account/'))) return 'settings'; if (h && BRAND_TAB_IDS.includes(h)) return h; return initialTab && BRAND_TAB_IDS.includes(initialTab) ? initialTab : 'ai-plans'; } catch (_) { return 'ai-plans'; } })();
+  const initialBrandTab = (() => {
+    try {
+      const caiHashes = ['dashboard','campaigns','content','analysis','optimize'];
+      // Override: new brands always start on home.
+      if (brand && !brand.hasMetaToken && !brand.adAccount) return 'home';
+      if (typeof window === 'undefined') return 'ai-plans';
+      const h = (window.location.hash || '').replace(/^#/, '');
+      if (caiHashes.includes(h)) return 'ai-plans';
+      if (h === 'account' || (h && h.startsWith('account/'))) return 'settings';
+      if (h && BRAND_TAB_IDS.includes(h)) return h;
+      return initialTab && BRAND_TAB_IDS.includes(initialTab) ? initialTab : 'ai-plans';
+    } catch (_) { return 'ai-plans'; }
+  })();
   const [brandTab, setBrandTabState] = useState(initialBrandTab);
   useEffect(() => {
     if (!brand) return;
@@ -11616,6 +11628,13 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
     if (!hasCompletedSetup && brandTab !== 'settings' && brandTab !== 'home') {
       setBrandTabState('home');
       try { window.location.hash = '#home'; } catch (_) {}
+    }
+  }, [brand?.hasMetaToken, brand?.adAccount, brandTab]);
+  useEffect(() => {
+    if (brand?.hasMetaToken && brand?.adAccount && brandTab === 'home') {
+      setBrandTabState('ai-plans');
+      setActiveCaiTab('dashboard');
+      window.location.hash = 'dashboard';
     }
   }, [brand?.hasMetaToken, brand?.adAccount, brandTab]);
   const setBrandTab = useCallback((tabId) => {
@@ -12006,7 +12025,10 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           { id: 'analysis', label: 'Analysis' },
           { id: 'optimize', label: 'Optimize' },
           { id: null, label: 'Account', isAccount: true },
-        ].map(t => {
+        ].filter(t => {
+          if (t.id === 'dashboard' || t.isAccount) return true;
+          return !!(brand?.hasMetaToken && brand?.adAccount);
+        }).map(t => {
           const isActive = t.isAccount ? brandTab === 'settings' : activeCaiTab === t.id;
           return (
             <button key={t.id ?? 'account'} onClick={() => t.isAccount ? setCaiTab(null) : setCaiTab(t.id)} style={{padding:'8px 14px',background:isActive?'rgba(155,109,255,.12)':'transparent',border:'none',borderRadius:6,color:isActive?'#fff':'var(--cs-t4)',fontSize:13,fontWeight:isActive?600:500,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',whiteSpace:'nowrap'}}>{t.label}</button>

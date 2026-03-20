@@ -570,6 +570,7 @@ const forgotPasswordLimiter = rateLimit({
 // ═══ JWT AUTH ═══
 // ── Role-based access control ──
 const ROLE_HIERARCHY = { owner: 4, admin: 3, editor: 2, viewer: 1 };
+const REVOKED_BRAND_TOKENS = new Set();
 
 function hasPermission(userRole, requiredRole) {
   return (ROLE_HIERARCHY[userRole] || 0) >= (ROLE_HIERARCHY[requiredRole] || 99);
@@ -603,6 +604,9 @@ function authBrand(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
   if (!token) return res.status(401).json({ error: 'Authentication required', code: 'NO_TOKEN' });
+  if (REVOKED_BRAND_TOKENS.has(token)) {
+    return res.status(401).json({ error: 'Session revoked — please log in again', code: 'TOKEN_REVOKED' });
+  }
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     req.brandAuth = { brandId: payload.brandId, email: payload.email, role: payload.role || 'owner' };
@@ -2673,14 +2677,19 @@ app.delete('/api/brand/account', requireRole('owner'), async (req, res) => {
       }
     }
 
-    // Now delete the brand record itself (by id, not email)
+    // Now delete the brand record itself (hard delete by id)
     if (!supabase) return res.status(503).json({ error: 'Database not configured' });
     const { error } = await supabase.from('brands').delete().eq('id', brandId);
     if (error) return res.json({ error: error.message || 'Failed to delete brand' });
 
+    // Invalidate current JWT token after account deletion
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (token) REVOKED_BRAND_TOKENS.add(token);
+
     console.log('[brand-delete] Brand account deleted: ' + email);
     await auditLogAction('account_deleted', brandId, { email });
-    res.json({ success: true });
+    res.json({ success: true, loggedOut: true });
   } catch (e) {
     console.error('[brand-delete] Error:', e.message);
     res.json({ error: e.message || 'Failed to delete account' });
