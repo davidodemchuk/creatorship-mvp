@@ -8129,6 +8129,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         }
 
         setActivationResult(d);
+        // Auto-navigate to campaigns after showing completion state
+        setTimeout(() => {
+          if (typeof setCaiSubTab === 'function') setCaiSubTab('campaigns');
+        }, 3000);
         if (typeof refreshProfile === 'function') refreshProfile();
       } else {
         if (d.needsBilling || r.status === 402) {
@@ -10356,12 +10360,30 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             </div>
           )}
-        {!activating && activationResult?.success && (
-          <button onClick={() => { setActivationResult(null); setActivationLines([]); }} style={{ width: '100%', marginTop: 12, padding: '14px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Open CAi Dashboard</button>
+        {!activating && activationResult && !activationResult.error && (
+          <div className="gl" style={{ padding: 28, borderRadius: 16, textAlign: 'center', marginTop: 24, background: 'linear-gradient(135deg, rgba(52,211,153,0.1), rgba(6,104,225,0.1))', border: '1px solid rgba(52,211,153,0.25)' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>&#10003;</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#34D399', marginBottom: 8 }}>Campaign Built Successfully</h3>
+            <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+              {activationResult.adsCreated || 0} ads created and uploaded to Meta. Your campaign is paused — activate it when you're ready to go live.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => setCaiSubTab('campaigns')} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>View Campaign</button>
+              <button onClick={() => setCaiSubTab('analysis')} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>View Analysis</button>
+            </div>
+          </div>
         )}
-        {!activating && activationResult?.error && (
-          <div style={{ marginTop: 12, textAlign: 'center' }}>
-            <button onClick={() => { setActivationResult(null); setActivationLines([]); setActivating(false); }} style={{ padding: '10px 24px', background: 'none', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t3)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Back</button>
+        {!activating && activationResult && activationResult.error && (
+          <div className="gl" style={{ padding: 28, borderRadius: 16, textAlign: 'center', marginTop: 24, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>&#9888;</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#ef4444', marginBottom: 8 }}>Campaign Build Failed</h3>
+            <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+              {activationResult.message || activationResult.error || 'Something went wrong. Your analysis was saved — try building again.'}
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => { setActivationResult(null); setActivationLines([]); if (typeof runDeepDive === 'function') runDeepDive(); }} style={{ padding: '12px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
+              <button onClick={() => setCaiSubTab('account')} style={{ padding: '12px 24px', borderRadius: 10, background: 'var(--cs-a06)', color: 'var(--cs-t2)', border: '1px solid var(--cs-a10)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Check Settings</button>
+            </div>
           </div>
         )}
       </div>
