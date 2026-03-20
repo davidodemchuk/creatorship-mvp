@@ -5107,7 +5107,7 @@ app.get('/auth/meta', async (req, res) => {
   }
   global._csrfTokens.set(csrfToken, { email: brandEmail, created: now });
   const state = Buffer.from(JSON.stringify({ email: brandEmail, csrf: csrfToken })).toString('base64');
-  const scopes = 'ads_management,ads_read,pages_show_list,pages_read_engagement';
+  const scopes = 'pages_show_list,pages_read_engagement,ads_management,ads_read,business_management,public_profile,email';
   const url = 'https://www.facebook.com/v22.0/dialog/oauth?' +
     'client_id=' + META_APP_ID +
     '&redirect_uri=' + encodeURIComponent(META_REDIRECT_URI) +
@@ -5185,7 +5185,7 @@ app.get('/auth/meta/callback', async (req, res) => {
     // Fetch pages immediately after we have the token so metaPages is always saved
     let pages = [];
     try {
-      const pagesRes = await fetch('https://graph.facebook.com/v18.0/me/accounts?fields=id,name,access_token,picture.type(square)&access_token=' + encodeURIComponent(longToken));
+      const pagesRes = await fetch('https://graph.facebook.com/v22.0/me/accounts?fields=id,name,access_token,picture.type(square)&access_token=' + encodeURIComponent(longToken));
       const pagesData = await pagesRes.json();
       pages = Array.isArray(pagesData.data) ? pagesData.data : [];
     } catch (err) {
@@ -5288,8 +5288,8 @@ app.get('/api/meta-pages', authBrand, async (req, res) => {
 
     const fetchMeta = async (token) => {
       const [pagesRes, adAccountsRes] = await Promise.all([
-        fetch('https://graph.facebook.com/v18.0/me/accounts?fields=id,name,category,access_token,picture.type(square)&access_token=' + encodeURIComponent(token)),
-        fetch('https://graph.facebook.com/v18.0/me/adaccounts?fields=id,name,account_id&access_token=' + encodeURIComponent(token)),
+        fetch('https://graph.facebook.com/v22.0/me/accounts?fields=id,name,category,access_token,picture.type(square)&access_token=' + encodeURIComponent(token)),
+        fetch('https://graph.facebook.com/v22.0/me/adaccounts?fields=id,name,account_id&access_token=' + encodeURIComponent(token)),
       ]);
       const pagesData = await pagesRes.json().catch(() => ({}));
       const adAccountsData = await adAccountsRes.json().catch(() => ({}));
@@ -5316,6 +5316,7 @@ app.get('/api/meta-pages', authBrand, async (req, res) => {
           pageId: p.id,
           pageName: p.name,
           avatarUrl: p.picture?.data?.url || null,
+          access_token: p.access_token || null,
         }))
       : [];
 
@@ -5335,13 +5336,12 @@ app.get('/api/meta-pages', authBrand, async (req, res) => {
         const brand = await getBrand(brandId, email);
         if (brand) {
           brand.metaPages = pages.map(p => ({ id: p.pageId, name: p.pageName, picture: p.avatarUrl }));
-          // Auto-select first page if none selected
-          if (!brand.pageId && !brand.metaPageId && pages.length > 0) {
-            brand.pageId = pages[0].pageId;
-            brand.metaPageId = pages[0].pageId;
-            brand.metaPageName = pages[0].pageName;
-            console.log('[meta-pages] Auto-selected page:', pages[0].pageName, pages[0].pageId);
-          }
+          // Always save first page so user can re-select
+          brand.pageId = pages[0].pageId;
+          brand.metaPageId = pages[0].pageId;
+          brand.metaPageName = pages[0].pageName;
+          if (pages[0].access_token) brand.metaPageAccessToken = pages[0].access_token;
+          console.log('[meta-pages] Saved page:', pages[0].pageName, pages[0].pageId);
           await saveBrand(brand);
         }
       } catch (saveErr) { console.log('[meta-pages] Save error:', saveErr.message); }
