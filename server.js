@@ -1512,8 +1512,8 @@ app.get('/auth/tiktok', async (req, res) => {
 
 app.get('/auth/tiktok/callback', async (req, res) => {
   const { code, state: stateRaw, error: err, error_description } = req.query;
-  if (err) return res.send('<h1>' + err + '</h1><p>' + (error_description || '') + '</p><a href="' + (process.env.FRONTEND_URL || 'http://localhost:5173') + '">Back</a>');
-  if (!code) return res.send('<h1>No code</h1><pre>' + JSON.stringify(req.query) + '</pre>');
+  if (err) return res.send('<h1>' + escapeHtml(String(err)) + '</h1><p>' + escapeHtml(String(error_description || '')) + '</p><a href="' + (process.env.FRONTEND_URL || 'http://localhost:5173') + '">Back</a>');
+  if (!code) return res.send('<h1>No code</h1><pre>' + escapeHtml(JSON.stringify(req.query)) + '</pre>');
   let creatorId = null;
   try { if (stateRaw) creatorId = JSON.parse(Buffer.from(stateRaw, 'base64url').toString()).creatorId; } catch (_) {}
 
@@ -2990,7 +2990,7 @@ app.get('/api/billing/status', authBrand, requireRole('admin'), async (req, res)
 });
 
 // Calculate and charge for a billing period
-app.post('/api/billing/charge-period', async (req, res) => {
+app.post('/api/billing/charge-period', checkAdmin, async (req, res) => {
   if (!stripe) return res.status(503).json({ error: 'Stripe is not configured' });
   const { brandId, email, periodStart, periodEnd } = req.body;
   const brand = await getBrand(brandId, email);
@@ -3040,10 +3040,9 @@ app.post('/api/billing/charge-period', async (req, res) => {
 });
 
 // Billing history
-app.get('/api/billing/history', async (req, res) => {
-  const { brandId, email } = req.query;
-  const brand = await getBrand(brandId, email);
-  if (!brand) return res.json({ error: 'Brand not found' });
+app.get('/api/billing/history', authBrand, async (req, res) => {
+  const brand = await getBrandById(req.brandAuth.brandId);
+  if (!brand) return res.status(404).json({ error: 'Brand not found' });
   const records = await loadBillingRecords(brand.id);
   let stripeInvoices = [];
   if (stripe && brand.stripeCustomerId) {
@@ -3400,7 +3399,7 @@ app.post('/api/brand/meta-audit', authBrand, async (req, res) => {
 });
 
 // ═══ Meta Token Health Check ═══
-app.post('/api/billing/verify-meta-access', async (req, res) => {
+app.post('/api/billing/verify-meta-access', checkAdmin, async (req, res) => {
   const brands = await loadBrands();
   const activeBrands = brands.filter(b => b.cai?.isActive || b.billingEnabled);
   const results = [];
@@ -3826,11 +3825,11 @@ app.post('/api/creator/support', async (req, res) => {
         reply_to: creator.email || undefined,
         subject: `[Creator Support] ${subject}`,
         html: `
-          <p><strong>From:</strong> ${creator.displayName || creator.email || 'unknown'} (${creator.tiktokHandle || '—'})</p>
-          <p><strong>Creator ID:</strong> ${creator.id}</p>
-          <p><strong>Subject:</strong> ${subject}</p>
+          <p><strong>From:</strong> ${escapeHtml(String(creator.displayName || creator.email || 'unknown'))} (${escapeHtml(String(creator.tiktokHandle || '—'))})</p>
+          <p><strong>Creator ID:</strong> ${escapeHtml(String(creator.id))}</p>
+          <p><strong>Subject:</strong> ${escapeHtml(String(subject))}</p>
           <hr/>
-          <p>${String(message).replace(/\n/g, '<br/>')}</p>
+          <p>${escapeHtml(String(message)).replace(/\n/g, '<br/>')}</p>
         `
       })
     });
@@ -3848,8 +3847,9 @@ app.post('/api/creator/support', async (req, res) => {
 });
 
 app.delete('/api/creator/account', async (req, res) => {
-  const { creatorId } = req.body;
-  if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+  const authedCreator = await getCreatorFromAuth(req);
+  if (!authedCreator) return res.status(401).json({ error: 'Unauthorized' });
+  const creatorId = authedCreator.id;
   const creators = await loadCreators();
   const idx = creators.findIndex(c => c.id === creatorId);
   if (idx === -1) return res.status(404).json({ error: 'Creator not found' });
@@ -4096,8 +4096,7 @@ app.post('/api/brand/invites/clear', async (req, res) => {
   try { invites = loadJson(invitesPath) || []; } catch (_) { invites = []; }
   const remaining = invites.filter(i => i.brandId !== brandId);
   saveJson(invitesPath, remaining);
-      logActivity('creator_invite', { brandId: req.body.brandId, tiktokHandle: req.body.tiktokHandle, email: req.body.email });
-    res.json({ success: true, cleared: invites.length - remaining.length });
+  res.json({ success: true, cleared: invites.length - remaining.length });
 });
 
 app.get('/api/brand/uploads', async (req, res) => {
