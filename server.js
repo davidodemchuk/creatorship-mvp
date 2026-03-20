@@ -1825,7 +1825,9 @@ app.get('/api/creator/earnings', async (req, res) => {
 });
 
 app.post('/api/tiktok/disconnect', async (req, res) => {
-  const creatorId = req.body?.creatorId;
+  const authedCreator = await getCreatorFromAuth(req);
+  if (!authedCreator) return res.status(401).json({ error: 'Unauthorized' });
+  const creatorId = authedCreator.id;
   if (creatorId) {
     const creators = await loadCreators();
     const idx = creators.findIndex(c => c.id === creatorId);
@@ -2653,20 +2655,23 @@ app.delete('/api/brand/account', requireRole('owner'), async (req, res) => {
       }
 
       // Also clean up related Supabase tables
-      try {
-        await supabase.from('content_licenses').delete().eq('brand_id', brand.id);
-        await supabase.from('messages').delete().eq('brand_id', brand.id);
-        await supabase.from('campaign_registry').delete().eq('brand_id', brand.id);
-        await supabase.from('billing').delete().eq('brand_id', brand.id);
-        await supabase.from('billing_audit_log').delete().eq('brand_id', brand.id);
-        await supabase.from('team_members').delete().eq('brand_id', brand.id);
-        await supabase.from('creator_earnings').delete().eq('brand_id', brand.id);
-      } catch (cleanupErr) {
-        console.error('[brand-delete] Related table cleanup error:', cleanupErr.message);
+      if (supabase) {
+        try {
+          await supabase.from('content_licenses').delete().eq('brand_id', brand.id);
+          await supabase.from('messages').delete().eq('brand_id', brand.id);
+          await supabase.from('campaign_registry').delete().eq('brand_id', brand.id);
+          await supabase.from('billing').delete().eq('brand_id', brand.id);
+          await supabase.from('billing_audit_log').delete().eq('brand_id', brand.id);
+          await supabase.from('team_members').delete().eq('brand_id', brand.id);
+          await supabase.from('creator_earnings').delete().eq('brand_id', brand.id);
+        } catch (cleanupErr) {
+          console.error('[brand-delete] Related table cleanup error:', cleanupErr.message);
+        }
       }
     }
 
     // Now delete the brand record itself (by id, not email)
+    if (!supabase) return res.status(503).json({ error: 'Database not configured' });
     const { error } = await supabase.from('brands').delete().eq('id', brandId);
     if (error) return res.json({ error: error.message || 'Failed to delete brand' });
 
@@ -3600,7 +3605,7 @@ async function migratePlaintextPasswords() {
       brandsChanged = true;
     }
   }
-  if (brandsChanged) await await saveBrands(brands);
+  if (brandsChanged) await saveBrands(brands);
 
   const creators = await loadCreators();
   let creatorsChanged = false;
@@ -3615,7 +3620,7 @@ async function migratePlaintextPasswords() {
       creatorsChanged = true;
     }
   }
-  if (creatorsChanged) await await saveCreators(creators);
+  if (creatorsChanged) await saveCreators(creators);
 
   console.log(`[auth] migrated ${migrated} passwords to bcrypt`);
 }
@@ -3746,8 +3751,9 @@ app.get('/api/creator/public/:handle', async (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // ═══ CREATOR SETTINGS ═══
 app.get('/api/creator/profile', async (req, res) => {
-  const { creatorId } = req.query;
-  if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+  const authedCreator = await getCreatorFromAuth(req);
+  if (!authedCreator) return res.status(401).json({ error: 'Unauthorized' });
+  const creatorId = authedCreator.id;
   const creators = await loadCreators();
   const creator = creators.find(c => c.id === creatorId);
   if (!creator) return res.status(404).json({ error: 'Creator not found' });
@@ -3768,8 +3774,10 @@ app.get('/api/creator/profile', async (req, res) => {
 });
 
 app.post('/api/creator/update-profile', async (req, res) => {
-  const { creatorId, displayName, tiktokHandle, minCommission, tiktokAvatar, tiktokFollowers, tiktokVideos, enrichedProfile } = req.body;
-  if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+  const authedCreator = await getCreatorFromAuth(req);
+  if (!authedCreator) return res.status(401).json({ error: 'Unauthorized' });
+  const { displayName, tiktokHandle, minCommission, tiktokAvatar, tiktokFollowers, tiktokVideos, enrichedProfile } = req.body;
+  const creatorId = authedCreator.id;
   const creators = await loadCreators();
   const idx = creators.findIndex(c => c.id === creatorId);
   if (idx === -1) return res.status(404).json({ error: 'Creator not found' });
@@ -3785,8 +3793,10 @@ app.post('/api/creator/update-profile', async (req, res) => {
 });
 
 app.post('/api/creator/change-password', async (req, res) => {
-  const { creatorId, currentPassword, newPassword } = req.body;
-  if (!creatorId) return res.status(400).json({ error: 'creatorId required' });
+  const authedCreator = await getCreatorFromAuth(req);
+  if (!authedCreator) return res.status(401).json({ error: 'Unauthorized' });
+  const { currentPassword, newPassword } = req.body;
+  const creatorId = authedCreator.id;
   if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current and new password required' });
   if (newPassword.length < 8) return res.status(400).json({ error: 'New password must be at least 8 characters' });
   const creators = await loadCreators();
@@ -3889,6 +3899,16 @@ app.post('/api/messages/send', async (req, res) => {
   let { fromType, fromId, toType, toId, body, creatorHandle } = req.body;
   if (!fromType || !fromId || !toType || !body) {
     return res.status(400).json({ error: 'fromType, fromId, toType, body required' });
+  }
+  // Verify sender identity
+  if (fromType === 'creator') {
+    const authedCreator = await getCreatorFromAuth(req);
+    if (!authedCreator || authedCreator.id !== fromId) return res.status(401).json({ error: 'Unauthorized' });
+  } else if (fromType === 'brand') {
+    const auth = req.headers.authorization || '';
+    const token = (auth.match(/^\s*Bearer\s+(.+)$/i) || [])[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+    try { const decoded = jwt.verify(token, JWT_SECRET); if (decoded.brandId !== fromId) return res.status(401).json({ error: 'Unauthorized' }); } catch (_) { return res.status(401).json({ error: 'Unauthorized' }); }
   }
   const ch = normHandle(creatorHandle || '');
   if (!ch) return res.status(400).json({ error: 'creatorHandle required for thread' });
@@ -7804,7 +7824,7 @@ app.post('/api/cai/create-campaign', authBrand, requireRole('editor'), async (re
       optimization_goal: 'OFFSITE_CONVERSIONS',
       bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
       targeting: JSON.stringify({ geo_locations: { countries: ['US'] }, age_min: 18, age_max: 65 }),
-      promoted_object: JSON.stringify({ pixel_id: brand.pixelId || '', custom_event_type: 'PURCHASE' }),
+      promoted_object: JSON.stringify({ pixel_id: brand.metaPixelId || '', custom_event_type: 'PURCHASE' }),
       status: 'ACTIVE',
       access_token: metaToken,
     };
@@ -8302,7 +8322,7 @@ app.post('/api/cai/poll-performance', authBrand, async (req, res) => {
 });
 
 // Admin: poll all active brands (for cron job)
-app.post('/api/admin/cai-poll-all', async (req, res) => {
+app.post('/api/admin/cai-poll-all', checkAdmin, async (req, res) => {
   const brands = await loadBrands();
   const active = brands.filter(b => b.cai?.isActive && b.metaToken);
   const results = [];
@@ -8314,7 +8334,7 @@ app.post('/api/admin/cai-poll-all', async (req, res) => {
 });
 
 // Admin: send weekly digest NOW (for testing)
-app.post('/api/admin/cai-send-digest', async (req, res) => {
+app.post('/api/admin/cai-send-digest', checkAdmin, async (req, res) => {
   const { brandId } = req.body;
   const brands = brandId ? [await getBrandById(brandId)].filter(Boolean) : (await loadBrands()).filter(b => b.cai?.isActive && b.email);
   const sent = [];

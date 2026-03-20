@@ -5007,9 +5007,14 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
 
 
 
+  // If in creators phase but no cached videos, switch to products
+  const cachedVidsLen = (brand?.tiktokVideosCache || []).length;
+  useEffect(() => { if (phase === 'creators' && cachedVidsLen === 0) setPhase('products'); }, [phase, cachedVidsLen]);
+
   // === CREATOR-FIRST PHASE (default when cached videos exist) ===
   if (phase === 'creators') {
     const cachedVids = brand?.tiktokVideosCache || [];
+    if (cachedVids.length === 0) return null;
     const cGroups = {};
     cachedVids.forEach(v => {
       const h = (v.authorHandle || '').toLowerCase().replace(/^@/, '') || 'unknown';
@@ -5020,11 +5025,6 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
     });
     const sortedCr = Object.values(cGroups).sort((a, b) => b.totalViews - a.totalViews);
     const fN3 = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : String(n||0);
-
-    if (cachedVids.length === 0) {
-      // No cached videos — fall through to products
-      return (() => { setPhase('products'); return null; })() || <div />;
-    }
 
     return <div className="fu">
       <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
