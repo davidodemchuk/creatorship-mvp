@@ -9959,7 +9959,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
             {/* Budget context — volume-first */}
             <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, fontSize: 13, lineHeight: 1.5, background: Math.round(monthlyBudget/30) < 25 ? 'rgba(255,180,0,.05)' : Math.round(monthlyBudget/30) < 50 ? 'rgba(6,104,225,.04)' : Math.round(monthlyBudget/30) < 100 ? 'rgba(52,211,153,.04)' : Math.round(monthlyBudget/30) < 300 ? 'rgba(52,211,153,.06)' : 'rgba(155,109,255,.04)', border: '1px solid ' + (Math.round(monthlyBudget/30) < 25 ? 'rgba(255,180,0,.12)' : Math.round(monthlyBudget/30) < 50 ? 'rgba(6,104,225,.1)' : Math.round(monthlyBudget/30) < 300 ? 'rgba(52,211,153,.1)' : 'rgba(155,109,255,.1)'), color: Math.round(monthlyBudget/30) < 25 ? '#ffb400' : Math.round(monthlyBudget/30) < 50 ? '#4da6ff' : Math.round(monthlyBudget/30) < 300 ? '#34d399' : '#9b6dff' }}>
-              {Math.round(monthlyBudget/30) >= 10 && Math.round(monthlyBudget/30) < 25 && activeCreativeCount > 0 && `Testing phase — ${activeCreativeCount} creatives, let Meta learn.`}
+              {caiData?.isActive && Math.round(monthlyBudget/30) >= 10 && Math.round(monthlyBudget/30) < 25 && activeCreativeCount > 0 && `Testing phase — ${activeCreativeCount} creatives, let Meta learn.`}
               {Math.round(monthlyBudget/30) >= 25 && Math.round(monthlyBudget/30) < 50 && 'Solid budget — 100+ creatives competing.'}
               {Math.round(monthlyBudget/30) >= 50 && Math.round(monthlyBudget/30) < 100 && 'Growth mode — 200+ creatives, Meta finds winners fast.'}
               {Math.round(monthlyBudget/30) >= 100 && Math.round(monthlyBudget/30) < 300 && 'Scale mode — load everything, Meta\'s algorithm does the work.'}
@@ -10025,7 +10025,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           )}
           {(profile?.metaPages || brand?.metaPages || metaPagesProp || []).length === 1 && (
-            <div style={{ fontSize: 13, color: '#34d399', marginBottom: 12 }}>✓ Facebook Page: {(profile?.metaPages || brand?.metaPages || metaPagesProp)[0].name || (profile?.metaPages || brand?.metaPages || metaPagesProp)[0].pageName}</div>
+            <div style={{ fontSize: 13, color: '#34d399', marginBottom: 12 }}>✓ Facebook Page: {brand?.metaPageName || brand?.pageName || 'No page selected'}</div>
           )}
           {(!(profile?.metaPages || brand?.metaPages || metaPagesProp) || (profile?.metaPages || brand?.metaPages || metaPagesProp).length === 0) && (
             <div style={{ padding: '12px 16px', background: 'rgba(232,89,60,.06)', border: '1px solid rgba(232,89,60,.15)', borderRadius: 8, marginBottom: 12 }}>
@@ -10058,7 +10058,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               if (d.ok) { toast.success('Saved — $' + Math.round(monthlyBudget/30) + '/day · ' + roasTarget.toFixed(1) + 'x ROAS'); setTimeout(() => window.location.reload(), 1000); }
               else toast.error(d.error || 'Something went wrong');
             } catch (err) { toast.error('Failed: ' + err.message); }
-          }} style={{ width: '100%', padding: '14px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6 }}>Save Changes — Updates Meta Instantly</button>
+          }} style={{ width: '100%', padding: '14px 0', background: ((caiData?.campaign?.status === 'PAUSED' || !caiData?.isActive) ? 'var(--cs-a10)' : 'linear-gradient(135deg, #9b6dff, #0668E1)'), color: '#fff', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 6 }}>{(caiData?.campaign?.status === 'PAUSED' || !caiData?.isActive) ? 'Save Changes — Will apply when campaign is active' : 'Save Changes — Updates Meta Instantly'}</button>
           <div style={{ fontSize: 12, color: 'var(--cs-t4)', textAlign: 'center', marginBottom: 28 }}>Changes are applied directly to your Meta campaign via the API. No need to open Ads Manager.</div>
             </>
           )}
