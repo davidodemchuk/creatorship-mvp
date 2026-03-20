@@ -5288,7 +5288,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
                   </div>
                 ) : (
                   <div style={{position:"relative",aspectRatio:"9/16",minHeight:240,overflow:"hidden",cursor:"pointer",background:"#0a0a0a"}} onClick={()=>setPlayingVideo(v?.id)}>
-                    {cover ? <img src={cover} alt="" onError={e=>{e.target.style.display='none'}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} /> : <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg, #0891b2, #00e0b4)"}} />}
+                    {cover ? <img src={cover} alt="" onError={e=>{e.target.style.display='none';e.target.parentElement.style.background='linear-gradient(135deg, #0891b2, #00e0b4)';}} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} /> : <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg, #0891b2, #00e0b4)"}} />}
                     <div style={{position:"absolute",inset:0,background:"linear-gradient(transparent 50%, rgba(0,0,0,0.8))"}} />
                     {/* Play button */}
                     <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",zIndex:2}}>
@@ -8518,21 +8518,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         {/* ═══ ANALYSIS TAB — DEEP DIVE REPORT ═══ */}
         {caiSubTab === 'analysis' && (<>
-          {a && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-              <button onClick={() => { if (typeof runDeepDive === 'function') runDeepDive(); }} style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                background: 'var(--cs-a06)',
-                border: '1px solid var(--cs-a10)',
-                color: 'var(--cs-t2)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}>Re-run Analysis</button>
-            </div>
-          )}
           {a ? (<>
 
             {/* ─── EXECUTIVE SUMMARY ─── */}
@@ -8677,7 +8662,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               {sa.ownedContentAnalysis && (
                 <div style={{ marginTop: 16, padding: '14px 16px', background: 'var(--cs-a04)', borderRadius: 10, borderTop: '1px solid var(--cs-a06)' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Content Library Summary</div>
-                  <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{typeof sa.ownedContentAnalysis === 'string' ? sa.ownedContentAnalysis : sa.ownedContentAnalysis.summary || sa.ownedContentAnalysis.overview || JSON.stringify(sa.ownedContentAnalysis).slice(0, 300)}</div>
+                  <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{typeof sa.ownedContentAnalysis === 'string' ? sa.ownedContentAnalysis : sa.ownedContentAnalysis.summary || sa.ownedContentAnalysis.overview || (Array.isArray(sa.ownedContentAnalysis) ? sa.ownedContentAnalysis.map(item => item.metrics || item.summary || item.text || JSON.stringify(item)).join(' · ') : String(sa.ownedContentAnalysis))}</div>
                 </div>
               )}
             </div>
@@ -9331,10 +9316,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           </div>
 
-          {(!caiData?.campaign?.id || (creatives || []).length === 0) && (
+          {!caiData?.campaign?.id && (
             <div style={{ textAlign: 'center', padding: '60px 24px' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>&#128203;</div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>No active campaigns</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>No campaigns yet</h3>
               <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 400, margin: '0 auto 16px' }}>
                 {a ? 'Your analysis is ready. Build a new campaign to start running ads.' : 'Run a deep dive first and CAi will build your campaign.'}
               </p>
@@ -11650,7 +11635,8 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
     const timeoutId = setTimeout(() => {
       if (!cancelled) { setLoadingMetaPages(false); setMetaPagesFetchFailed(true); }
     }, 8000);
-    fetch('/api/meta-pages?brandId=' + encodeURIComponent(brandId))
+    const _metaToken = localStorage.getItem('creatorship_brand_token');
+    fetch('/api/meta-pages?brandId=' + encodeURIComponent(brandId), _metaToken ? { headers: { Authorization: 'Bearer ' + _metaToken } } : {})
       .then(r => r.json())
       .then(d => {
         if (cancelled) return;
