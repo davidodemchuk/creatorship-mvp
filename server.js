@@ -5107,7 +5107,7 @@ app.get('/auth/meta', async (req, res) => {
   }
   global._csrfTokens.set(csrfToken, { email: brandEmail, created: now });
   const state = Buffer.from(JSON.stringify({ email: brandEmail, csrf: csrfToken })).toString('base64');
-  const scopes = 'pages_show_list,pages_read_engagement,ads_management,ads_read,business_management,public_profile,email';
+  const scopes = 'pages_show_list,pages_read_engagement,ads_management,ads_read,business_management,public_profile';
   const url = 'https://www.facebook.com/v22.0/dialog/oauth?' +
     'client_id=' + META_APP_ID +
     '&redirect_uri=' + encodeURIComponent(META_REDIRECT_URI) +
