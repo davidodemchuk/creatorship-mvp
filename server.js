@@ -2702,7 +2702,7 @@ app.post('/api/brand/update-email', async (req, res) => {
   if (existing && existing.id !== brandId) return res.status(400).json({ error: 'Email already in use' });
   const oldEmail = brand.email;
   brand.email = newEmail.toLowerCase();
-  await supabase.from('brands').update({ email: newEmail.toLowerCase(), data: brand }).eq('id', brandId);
+  await saveBrand(brand);
   await auditLogAction('email_changed', brandId, { oldEmail, newEmail: newEmail.toLowerCase() });
   res.json({ success: true });
 });
