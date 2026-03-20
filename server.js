@@ -2771,12 +2771,9 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   let event;
   try {
-    if (webhookSecret && sig && req.body) {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } else {
-      const payload = Buffer.isBuffer(req.body) ? req.body.toString() : req.body;
-      event = typeof payload === 'string' ? JSON.parse(payload) : payload;
-    }
+    if (!webhookSecret) { console.error('[webhook] STRIPE_WEBHOOK_SECRET not configured — rejecting'); return res.status(500).send('Webhook secret not configured'); }
+    if (!sig) return res.status(400).send('Missing stripe-signature header');
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err) {
     console.error('[webhook] Signature verification failed:', err.message);
     return res.status(400).send('Webhook Error: ' + err.message);
@@ -3084,7 +3081,7 @@ app.post('/api/billing/remove-payment', authBrand, requireRole('admin'), async (
 // Protected by a simple secret to prevent unauthorized access
 app.post('/api/billing/run', async (req, res) => {
   const secret = req.headers['x-billing-secret'] || req.body.secret;
-  if (secret !== (process.env.BILLING_SECRET || 'creatorship-billing-2026')) return res.status(403).json({ error: 'Unauthorized' });
+  if (!process.env.BILLING_SECRET || secret !== process.env.BILLING_SECRET) return res.status(403).json({ error: 'Unauthorized' });
 
   const brands = (await loadBrands()).filter(b => b.billingEnabled && b.stripeCustomerId);
   if (brands.length === 0) return res.json({ message: 'No brands with billing enabled', processed: 0 });
@@ -4158,7 +4155,7 @@ app.post('/api/brand/upload-file', requireRole('editor'), (req, res) => {
     if (!brandId || !token) return res.status(401).json({ error: 'Auth required' });
 
     let decoded;
-    try { decoded = jwt.verify(token, process.env.SUPABASE_JWT_SECRET || 'dev-secret'); } catch (_) { return res.status(401).json({ error: 'Invalid token' }); }
+    try { decoded = jwt.verify(token, JWT_SECRET); } catch (_) { return res.status(401).json({ error: 'Invalid token' }); }
 
     const brand = await getBrandById(brandId);
     if (!brand) return res.status(404).json({ error: 'Brand not found' });
@@ -10099,7 +10096,7 @@ app.post('/api/campaigns/budget', authBrand, requireRole('editor'), async (req, 
 // Trigger: POST /api/payouts/run-weekly (called by Railway cron or manually)
 app.post('/api/payouts/run-weekly', async (req, res) => {
   const secret = req.headers['x-payout-secret'] || req.body.secret;
-  if (secret !== (process.env.PAYOUT_SECRET || 'creatorship-payouts-2026')) return res.status(403).json({ error: 'Unauthorized' });
+  if (!process.env.PAYOUT_SECRET || secret !== process.env.PAYOUT_SECRET) return res.status(403).json({ error: 'Unauthorized' });
   if (!stripe) return res.status(503).json({ error: 'Stripe not configured' });
 
   const MIN_PAYOUT_CENTS = 2500; // $25 minimum
@@ -10318,7 +10315,7 @@ app.post('/api/payouts/run-weekly', async (req, res) => {
 
 app.get('/api/payouts/status', async (req, res) => {
   const secret = req.headers['x-payout-secret'] || req.query.secret;
-  if (secret !== (process.env.PAYOUT_SECRET || 'creatorship-payouts-2026')) return res.status(403).json({ error: 'Unauthorized' });
+  if (!process.env.PAYOUT_SECRET || secret !== process.env.PAYOUT_SECRET) return res.status(403).json({ error: 'Unauthorized' });
 
   const payoutRuns = await loadPayoutRuns();
   const runsForResponse = payoutRuns.map(r => ({ periodKey: r.period_key, runAt: r.created_at, status: r.status, payoutAmount: r.payout_amount, creatorsProcessed: null, payoutsMade: null, totalPaid: r.payout_amount, campaignsChecked: null }));
