@@ -5570,7 +5570,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
 /*══════════════════════════════════════════════════════
   SETTINGS TAB — Connection flows + brand profile
 ══════════════════════════════════════════════════════*/
-function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile, setProfile, setBrand, brandTikTokPage }) {
+function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile, setProfile, setBrand, brandTikTokPage, setBrandTab }) {
   const toast = useToast();
   const userRole = getBrandUserRole();
   const canDoAction = (action) => canDo(userRole, action);
@@ -6190,6 +6190,45 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
           </div>
         )}
         <FeedbackMsg msg={metaMsg} />
+      </div>
+      <div className="gl" style={{ padding: 24, borderRadius: 14, marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#635BFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>S</span>
+            </div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15 }}>Stripe</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12 }}>Billing and creator payouts</div>
+            </div>
+          </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: brand?.billingEnabled ? 'rgba(52,211,153,0.15)' : 'var(--cs-a06)', color: brand?.billingEnabled ? '#34D399' : 'var(--cs-t4)', fontSize: 12, fontWeight: 600 }}>
+            {brand?.billingEnabled ? 'Connected' : 'Not Connected'}
+          </span>
+        </div>
+
+        {brand?.billingEnabled ? (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
+              <div style={{ padding: 12, borderRadius: 10, background: 'var(--cs-a04)' }}>
+                <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>Card</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{brand?.billingCardBrand || 'Card'} ****{brand?.billingCardLast4 || '????'}</div>
+              </div>
+              <div style={{ padding: 12, borderRadius: 10, background: 'var(--cs-a04)' }}>
+                <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>Fee</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>4% of ad spend</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--cs-t4)' }}>Manage billing details in the Billing tab.</div>
+          </div>
+        ) : (
+          <div>
+            <p style={{ color: 'var(--cs-t3)', fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+              Connect Stripe to enable campaign billing. Creatorship charges 4% of managed ad spend — no retainer, no minimums. First 3 campaigns are free.
+            </p>
+            <button type="button" onClick={() => { setBrandTab('settings'); setSettingsTab('billing'); try { window.location.hash = 'account/billing'; } catch (_) {} }} style={{ padding: '10px 20px', borderRadius: 8, background: '#635BFF', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Set Up Billing</button>
+          </div>
+        )}
       </div>
       <div className="gl" style={{ padding: 24, borderRadius: 14, marginTop: 24 }} id="creator-outreach-card">
         <div style={S.sectionTitle}>Creator Outreach</div>
@@ -11921,7 +11960,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
 
         {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
 
-        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>setBrandTab('ai-plans')} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to CAi</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} />}</div>}
+        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>setBrandTab('ai-plans')} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to CAi</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} setBrandTab={setBrandTab} />}</div>}
 
         {/* Launch Campaign Modal — standalone, renders from any tab */}
         {pendingLaunchVideo && <LaunchCampaignModal video={pendingLaunchVideo} brand={brand} profile={profile ?? brand} onClose={() => setPendingLaunchVideo(null)} setBrandTab={setBrandTab} />}
