@@ -11607,6 +11607,15 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const initialBrandTab = (() => { try { const caiHashes = ['dashboard','campaigns','content','analysis','optimize']; if (typeof window === 'undefined') return 'ai-plans'; const h = (window.location.hash || '').replace(/^#/, ''); if (caiHashes.includes(h)) return 'ai-plans'; if (h === 'account' || (h && h.startsWith('account/'))) return 'settings'; if (h && BRAND_TAB_IDS.includes(h)) return h; return initialTab && BRAND_TAB_IDS.includes(initialTab) ? initialTab : 'ai-plans'; } catch (_) { return 'ai-plans'; } })();
   const [brandTab, setBrandTabState] = useState(initialBrandTab);
+  useEffect(() => {
+    if (!brand) return;
+    // Brand needs onboarding if they haven't connected Meta and haven't run deep dive.
+    const hasCompletedSetup = brand.hasMetaToken && brand.adAccount && (brand.caiDeepDive || brand.cai?.deepDive);
+    if (!hasCompletedSetup && brandTab !== 'settings' && brandTab !== 'home') {
+      setBrandTabState('home');
+      try { window.location.hash = '#home'; } catch (_) {}
+    }
+  }, [brand?.hasMetaToken, brand?.adAccount, brand?.caiDeepDive, brand?.cai?.deepDive, brandTab]);
   const setBrandTab = useCallback((tabId) => {
     setBrandTabState(tabId);
     window.location.hash = '#' + tabId;
