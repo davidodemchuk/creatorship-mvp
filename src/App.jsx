@@ -9746,27 +9746,71 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         </>)}
 
         {/* ═══ OPTIMIZE TAB — Budget/ROAS first so post-OAuth lands on them ═══ */}
-        {caiSubTab === 'optimize' && (<>
-          {(!caiData?.campaign?.id || activeCreativeCount === 0) && (
-            <div className="gl" style={{ padding: 32, borderRadius: 16, textAlign: 'center', marginBottom: 24 }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>&#9881;</div>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>No active campaign to optimize</h3>
-              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
-                Once you build a campaign, this tab lets you adjust your daily budget, ROAS target, and automation settings. Changes sync directly to Meta in real-time.
-              </p>
-              <button onClick={() => setCaiSubTab('dashboard')} style={{
-                padding: '12px 28px',
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
-                color: '#fff',
-                border: 'none',
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}>Build a Campaign First</button>
-            </div>
-          )}
+        {caiSubTab === 'optimize' && (
+          <>
+            {mode === 'auto' && (!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? (
+              <div style={{ maxWidth: 600, margin: '0 auto', padding: '20px 0' }}>
+                <button onClick={() => { setMode(null); setCaiSubTab('analysis'); }} style={{ background: 'none', border: 'none', color: 'var(--cs-t3)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>Back to analysis</button>
+                <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.08), rgba(6,104,225,.06))', border: '1px solid rgba(155,109,255,.25)', borderRadius: 16, padding: 28, marginBottom: 20 }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 6 }}>Almost there — finish setup to launch</div>
+                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>Complete the steps below, then set your budget and CAi handles the rest.</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)' }}>
+                      <div style={{ fontSize: 20, flexShrink: 0, width: 32, textAlign: 'center' }}>{brand?.hasMetaToken ? '\u2705' : '\u0031\uFE0F\u20E3'}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Connect Meta Ads</div>
+                        {!brand?.hasMetaToken && <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Required to create campaigns on Meta</div>}
+                      </div>
+                      {!brand?.hasMetaToken ? (
+                        <button onClick={() => { window.location.href = '/auth/meta?email=' + encodeURIComponent(brand?.email); }} style={{ padding: '8px 16px', borderRadius: 8, background: '#0668E1', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Connect</button>
+                      ) : <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Connected</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)' }}>
+                      <div style={{ fontSize: 20, flexShrink: 0, width: 32, textAlign: 'center' }}>{(brand?.emailVerified || profile?.emailVerified) ? '\u2705' : '\u0032\uFE0F\u20E3'}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Verify Email</div>
+                        {!(brand?.emailVerified || profile?.emailVerified) && <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Check your inbox for the verification link</div>}
+                      </div>
+                      {(brand?.emailVerified || profile?.emailVerified) ? <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Verified</span> : <span style={{ fontSize: 13, color: '#f5a623', fontWeight: 600 }}>Pending</span>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)' }}>
+                      <div style={{ fontSize: 20, flexShrink: 0, width: 32, textAlign: 'center' }}>{brand?.outreachAuthorized ? '\u2705' : '\u0033\uFE0F\u20E3'}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Authorize Creator Outreach</div>
+                        {!brand?.outreachAuthorized && <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Allow CAi to contact creators on your behalf</div>}
+                      </div>
+                      {brand?.outreachAuthorized ? <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Authorized</span> : (
+                        <button onClick={async () => {
+                          const token = localStorage.getItem('creatorship_brand_token');
+                          await fetch('/api/brand/authorize-outreach', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand?.id }) });
+                          setBrand(prev => ({ ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() }));
+                          setProfile(prev => ({ ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() }));
+                        }} style={{ padding: '8px 16px', borderRadius: 8, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Authorize</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : !caiData?.campaign?.id && !activeCreativeCount ? (
+              <div className="gl" style={{ padding: 32, borderRadius: 16, textAlign: 'center', marginBottom: 20 }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>&#x2699;&#xFE0F;</div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 10 }}>No active campaign to optimize</h3>
+                <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.6, maxWidth: 400, margin: 'auto' }}>
+                  Once you build a campaign, this tab lets you adjust your daily budget, ROAS target, and automation settings. Changes sync directly to Meta in real time.
+                </p>
+                <button onClick={() => setCaiSubTab('dashboard')} style={{
+                  padding: '14px 32px',
+                  borderRadius: 12,
+                  background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}>Build a Campaign First</button>
+              </div>
+            ) : null}
 
           {caiData?.campaign?.id && activeCreativeCount > 0 && (
             <>
