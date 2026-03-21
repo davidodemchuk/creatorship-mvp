@@ -8109,7 +8109,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
 
   // ═══ CAi DASHBOARD — shows when active OR when paused with existing campaign data ═══
-  if (showCampaignWorkspace || deepDiveLoading || terminalLines.length || deepDive) {
+  if (deepDiveLoading && !deepDive && terminalLines.length > 0) {
+    // Deep dive is running — skip tab content, fall through to terminal return below
+  } else if (showCampaignWorkspace || deepDiveLoading || terminalLines.length || deepDive) {
     const creatives = caiData?.creatives || [];
     const activeCreativeCount = (caiData?.creatives || []).filter(c => c.status !== 'deleted' && c.status !== 'archived').length;
     const noCampaignOrCreatives = (!caiData?.campaign?.id || creatives.length === 0);
