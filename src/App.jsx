@@ -11778,7 +11778,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <span style={LOGO_CR}>Creatorship</span>
       </div>
       {/* Main Nav */}
-      <nav className="cai-header-nav" style={{display:'flex',alignItems:'center',gap:2,flex:1,justifyContent:'center'}}>
+      <nav className="cai-header-nav" style={{display:'flex',alignItems:'center',gap:2,flex:1,justifyContent:'center', ...(buildInProgress && buildInfo?.phase === 'deep-dive' ? {opacity:0,pointerEvents:'none'} : {})}}>
         {[
           { id: 'dashboard', label: 'Dashboard' },
           { id: 'campaigns', label: 'Campaigns' },
