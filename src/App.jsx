@@ -8608,22 +8608,20 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>Your Ad-Ready Videos</span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>These are your brand's TikTok videos — you own them. CAi will reformat and launch these as Meta ads.</div>
-              <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '2px solid rgba(155,109,255,.35)', borderRadius: 12, marginBottom: 20, marginTop: 4, boxShadow: '0 4px 24px rgba(155,109,255,.15)' }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#9b6dff', marginBottom: 4 }}>You own {(sa.topPicks || []).length} proven videos — launch them as Meta ads now</div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 16 }}>
-                  {sa.modeReason || 'You already have the rights to your brand-owned content. No creator licensing needed — start running ads today.'}
+              <div style={{ padding: '28px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '1px solid rgba(155,109,255,.35)', borderRadius: 16, marginBottom: 20, marginTop: 12, boxShadow: '0 0 30px rgba(155,109,255,.08)' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#c4a0ff', marginBottom: 8 }}>You have {(sa.topPicks || []).length} proven videos ready for Meta ads</div>
+                <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>
+                  Advantage+ Sales with broad targeting and CBO will outperform manual — let the algorithm distribute budget to best-performing creative across all videos simultaneously.
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ padding: '16px 14px', borderRadius: 12, border: (sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: (sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
-                    {(sa.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: (sa.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Let CAi Run</div>
+                {!brand?.hasMetaToken && (
+                  <div style={{ fontSize: 13, color: '#f5a623', marginBottom: 14 }}>Connect Meta Ads in Account settings before launching campaigns.</div>
+                )}
+                <div style={{ textAlign: 'center' }}>
+                  <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 14, border: '1px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 340 }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
                     <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
                   </button>
-                  <button type="button" onClick={() => setMode('manual')} style={{ padding: '16px 14px', borderRadius: 12, border: !(sa.recommendedMode || 'auto').includes('auto') ? '2px solid #9b6dff' : '1px solid var(--cs-a06)', background: !(sa.recommendedMode || 'auto').includes('auto') ? 'rgba(155,109,255,.06)' : 'var(--cs-a04)', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'inherit' }}>
-                    {!(sa.recommendedMode || 'auto').includes('auto') && <div style={{ position: 'absolute', top: -9, right: 12, padding: '2px 10px', borderRadius: 4, background: '#9b6dff', color: '#fff', fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>RECOMMENDED</div>}
-                    <div style={{ fontSize: 15, fontWeight: 800, color: !(sa.recommendedMode || 'auto').includes('auto') ? '#9b6dff' : 'var(--cs-t1)', marginBottom: 2 }}>Manual + CAi Assist</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>You launch each video. CAi pre-fills copy.</div>
-                  </button>
+                  <div style={{ marginTop: 12, fontSize: 13, color: 'var(--cs-t3)', cursor: 'pointer' }} onClick={() => setCaiSubTab('dashboard')}>Review on Dashboard</div>
                 </div>
               </div>
 
