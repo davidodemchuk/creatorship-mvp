@@ -6857,6 +6857,52 @@ Include your top 15 videos in topPicks, ranked by ad potential. hero = strongest
       videosAnalyzed: allVideos.length,
       version: CAI_VERSION,
     };
+
+    // ---- AVATAR FALLBACK: Extract shopLogo from product/video data if missing ----
+    if (!brand.shopLogo) {
+      let foundLogo = null;
+      // Try 1: enrichedShop.products seller_info
+      if (!foundLogo && brand.enrichedShop?.products?.length) {
+        for (const p of brand.enrichedShop.products) {
+          const si = p.seller_info || p.sellerInfo || {};
+          const sl = si.shop_logo || si.shopLogo || si.avatar || si.seller_logo;
+          if (typeof sl === 'string' && sl) { foundLogo = sl; break; }
+          if (sl?.url_list?.[0]) { foundLogo = sl.url_list[0]; break; }
+          if (typeof si.shop_logo_url === 'string' && si.shop_logo_url) { foundLogo = si.shop_logo_url; break; }
+        }
+      }
+      // Try 2: enriched shop-level shopLogo
+      if (!foundLogo && brand.enrichedShop?.shopLogo) {
+        const sl = brand.enrichedShop.shopLogo;
+        if (typeof sl === 'string' && sl) foundLogo = sl;
+        else if (sl?.url_list?.[0]) foundLogo = sl.url_list[0];
+      }
+      // Try 3: TikTok profile avatar via ScrapeCreators
+      if (!foundLogo) {
+        try {
+          const profileHandle = (brand.storeName || brand.brandName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (profileHandle) {
+            const sk = process.env.SCRAPE_KEY || process.env.SCRAPECREATORS_API_KEY;
+            if (sk) {
+              const profileResp = await fetch('https://api.scrapecreators.com/v1/tiktok/profile?handle=' + encodeURIComponent(profileHandle), { headers: { 'x-api-key': sk } });
+              if (profileResp.ok) {
+                const profileData = await profileResp.json();
+                foundLogo = profileData.avatar_url || profileData.avatar?.url_list?.[0] || profileData.avatar_thumb?.url_list?.[0] || profileData.avatar_medium?.url_list?.[0] || null;
+              }
+            }
+          }
+        } catch (e) { console.log('[deep-dive] Avatar profile fallback failed:', e.message); }
+      }
+      // Try 4: Use the first video's cover as a last resort avatar
+      if (!foundLogo && allVideos.length > 0) {
+        foundLogo = allVideos[0].cover || allVideos[0].coverUrl || null;
+      }
+      if (foundLogo) {
+        brand.shopLogo = foundLogo;
+        console.log('[deep-dive] Set shopLogo from fallback:', String(foundLogo).substring(0, 60));
+      }
+    }
+
     await saveBrand(brand);
 
     res.end(JSON.stringify({
@@ -10841,12 +10887,21 @@ app.get('/api/brand/enrich', async (req, res) => {
       let logoUrl = '';
       const tryLogo = (v) => { if (typeof v === 'string' && v) return v; if (v?.url_list?.[0]) return v.url_list[0]; return ''; };
       logoUrl = tryLogo(sellerInfo.sellerLogo) || tryLogo(sellerInfo.shopLogo) || tryLogo(sellerInfo.avatarUrl) || tryLogo(sellerInfo.avatar) || tryLogo(sellerInfo.logo) || tryLogo(sellerInfo.seller_logo) || tryLogo(sellerInfo.shop_avatar) || tryLogo(sellerInfo.shop_logo) || '';
-      // Fallback: check product-level seller_info.shop_logo (raw API response)
+      // Fallback: check product-level seller_info.shop_logo / shop_avatar (string or object)
       if (!logoUrl) {
         for (const p of products) {
-          const pLogo = p.seller_info?.shop_logo?.url_list?.[0] || p.seller_info?.shop_avatar?.url_list?.[0];
+          const si = p.seller_info || {};
+          const pLogo = tryLogo(si.shop_logo) || tryLogo(si.shop_avatar) || tryLogo(si.seller_logo) || si.shop_logo?.url_list?.[0] || si.shop_avatar?.url_list?.[0];
           if (pLogo) { logoUrl = pLogo; break; }
         }
+      }
+      // Final logo fallback: try image field from first product
+      if (!logoUrl && products.length) {
+        for (const p of products) {
+          const img = p.image?.url_list?.[0] || (typeof p.image === 'string' ? p.image : null);
+          if (img) { logoUrl = img; break; }
+        }
+        if (logoUrl) console.log('[enrich] Using product image as logo fallback');
       }
       const sameSeller = sellerInfo.seller_id ? products.filter(p => p.seller_info?.seller_id === sellerInfo.seller_id) : products;
       const topProducts = sameSeller.slice(0, 20);

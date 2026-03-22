@@ -11992,7 +11992,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <div ref={brandNavRef} style={{position:'relative'}}>
           <button type="button" onClick={()=>setBrandNavOpen(o=>!o)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',background:'var(--cs-a06)',border:'1px solid var(--cs-a08)',borderRadius:8,color:'var(--cs-t0)',fontFamily:'inherit',cursor:'pointer'}}>
             {(() => {
-              const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo || '';
+              const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo || brand?.enrichedShop?.products?.[0]?.seller_info?.shop_logo?.url_list?.[0] || brand?.enrichedShop?.products?.[0]?.image?.url_list?.[0];
               const avatarUrl = logoRaw ? '/api/proxy-image?url=' + encodeURIComponent(logoRaw) : '';
               const displayName = brand?.storeName ? '@' + brand.storeName : brand?.brandName || 'Dashboard';
               const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
