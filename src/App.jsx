@@ -8165,7 +8165,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
   // ═══ AUTO MODE — Daily Budget + ROAS Guide + Activate ═══
   const setupComplete = brand?.hasMetaToken && (brand?.emailVerified || profile?.emailVerified) && brand?.outreachAuthorized;
-  if ((mode === 'auto' || (caiSubTab === 'optimize' && !caiData?.campaign?.id)) && setupComplete) {
+  if ((mode === 'auto' || (caiSubTab === 'optimize' && !caiData?.campaign?.id)) && setupComplete && !activating && !buildInProgress) {
     // Update URL to #optimize when viewing the budget page
     if (typeof window !== 'undefined' && window.location.hash !== '#optimize') {
       try { window.history.replaceState(null, '', '#optimize'); } catch (_) {}
@@ -8438,7 +8438,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             </div>
           )}
-        <div style={{ position: 'relative', display: (activating || buildInProgress) ? 'none' : undefined, ...(!hasMetaFull ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {}) }}>
+        <div style={{ position: 'relative', ...(!hasMetaFull ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {}) }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 6 }}>Set Your Daily Budget</h2>
           <p style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Start small, see results, scale up. No contracts. Pause anytime.</p>
@@ -8633,21 +8633,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#34d399' }}>All campaigns and ads launch PAUSED</div>
                 <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>You review and approve before anything goes live. No surprise spend.</div>
               </div>
-              {(activating || buildInProgress) && (
-                <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, padding: 24, marginBottom: 20, maxHeight: 400, overflowY: 'auto' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />
-                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t0)' }}>CAi is building your campaign</div>
-                  </div>
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, lineHeight: 1.8, color: 'var(--cs-t3)' }}>
-                    {terminalLines.slice(-20).map((line, i) => (
-                      <div key={i} style={{ color: line.type === 'success' ? '#34d399' : line.type === 'error' || line.type === 'warn' ? '#f87171' : line.type === 'highlight' ? '#9b6dff' : line.type === 'phase' ? '#0668E1' : 'var(--cs-t3)', fontWeight: line.type === 'phase' || line.type === 'success' ? 700 : 400, marginTop: line.type === 'spacer' ? 8 : 0 }}>
-                        {line.type === 'spacer' ? '' : (line.text != null ? line.text : line)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               <button onClick={handleActivate} disabled={activating} style={{ width: '100%', padding: '16px 0', background: activating ? 'var(--cs-a06)' : 'linear-gradient(135deg, #9b6dff, #0668E1)', color: activating ? 'var(--cs-t5)' : '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: activating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: activating ? 'none' : '0 4px 24px rgba(155,109,255,.2)' }}>
                 Activate CAi — ${db}/day
               </button>
@@ -8673,6 +8658,108 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // ═══ ACTIVATING (before workspace return — live activationLines terminal from budget / optimize) ═══
+  if (activating || (activationResult && activationLines.length > 0)) {
+    const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: 'var(--cs-t1)', dim: 'var(--cs-t5)', spacer: 'transparent' };
+    return (
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        {/* Part A: Title and context above terminal */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#9b6dff', marginBottom: 8 }}>Building Your CAi Campaign</div>
+          <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 500, margin: '0 auto' }}>
+            CAi is downloading your TikTok videos, formatting them for Meta, generating ad copy, and setting up your campaign. This takes about 30 seconds.
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 8 }}>You can leave this page — we'll email you when it's ready.</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--cs-card)', borderRadius: '12px 12px 0 0', borderBottom: '1px solid rgba(155,109,255,.15)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 5 }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffb400' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399' }} />
+            </div>
+            <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}><span style={CAI_BRAND}>CAi</span> <span style={{ color: 'var(--cs-t4)' }}>Activation · {CAI_VERSION}</span></span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {activating && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />}
+            <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{activating ? 'BUILDING' : 'COMPLETE'}</span>
+          </div>
+        </div>
+        <div style={{ background: 'var(--cs-bg3)', borderRadius: '0 0 12px 12px', padding: '12px 16px', maxHeight: 400, overflowY: 'auto', fontFamily: "'SF Mono', 'Fira Code', monospace" }} ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
+          {activationLines.map((line, i) => {
+            if (line.type === 'spacer') return <div key={i} style={{ height: 10 }} />;
+            const isPhase = line.type === 'phase';
+            return (
+              <div key={i} style={{ fontSize: isPhase ? 13 : 11, fontWeight: isPhase ? 900 : 400, color: lineColors[line.type] || 'var(--cs-t3)', lineHeight: isPhase ? 2.2 : 1.7, letterSpacing: isPhase ? '1px' : 0, animation: 'fadeIn 0.15s ease' }}>
+                {!isPhase && <span style={{ color: 'var(--cs-t5)', marginRight: 6, userSelect: 'none' }}>{line.type === 'success' || line.type === 'error' || line.type === 'warn' ? '' : '›'}</span>}
+                {line.text}
+              </div>
+            );
+          })}
+          {activating && <div style={{ color: '#9b6dff', animation: 'pulse 1s infinite', fontSize: 13 }}>▊</div>}
+        </div>
+        {/* Fixed overlay — shows immediately, blurs terminal behind */}
+          {activating && (
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(3,7,17,.5)', backdropFilter: 'blur(4px)' }}>
+              <div style={{ maxWidth: 480, padding: '40px 32px', textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 12, background: 'linear-gradient(135deg, rgba(155,109,255,.2), rgba(52,211,153,.15))', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🚀</div>
+                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 8 }}>CAi is Building Your Campaigns</h1>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', lineHeight: 1.6, marginBottom: 6 }}>
+                  Your ads are being created in Meta Ads Manager right now. All campaigns will launch <span style={{ color: '#34d399', fontWeight: 700 }}>PAUSED</span> for your review.
+                </p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginBottom: 24 }}>
+                  We'll email <strong style={{ color: 'rgba(255,255,255,.7)' }}>{brand?.email || ''}</strong> when everything is ready. You can safely close this page.
+                </p>
+
+                <div style={{ textAlign: 'left', padding: '20px', background: 'rgba(155,109,255,.06)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, marginBottom: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 12 }}>While you wait — complete your profile</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 14 }}>{brand?.emailVerified ? '✅' : '⬜'}</span>
+                      <span style={{ fontSize: 13, color: brand?.emailVerified ? '#34d399' : 'rgba(255,255,255,.7)' }}>Verify your email</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 14 }}>{brand?.websiteUrl ? '✅' : '⬜'}</span>
+                      <span style={{ fontSize: 13, color: brand?.websiteUrl ? '#34d399' : 'rgba(255,255,255,.7)' }}>Add your website URL</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 14 }}>{brand?.instagramHandle ? '✅' : '⬜'}</span>
+                      <span style={{ fontSize: 13, color: brand?.instagramHandle ? '#34d399' : 'rgba(255,255,255,.7)' }}>Connect your Instagram</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 14 }}>{(brand?.stripeCustomerId || brand?.billingConnected) ? '✅' : '⬜'}</span>
+                      <span style={{ fontSize: 13, color: (brand?.stripeCustomerId || brand?.billingConnected) ? '#34d399' : 'rgba(255,255,255,.7)' }}>Set up billing (Stripe)</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 14 }}>{brand?.tikTokStorePageUrl ? '✅' : '⬜'}</span>
+                      <span style={{ fontSize: 13, color: brand?.tikTokStorePageUrl ? '#34d399' : 'rgba(255,255,255,.7)' }}>TikTok Shop connected</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type='button'
+                  onClick={() => setCaiTab(null)}
+                  style={{ width: '100%', maxWidth: 320, padding: '14px 32px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  Complete Your Profile →
+                </button>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', marginTop: 10 }}>Opens Account settings — your campaigns keep building</div>
+              </div>
+            </div>
+          )}
+        {!activating && activationResult?.success && (
+          <button onClick={() => { setActivationResult(null); setActivationLines([]); }} style={{ width: '100%', marginTop: 12, padding: '14px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Open CAi Dashboard</button>
+        )}
+        {!activating && activationResult?.error && (
+          <div style={{ marginTop: 12, textAlign: 'center' }}>
+            <button onClick={() => { setActivationResult(null); setActivationLines([]); setActivating(false); }} style={{ padding: '10px 24px', background: 'none', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t3)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Back</button>
+          </div>
+        )}
       </div>
     );
   }
@@ -10840,108 +10927,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           </div>
           <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 16 }}>An email was sent to {brand?.email} with details. Check your inbox.</div>
         </div>
-      </div>
-    );
-  }
-
-  // ═══ ACTIVATING ═══
-  if (activating || (activationResult && activationLines.length > 0)) {
-    const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: 'var(--cs-t1)', dim: 'var(--cs-t5)', spacer: 'transparent' };
-    return (
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        {/* Part A: Title and context above terminal */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#9b6dff', marginBottom: 8 }}>Building Your CAi Campaign</div>
-          <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 500, margin: '0 auto' }}>
-            CAi is downloading your TikTok videos, formatting them for Meta, generating ad copy, and setting up your campaign. This takes about 30 seconds.
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 8 }}>You can leave this page — we'll email you when it's ready.</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--cs-card)', borderRadius: '12px 12px 0 0', borderBottom: '1px solid rgba(155,109,255,.15)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ display: 'flex', gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffb400' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399' }} />
-            </div>
-            <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}><span style={CAI_BRAND}>CAi</span> <span style={{ color: 'var(--cs-t4)' }}>Activation · {CAI_VERSION}</span></span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {activating && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />}
-            <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{activating ? 'BUILDING' : 'COMPLETE'}</span>
-          </div>
-        </div>
-        <div style={{ background: 'var(--cs-bg3)', borderRadius: '0 0 12px 12px', padding: '12px 16px', maxHeight: 400, overflowY: 'auto', fontFamily: "'SF Mono', 'Fira Code', monospace" }} ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
-          {activationLines.map((line, i) => {
-            if (line.type === 'spacer') return <div key={i} style={{ height: 10 }} />;
-            const isPhase = line.type === 'phase';
-            return (
-              <div key={i} style={{ fontSize: isPhase ? 13 : 11, fontWeight: isPhase ? 900 : 400, color: lineColors[line.type] || 'var(--cs-t3)', lineHeight: isPhase ? 2.2 : 1.7, letterSpacing: isPhase ? '1px' : 0, animation: 'fadeIn 0.15s ease' }}>
-                {!isPhase && <span style={{ color: 'var(--cs-t5)', marginRight: 6, userSelect: 'none' }}>{line.type === 'success' || line.type === 'error' || line.type === 'warn' ? '' : '›'}</span>}
-                {line.text}
-              </div>
-            );
-          })}
-          {activating && <div style={{ color: '#9b6dff', animation: 'pulse 1s infinite', fontSize: 13 }}>▊</div>}
-        </div>
-        {/* Fixed overlay — shows immediately, blurs terminal behind */}
-          {activating && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(3,7,17,.5)', backdropFilter: 'blur(4px)' }}>
-              <div style={{ maxWidth: 480, padding: '40px 32px', textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 12, background: 'linear-gradient(135deg, rgba(155,109,255,.2), rgba(52,211,153,.15))', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🚀</div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 8 }}>CAi is Building Your Campaigns</h1>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', lineHeight: 1.6, marginBottom: 6 }}>
-                  Your ads are being created in Meta Ads Manager right now. All campaigns will launch <span style={{ color: '#34d399', fontWeight: 700 }}>PAUSED</span> for your review.
-                </p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginBottom: 24 }}>
-                  We'll email <strong style={{ color: 'rgba(255,255,255,.7)' }}>{brand?.email || ''}</strong> when everything is ready. You can safely close this page.
-                </p>
-
-                <div style={{ textAlign: 'left', padding: '20px', background: 'rgba(155,109,255,.06)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, marginBottom: 20 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 12 }}>While you wait — complete your profile</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.emailVerified ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.emailVerified ? '#34d399' : 'rgba(255,255,255,.7)' }}>Verify your email</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.websiteUrl ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.websiteUrl ? '#34d399' : 'rgba(255,255,255,.7)' }}>Add your website URL</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.instagramHandle ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.instagramHandle ? '#34d399' : 'rgba(255,255,255,.7)' }}>Connect your Instagram</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{(brand?.stripeCustomerId || brand?.billingConnected) ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: (brand?.stripeCustomerId || brand?.billingConnected) ? '#34d399' : 'rgba(255,255,255,.7)' }}>Set up billing (Stripe)</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.tikTokStorePageUrl ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.tikTokStorePageUrl ? '#34d399' : 'rgba(255,255,255,.7)' }}>TikTok Shop connected</span>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type='button'
-                  onClick={() => setCaiTab(null)}
-                  style={{ width: '100%', maxWidth: 320, padding: '14px 32px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
-                >
-                  Complete Your Profile →
-                </button>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', marginTop: 10 }}>Opens Account settings — your campaigns keep building</div>
-              </div>
-            </div>
-          )}
-        {!activating && activationResult?.success && (
-          <button onClick={() => { setActivationResult(null); setActivationLines([]); }} style={{ width: '100%', marginTop: 12, padding: '14px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Open CAi Dashboard</button>
-        )}
-        {!activating && activationResult?.error && (
-          <div style={{ marginTop: 12, textAlign: 'center' }}>
-            <button onClick={() => { setActivationResult(null); setActivationLines([]); setActivating(false); }} style={{ padding: '10px 24px', background: 'none', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t3)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Back</button>
-          </div>
-        )}
       </div>
     );
   }
