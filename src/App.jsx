@@ -8157,7 +8157,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const dailyBudget = Math.round(monthlyBudget / 30);
   const a = deepDive?.analysis;
   const sa = a || {};
-  const showCampaignWorkspace = isActive || hasCampaignData || a || !!brand?.caiDeepDive;
+  // Include optimize tab so #optimize + incomplete setup still mounts workspace (setup gate), not fall-through to return null
+  const showCampaignWorkspace = isActive || hasCampaignData || a || !!brand?.caiDeepDive || caiSubTab === 'optimize';
 
   if (loading) return <div style={{ padding: '60px 0', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} /><div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Loading CAi...</div></div>;
 
@@ -8670,9 +8671,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>
                   Advantage+ Sales with broad targeting and CBO will outperform manual — let the algorithm distribute budget to best-performing creative across all videos simultaneously.
                 </div>
-                {!brand?.hasMetaToken && (
-                  <div style={{ fontSize: 13, color: '#f5a623', marginBottom: 14 }}>Connect Meta Ads in Account settings before launching campaigns.</div>
-                )}
                 <div style={{ textAlign: 'center' }}>
                   <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 14, border: '1px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 340 }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
@@ -9818,7 +9816,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         {/* ═══ OPTIMIZE TAB — Budget/ROAS first so post-OAuth lands on them ═══ */}
         {caiSubTab === 'optimize' && (
           <>
-            {!caiData?.campaign?.id && (!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? (
+            {(!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? (
               <div style={{ maxWidth: 600, margin: '0 auto', padding: '20px 0' }}>
                 <button onClick={() => { setMode(null); setCaiSubTab('analysis'); }} style={{ background: 'none', border: 'none', color: 'var(--cs-t3)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>Back to analysis</button>
                 <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.08), rgba(6,104,225,.06))', border: '1px solid rgba(155,109,255,.25)', borderRadius: 16, padding: 28, marginBottom: 20 }}>
@@ -9942,7 +9940,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             ) : null}
 
-            <div style={mode === 'auto' && (!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {}}>
+            <div style={(!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {}}>
           {caiData?.campaign?.id && activeCreativeCount > 0 && (
             <>
           {/* ─── Daily Budget (first so users see it after Meta connect) ─── */}
@@ -10921,7 +10919,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   }
 
   // ═══ AUTO MODE — Daily Budget + ROAS Guide + Activate ═══
-  if (mode === 'auto') {
+  if (mode === 'auto' && brand?.hasMetaToken && (brand?.emailVerified || profile?.emailVerified) && brand?.outreachAuthorized) {
     // Update URL to #optimize when viewing the budget page
     if (typeof window !== 'undefined' && window.location.hash !== '#optimize') {
       try { window.history.replaceState(null, '', '#optimize'); } catch (_) {}
