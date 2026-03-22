@@ -8163,6 +8163,505 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   if (loading) return <div style={{ padding: '60px 0', textAlign: 'center' }}><div style={{ width: 24, height: 24, border: '2px solid #9b6dff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} /><div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Loading CAi...</div></div>;
 
 
+  // ═══ AUTO MODE — Daily Budget + ROAS Guide + Activate ═══
+  const setupComplete = brand?.hasMetaToken && (brand?.emailVerified || profile?.emailVerified) && brand?.outreachAuthorized;
+  if ((mode === 'auto' || (caiSubTab === 'optimize' && !caiData?.campaign?.id)) && setupComplete) {
+    // Update URL to #optimize when viewing the budget page
+    if (typeof window !== 'undefined' && window.location.hash !== '#optimize') {
+      try { window.history.replaceState(null, '', '#optimize'); } catch (_) {}
+    }
+    const price = brand.avgProductPrice || 30;
+    const db = Math.round(monthlyBudget / 30);
+    const tiers = [
+      { name: 'Test', daily: 20, creatives: 3, desc: 'Prove it works', color: '#ffb400' },
+      { name: 'Growth', daily: 100, creatives: 5, desc: 'Scale what works', color: '#9b6dff' },
+      { name: 'Scale', daily: 500, creatives: 10, desc: 'Maximum velocity', color: '#34d399' },
+    ];
+
+    const roasLevels = [
+      { value: 0.5, label: '0.5x', color: '#34d399', why: 'Loss leader strategy. You lose money per sale but gain customers with high lifetime value. Only viable if your repeat purchase rate is strong.' },
+      { value: 1.0, label: '1.0x', color: '#34d399', why: 'Break-even. Every $1 in = $1 back. Use this if you\'re focused on customer acquisition and expect repeat purchases to make up the margin.' },
+      { value: 1.5, label: '1.5x', color: '#34d399', why: 'Conservative. Covers ad spend + Creatorship fee with slim margin. Good starting point if you want to be cautious while Meta\'s algorithm learns.' },
+      { value: 2.0, label: '2.0x', color: '#34d399', isCaiRec: true, why: 'Recommended starting target. $1 in, $2 back. Realistic for most DTC brands after 30-60 days. Leaves room for COGS, shipping, and profit.' },
+      { value: 2.5, label: '2.5x', color: '#ffb400', why: 'Ambitious but achievable. Strong target for brands with proven creatives and good LTV.' },
+      { value: 3.0, label: '3.0x', color: '#f87171', why: 'Aggressive. Achievable for products with strong hooks and low CPA, but may take 60+ days to reach. Meta may under-spend your budget if it can\'t find this return.' },
+    ];
+    const activeRoas = roasLevels.find(r => Math.abs(r.value - roasTarget) < 0.25) || roasLevels[3];
+
+    return (
+      <div style={{ maxWidth: 600, margin: '0 auto' }}>
+        <button onClick={() => { setMode(null); setCaiTab('analysis'); }} style={{ background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>← Back to analysis</button>
+          {(!hasMetaFull || !brand?.outreachAuthorized || !(brand?.emailVerified || profile?.emailVerified)) && (
+            <div style={{ background: 'linear-gradient(135deg, rgba(6,104,225,.08), rgba(155,109,255,.06))', border: '2px solid rgba(6,104,225,.2)', borderRadius: 14, padding: '28px 24px', marginBottom: 24 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>{hasMetaFull ? 'Almost there — finish setup to launch' : 'Almost there — connect Meta to launch'}</div>
+              <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, marginBottom: 20 }}>{hasMetaFull ? 'Complete the remaining steps below, then set your budget and CAi handles the rest.' : 'Your report is ready. CAi just needs Meta access to build your campaign. Once connected, set your budget and CAi handles the rest.'}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                <details style={{ borderRadius: 10, background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)', overflow: 'hidden' }}>
+                  <summary style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', cursor: 'pointer', listStyle: 'none' }}>
+                    <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>📋</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#4da6ff' }}>Don't have a Meta ads account? Here's how to set one up</div>
+                      <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>5-minute setup guide with direct links</div>
+                    </div>
+                    <span style={{ fontSize: 12, color: 'var(--cs-t4)', flexShrink: 0 }}>▾</span>
+                  </summary>
+                  <div style={{ padding: '16px', borderTop: '1px solid var(--cs-a06)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>1</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Create a Facebook Page for your brand</div>
+                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Your ads run from this Page — it's the identity buyers see in their feed.</div>
+                          <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Create a Facebook Page →</a>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>2</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Create an ad account in Meta Business Suite</div>
+                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>This is where Meta manages your ad spend and billing.</div>
+                          <a href="https://business.facebook.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Business Suite →</a>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>3</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Add a payment method</div>
+                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Meta charges your card directly for ad spend. Creatorship charges 4% separately via Stripe.</div>
+                          <a href="https://business.facebook.com/billing_hub/payment_settings" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Add payment method →</a>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>4</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Copy your Facebook Page ID</div>
+                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Go to your Page → About → Page ID. You'll paste this in Step 2 below.</div>
+                          <a href="https://www.facebook.com/help/1503421039731588" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>How to find your Page ID →</a>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(52,211,153,.15)', color: '#34d399', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>5</div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#34d399' }}>Come back and click "Connect →" below</div>
+                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Creatorship auto-detects your ad account. Approve permissions and you're ready.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </details>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: bp.hasMetaToken ? 'rgba(52,211,153,.06)' : 'var(--cs-a04)', border: bp.hasMetaToken ? '1px solid rgba(52,211,153,.2)' : '1px solid var(--cs-a06)' }}>
+                  <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>{bp.hasMetaToken ? '✓' : '1'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: bp.hasMetaToken ? '#34d399' : 'var(--cs-t1)' }}>Connect Meta Account</div>
+                    {!bp.hasMetaToken && (
+                      <>
+                        <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginTop: 2, lineHeight: 1.5 }}>Authorize Creatorship to manage ads on your behalf.</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '8px 12px', background: 'rgba(250,204,21,.08)', border: '1px solid rgba(250,204,21,.25)', borderRadius: 6 }}>
+                          <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
+                          <span style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600, lineHeight: 1.4 }}>Before you connect — copy your Facebook Page ID first. You'll paste it in Step 2. <a href="https://www.facebook.com/help/1503421039731588" target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontWeight: 600 }}>How to find it →</a></span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {!bp.hasMetaToken && <a href={'/auth/meta?email=' + encodeURIComponent(brand?.email || '')} style={{ padding: '8px 18px', background: '#1877F2', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13, textDecoration: 'none' }}>Connect →</a>}
+                </div>
+                {metaHealthIssues && metaHealthIssues.length > 0 && (
+                  <div style={{ padding: '16px', background: 'rgba(239,68,68,.06)', border: '2px solid rgba(239,68,68,.2)', borderRadius: 12, marginBottom: 16 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#ef4444', marginBottom: 10 }}>⚠ Fix these before activating</div>
+                    {metaHealthIssues.map((issue, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'start', padding: '8px 0', borderTop: i > 0 ? '1px solid rgba(239,68,68,.1)' : 'none' }}>
+                        <span style={{ fontSize: 14, flexShrink: 0 }}>🔴</span>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{issue.title}</div>
+                          <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>{issue.message}</div>
+                          {issue.action === 'open_meta_billing' && (
+                            <a href={issue.actionUrl || 'https://business.facebook.com/billing_hub/payment_settings'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Billing Settings →</a>
+                          )}
+                          {issue.action === 'open_meta_business' && (
+                            <a href={issue.actionUrl || 'https://business.facebook.com'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Business Suite →</a>
+                          )}
+                          {issue.action === 'reconnect_meta' && (
+                            <a href={'/auth/meta?email=' + encodeURIComponent(brand?.email || '')} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Reconnect Meta →</a>
+                          )}
+                          {(issue.action === 'select_ad_account' || issue.action === 'select_page') && (
+                            <button type="button" onClick={() => setCaiTab(null)} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', textAlign: 'left' }}>Go to Account Settings →</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <button onClick={async () => {
+                      setMetaHealthIssues(null);
+                      try {
+                        const token = localStorage.getItem('creatorship_brand_token');
+                        const hc = await fetch('/api/meta-health-check?brandId=' + brand.id, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json());
+                        if (!hc.ok && hc.issues?.length > 0) {
+                          setMetaHealthIssues(hc.issues.filter(i => i.severity === 'critical'));
+                        }
+                      } catch (_) {}
+                    }} style={{ marginTop: 12, padding: '8px 16px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      I've fixed this — check again
+                    </button>
+                  </div>
+                )}
+                <div style={{ padding: '12px 14px', borderRadius: 10, background: bp.pageId ? 'rgba(52,211,153,.06)' : 'var(--cs-a03)', border: bp.pageId ? '1px solid rgba(52,211,153,.15)' : '1px solid var(--cs-a06)', opacity: bp.hasMetaToken ? 1 : 0.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>{bp.pageId ? '✓' : '2'}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: bp.pageId ? '#34d399' : 'var(--cs-t1)' }}>Select Facebook Page{bp.pageId ? ': ' + (bp.pageName || bp.pageId) : ''}</div>
+                    </div>
+                  </div>
+                  {!bp.pageId && bp.hasMetaToken && (
+                    <div style={{ marginTop: 10, marginLeft: 34 }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="Paste your Facebook Page ID"
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter' && e.target.value.trim()) {
+                              const pid = e.target.value.trim();
+                              try {
+                                const token = localStorage.getItem('creatorship_brand_token');
+                                await fetch('/api/brand/me', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId: pid, pageName: 'FB Page ' + pid }) });
+                                setBrand(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
+                                if (setProfile) setProfile(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
+                              } catch (_) {}
+                            }
+                          }}
+                          style={{ flex: 1, padding: '8px 12px', background: 'var(--cs-a04)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t1)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            const input = e.target.parentElement.querySelector('input');
+                            if (input && input.value.trim()) {
+                              const pid = input.value.trim();
+                              const token = localStorage.getItem('creatorship_brand_token');
+                              fetch('/api/brand/me', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId: pid, pageName: 'FB Page ' + pid }) })
+                                .then(() => {
+                                  setBrand(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
+                                  if (setProfile) setProfile(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
+                                }).catch(() => {});
+                            }
+                          }}
+                          style={{ padding: '8px 16px', background: '#1877F2', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >Save</button>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 4, marginBottom: 4, lineHeight: 1.5 }}>Your ads appear in feeds as posts from this Page — it's the identity behind every ad Meta shows to buyers.</div>
+                      <a href="https://www.facebook.com/help/1503421039731588" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#4da6ff', marginTop: 6, display: 'inline-block', textDecoration: 'none' }}>How to find your Facebook Page ID →</a>
+                    </div>
+                  )}
+                </div>
+                {/* Step 3: Authorize Creator Outreach */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', borderRadius: 10, background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t4)', flexShrink: 0, width: 28, textAlign: 'center' }}>3</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Authorize Creator Outreach</div>
+                    {!brand?.outreachAuthorized ? (
+                      <div>
+                        <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 4 }}>Allow Creatorship to contact creators on your behalf to license their TikTok content as Meta ads. No content is used without their signed agreement.</div>
+                        <button onClick={async () => {
+                          const confirmed = await showConfirm({
+                            title: 'Authorize Creator Outreach',
+                            message: 'By authorizing, you allow Creatorship to:\n\n' +
+                              '•  Contact TikTok creators who have made videos featuring your products\n' +
+                              '•  Introduce your brand and offer a paid content partnership\n' +
+                              '•  Request permission to use their content as paid Meta ads\n\n' +
+                              '**Your protections:**\n\n' +
+                              '•  No content is used without the creator\'s signed licensing agreement\n' +
+                              '•  All campaigns launch PAUSED — you review every ad before it goes live\n' +
+                              '•  Creators earn a commission on sales from their content\n\n' +
+                              '**This is required** because Meta\'s ad policies require documented rights to use third-party content in paid advertising.',
+                            confirmText: 'I Understand — Authorize',
+                            cancelText: 'Not right now',
+                          });
+                          if (!confirmed) return;
+                          try {
+                            const token = localStorage.getItem('creatorship_brand_token');
+                            await fetch('/api/brand/authorize-outreach', {
+                              method: 'POST',
+                              headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ brandId: brand.id }),
+                            });
+                            setBrand(prev => (prev ? { ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() } : prev));
+                            setProfile(prev => (prev ? { ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() } : prev));
+                          } catch (_) {}
+                        }} style={{ marginTop: 8, padding: '8px 20px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Authorize Outreach
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        <span style={{ color: '#34d399', fontSize: 13 }}>✓</span>
+                        <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Authorized</span>
+                        <span style={{ fontSize: 11, color: 'var(--cs-t5)', marginLeft: 4 }}>{brand.outreachAuthorizedAt ? new Date(brand.outreachAuthorizedAt).toLocaleDateString() : ''}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Step 4: Verify Email */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', borderRadius: 10, background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t4)', flexShrink: 0, width: 28, textAlign: 'center' }}>4</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Verify Your Email</div>
+                    {(brand?.emailVerified || profile?.emailVerified) ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        <span style={{ color: '#34d399', fontSize: 13 }}>✓</span>
+                        <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Email verified</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 4 }}>Check your inbox for the verification link. This is required before CAi can activate campaigns.</div>
+                        <button onClick={async () => {
+                          try {
+                            const token = localStorage.getItem('creatorship_brand_token');
+                            await fetch('/api/auth/resend-verification', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                              body: JSON.stringify({ email: brand?.email || profile?.email }),
+                            });
+                            alert('Verification email sent! Check your inbox.');
+                          } catch (_) {}
+                        }} style={{ marginTop: 8, padding: '8px 20px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a10)', borderRadius: 6, color: 'var(--cs-t1)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Resend Verification Email
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)' }}>
+                  <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>✅</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#34d399' }}>All campaigns launch PAUSED for your review</div>
+                    <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>No ads go live until you approve them. No surprise spend.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        <div style={{ position: 'relative', ...(hasMetaFull ? {} : { filter: 'blur(3px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' }) }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 6 }}>Set Your Daily Budget</h2>
+          <p style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Start small, see results, scale up. No contracts. Pause anytime.</p>
+        </div>
+
+        {/* Daily Budget Tiers */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
+          {tiers.map(tier => {
+            const isSelected = Math.abs(db - tier.daily) < 10;
+            const salesDay = Math.round(tier.daily / (price * 0.35));
+            const revDay = salesDay * price;
+            return (
+              <button key={tier.name} onClick={() => setMonthlyBudget(tier.daily * 30)} style={{ padding: '18px 14px', borderRadius: 14, border: isSelected ? '2px solid ' + tier.color : '1px solid var(--cs-a08)', background: isSelected ? 'rgba(155,109,255,.06)' : 'var(--cs-card)', cursor: 'pointer', textAlign: 'center', fontFamily: 'inherit', position: 'relative', transition: 'all .15s' }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: tier.color, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>{tier.name}</div>
+                <div className="mono" style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 2 }}>${tier.daily}<span style={{ fontSize: 13, color: 'var(--cs-t4)', fontWeight: 400 }}>/day</span></div>
+                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginBottom: 6 }}>{tier.creatives} creatives</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? tier.color : 'var(--cs-t3)' }}>{tier.desc}</div>
+                <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 4 }}>~{salesDay} sales/day · ${revDay}/day rev</div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Custom daily budget */}
+        <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Custom daily budget</span>
+            <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#34d399' }}>${db}/day</span>
+          </div>
+          <input type="range" min={600} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, cursor: 'pointer' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--cs-t5)', marginTop: 4 }}>
+            <span>$20/day</span>
+            <span className="mono" style={{ color: 'var(--cs-t4)' }}>${monthlyBudget.toLocaleString()}/mo</span>
+            <span>$1,000/day</span>
+          </div>
+        </div>
+
+        {/* ROAS with explanations */}
+        <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: 'var(--cs-t4)' }}>ROAS Target</span>
+            <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: roasTarget <= 2.0 ? '#34d399' : roasTarget <= 2.5 ? '#ffb400' : '#f87171' }}>{roasTarget.toFixed(1)}x</span>
+          </div>
+          <input type="range" min={0.5} max={3.0} step={0.1} value={roasTarget} onChange={e => setRoasTarget(+e.target.value)} style={{ width: '100%', accentColor: '#9b6dff', height: 6, cursor: 'pointer' }} />
+          <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+            {roasLevels.map(r => (
+              <button key={r.value} onClick={() => setRoasTarget(r.value)} style={{ padding: '4px 10px', borderRadius: 6, border: Math.abs(roasTarget - r.value) < 0.15 ? '1px solid ' + r.color : '1px solid var(--cs-a08)', background: Math.abs(roasTarget - r.value) < 0.15 ? 'rgba(155,109,255,.08)' : 'transparent', color: Math.abs(roasTarget - r.value) < 0.15 ? r.color : 'var(--cs-t4)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{r.label}{r.isCaiRec && <span style={{ marginLeft: 4, fontSize: 8, fontWeight: 800, color: '#9b6dff', verticalAlign: 'super' }}>CAi</span>}</button>
+            ))}
+          </div>
+          {/* Active ROAS explanation */}
+          <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(155,109,255,.03)', border: '1px solid rgba(155,109,255,.06)', borderRadius: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: roasTarget <= 2.0 ? '#34d399' : roasTarget <= 2.5 ? '#ffb400' : '#f87171', marginBottom: 3 }}>{roasTarget.toFixed(1)}x — Every $1 spent → ${roasTarget.toFixed(1)} revenue</div>
+            <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>{activeRoas.why}</div>
+          </div>
+            {roasTarget > 2.5 && (
+              <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(255,180,0,.06)', border: '1px solid rgba(255,180,0,.15)', borderRadius: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#ffb400' }}>⚠ Aggressive target — {roasTarget.toFixed(1)}x is hard to sustain</div>
+                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>Most DTC brands on Meta achieve 1.5-2.5x. At {roasTarget.toFixed(1)}x, Meta may under-deliver your daily budget because it can't find enough buyers at that return. Consider starting at 2.0x and scaling up.</div>
+              </div>
+            )}
+        </div>
+
+          {/* ═══ LEARNING PHASE TIMELINE ═══ */}
+          <div style={{ background: 'rgba(255,180,0,.04)', border: '1px solid rgba(255,180,0,.12)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 10 }}>What to expect — <span style={{ background: 'linear-gradient(90deg, #9b6dff, #0668E1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>CAi Max</span> + Meta Advantage+ need time to learn</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>WEEK 1-2</div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>CAi Max and Meta Advantage+ are learning your audience. Expect your full ${db}/day budget to be spent — that's how the algorithm learns. ROAS will be 0.5x-1.0x. <span style={{ color: '#ffb400', fontWeight: 600 }}>You will likely lose money. This is normal and expected.</span></div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#ffb400', background: 'rgba(255,180,0,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>WEEK 3-4</div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>CAi starts finding buyers and pauses underperformers automatically. ROAS climbs toward your {roasTarget.toFixed(1)}x target — but it's not guaranteed. CAi optimizes toward it over time.</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#34d399', background: 'rgba(52,211,153,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>MONTH 2+</div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>Steady state. Your {roasTarget.toFixed(1)}x target becomes realistic. You're always in control — lower budget, raise it, or pause everything from Settings. Changes hit Meta instantly.</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 8, fontStyle: 'italic' }}>Start at a level you're comfortable spending during the learning phase. Scale once CAi proves results.</div>
+          </div>
+
+        {/* ═══ REALISTIC PROJECTIONS WITH DELIVERY RATE ═══ */}
+        <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '20px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Estimated range at ${db.toLocaleString()}/day</div>
+            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'var(--cs-a04)', color: 'var(--cs-t4)', fontWeight: 600 }}>ESTIMATES — NOT GUARANTEED</span>
+          </div>
+          {(() => {
+            const monthly = db * 30;
+            // Meta delivery rate — higher ROAS targets = lower delivery because Meta can't find enough buyers
+            const deliveryRate = roasTarget <= 1.5 ? 0.95 : roasTarget <= 2.0 ? 0.90 : roasTarget <= 2.5 ? 0.80 : roasTarget <= 3.0 ? 0.65 : 0.50;
+            const estimatedSpend = Math.round(monthly * deliveryRate);
+            const conservativeRoas = Math.max(roasTarget * 0.6, 0.8);
+            const estimatedRevLow = Math.round(estimatedSpend * conservativeRoas);
+            const estimatedRevHigh = Math.round(estimatedSpend * roasTarget);
+            return (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div style={{ padding: '12px', background: 'var(--cs-a03)', borderRadius: 10, textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>Est. Monthly Spend</div>
+                    <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t1)' }}>${estimatedSpend.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--cs-t4)' }}>/mo</span></div>
+                    <div style={{ fontSize: 10, color: 'var(--cs-t5)', marginTop: 2 }}>{Math.round(deliveryRate * 100)}% delivery est.</div>
+                  </div>
+                  <div style={{ padding: '12px', background: 'var(--cs-a03)', borderRadius: 10, textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>Conservative Revenue</div>
+                    <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#ffb400' }}>${estimatedRevLow.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--cs-t4)' }}>/mo</span></div>
+                    <div style={{ fontSize: 10, color: 'var(--cs-t5)', marginTop: 2 }}>{conservativeRoas.toFixed(1)}x ROAS (learning)</div>
+                  </div>
+                  <div style={{ padding: '12px', background: 'var(--cs-a03)', borderRadius: 10, textAlign: 'center' }}>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>At Target Revenue</div>
+                    <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#34d399' }}>${estimatedRevHigh.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--cs-t4)' }}>/mo</span></div>
+                    <div style={{ fontSize: 10, color: 'var(--cs-t5)', marginTop: 2 }}>{roasTarget}x ROAS (if achieved)</div>
+                  </div>
+                </div>
+                {deliveryRate < 0.85 && (
+                  <div style={{ padding: '10px 12px', background: 'rgba(250,204,21,.06)', border: '1px solid rgba(250,204,21,.15)', borderRadius: 8, marginBottom: 10 }}>
+                    <div style={{ fontSize: 12, color: '#fbbf24', lineHeight: 1.5 }}>
+                      <strong>Why {Math.round(deliveryRate * 100)}% delivery?</strong> At {roasTarget}x ROAS, Meta's algorithm restricts spending to only show ads to users likely to convert at that return. Higher targets = fewer qualifying impressions = less of your budget gets spent. This is normal — it means Meta is protecting your return, not wasting your money.
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontSize: 11, color: 'var(--cs-t5)', lineHeight: 1.5, fontStyle: 'italic' }}>
+                  These are estimates based on category benchmarks and your ROAS target. Actual results depend on creative quality, product-market fit, and Meta's learning phase. Week 1-2 returns will be lower while the algorithm learns.
+                </div>
+              </>
+            );
+          })()}
+        </div>
+
+        {/* Activate or Connect Meta or Billing gate */}
+        {(() => {
+          const launchCount = brand?.launchCount || 0;
+          const hasStripe = !!(brand?.stripeCustomerId || brand?.billingConnected || brand?.billingEnabled);
+          const needsBilling = launchCount >= 3 && !hasStripe;
+          if (!hasMetaFull) return null; // will render Connect Meta block below
+          if (needsBilling) {
+            return (
+              <div style={{ padding: '20px', background: 'rgba(155,109,255,.04)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>You've used your 3 free launches!</div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginBottom: 16, lineHeight: 1.6 }}>
+                  To continue running campaigns, connect your billing. You'll only be charged 4% of managed ad spend — nothing until your ads actually run.
+                </div>
+                <button type="button" onClick={() => setBrandTab('settings')} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Connect Billing
+                </button>
+              </div>
+            );
+          }
+          return (
+            <>
+              {metaHealthIssues && metaHealthIssues.length > 0 && (
+                <div style={{ padding: '16px', background: 'rgba(239,68,68,.06)', border: '2px solid rgba(239,68,68,.2)', borderRadius: 12, marginBottom: 16 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#ef4444', marginBottom: 10 }}>⚠ Fix these before activating</div>
+                  {metaHealthIssues.map((issue, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'start', padding: '8px 0', borderTop: i > 0 ? '1px solid rgba(239,68,68,.1)' : 'none' }}>
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>🔴</span>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{issue.title}</div>
+                        <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>{issue.message}</div>
+                        {issue.action === 'open_meta_billing' && (
+                          <a href={issue.actionUrl || 'https://business.facebook.com/billing_hub/payment_settings'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Billing Settings →</a>
+                        )}
+                        {issue.action === 'open_meta_business' && (
+                          <a href={issue.actionUrl || 'https://business.facebook.com'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Business Suite →</a>
+                        )}
+                        {issue.action === 'reconnect_meta' && (
+                          <a href={'/auth/meta?email=' + encodeURIComponent(brand?.email || '')} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Reconnect Meta →</a>
+                        )}
+                        {(issue.action === 'select_ad_account' || issue.action === 'select_page') && (
+                          <button type="button" onClick={() => setCaiTab(null)} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', textAlign: 'left' }}>Go to Account Settings →</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={async () => {
+                    setMetaHealthIssues(null);
+                    try {
+                      const token = localStorage.getItem('creatorship_brand_token');
+                      const hc = await fetch('/api/meta-health-check?brandId=' + brand.id, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json());
+                      if (!hc.ok && hc.issues?.length > 0) {
+                        setMetaHealthIssues(hc.issues.filter(i => i.severity === 'critical'));
+                      }
+                    } catch (_) {}
+                  }} style={{ marginTop: 12, padding: '8px 16px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    I've fixed this — check again
+                  </button>
+                </div>
+              )}
+              <div style={{ padding: '12px 16px', background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)', borderRadius: 10, marginBottom: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#34d399' }}>All campaigns and ads launch PAUSED</div>
+                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>You review and approve before anything goes live. No surprise spend.</div>
+              </div>
+              <button onClick={handleActivate} style={{ width: '100%', padding: '16px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 24px rgba(155,109,255,.2)' }}>
+                Activate CAi — ${db}/day
+              </button>
+              {launchCount < 3 && (
+                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 8, textAlign: 'center' }}>
+                  {3 - launchCount} free campaign{3 - launchCount !== 1 ? 's' : ''} remaining — no billing needed
+                </div>
+              )}
+            </>
+          );
+        })()}
+        </div>
+
+        {/* Trust Badges */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
+          {[
+            { icon: '⏸', text: 'All ads start PAUSED — you review and approve before going live' },
+            { icon: '🚫', text: 'No contracts. Cancel anytime.' },
+            { icon: '💳', text: '4% fee only when ads are running' },
+            { icon: '🔄', text: 'Lower budget or pause anytime in Settings' },
+          ].map((badge, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', fontSize: 12, color: 'var(--cs-t4)' }}>
+              <span style={{ fontSize: 13, flexShrink: 0 }}>{badge.icon}</span>{badge.text}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   // ═══ CAi DASHBOARD — shows when active OR when paused with existing campaign data ═══
   if (deepDiveLoading && !deepDive && terminalLines.length > 0) {
     // Deep dive is running — skip tab content, fall through to terminal return below
@@ -9919,44 +10418,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   </div>
                 </div>
               </div>
-            ) : !caiData?.campaign?.id && !activeCreativeCount && brand?.hasMetaToken && (brand?.emailVerified || profile?.emailVerified) && brand?.outreachAuthorized ? (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.08), rgba(6,104,225,.06))', border: '1px solid rgba(155,109,255,.25)', borderRadius: 16, padding: 28, marginBottom: 20 }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 6 }}>Ready to launch</div>
-                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>Set your daily budget and ROAS target below, then hit Activate. CAi will build your campaign, upload creatives to Meta, and launch everything PAUSED for your review.</div>
-                </div>
-                <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, padding: 24, marginBottom: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                    <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Daily Budget</label>
-                    <span className="mono" style={{ fontSize: 32, fontWeight: 800, color: '#34d399' }}>${Math.round(monthlyBudget / 30)}<span style={{ fontSize: 14, color: 'var(--cs-t4)', fontWeight: 400 }}>/day</span></span>
-                  </div>
-                  <span className="mono" style={{ fontSize: 14, color: 'var(--cs-t4)' }}>${monthlyBudget.toLocaleString()}/mo</span>
-                  <input type="range" min={600} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, marginTop: 12, cursor: 'pointer' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--cs-t5)', marginTop: 4 }}>
-                    <span>$20/day</span>
-                    <span>$1,000/day</span>
-                  </div>
-                </div>
-                <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                    <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>ROAS Target</label>
-                    <span className="mono" style={{ fontSize: 24, fontWeight: 800, color: '#9b6dff' }}>{roasTarget.toFixed(1)}x</span>
-                  </div>
-                  <input type="range" min={0.5} max={5} step={0.1} value={roasTarget} onChange={e => setRoasTarget(+e.target.value)} style={{ width: '100%', accentColor: '#9b6dff', height: 6, cursor: 'pointer' }} />
-                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                    {[0.5, 1.0, 1.5, 2.0, 2.5, 3.0].map(v => (
-                      <button key={v} type="button" onClick={() => setRoasTarget(v)} style={{ padding: '4px 10px', borderRadius: 6, border: Math.abs(roasTarget - v) < 0.05 ? '1px solid #9b6dff' : '1px solid var(--cs-a06)', background: Math.abs(roasTarget - v) < 0.05 ? 'rgba(155,109,255,.15)' : 'var(--cs-a04)', color: Math.abs(roasTarget - v) < 0.05 ? '#9b6dff' : 'var(--cs-t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{v}x{v === 2.0 ? ' CAi' : ''}</button>
-                    ))}
-                  </div>
-                </div>
-                <button type="button" onClick={handleActivate} disabled={activating} style={{ width: '100%', padding: '16px 0', borderRadius: 12, border: 'none', background: activating ? 'var(--cs-a06)' : 'linear-gradient(135deg, #9b6dff, #0668E1)', color: activating ? 'var(--cs-t5)' : '#fff', fontSize: 16, fontWeight: 800, cursor: activating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>
-                  {activating ? 'Building Campaign...' : `Activate CAi — $${Math.round(monthlyBudget / 30)}/day`}
-                </button>
-                <div style={{ fontSize: 12, color: 'var(--cs-t5)', textAlign: 'center', marginTop: 8 }}>Campaign launches PAUSED. You review every ad before it goes live.</div>
-                {activationResult?.error && (
-                  <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)', fontSize: 13, color: '#f87171' }}>{activationResult.error}</div>
-                )}
-              </div>
             ) : !caiData?.campaign?.id && !activeCreativeCount ? (
               <div className="gl" style={{ padding: 32, borderRadius: 16, textAlign: 'center', marginBottom: 24 }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>&#x2699;&#xFE0F;</div>
@@ -10951,504 +11412,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
         <div style={{ textAlign: 'center', marginTop: 8 }}>
           <button type="button" onClick={() => { rerunDeepDive(); }} style={{ background: 'none', border: '1px solid rgba(155,109,255,.15)', borderRadius: 6, color: 'var(--cs-t4)', fontSize: 12, padding: '4px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Re-run Analysis</button>
-        </div>
-      </div>
-    );
-  }
-
-  // ═══ AUTO MODE — Daily Budget + ROAS Guide + Activate ═══
-  if (mode === 'auto' && brand?.hasMetaToken && (brand?.emailVerified || profile?.emailVerified) && brand?.outreachAuthorized) {
-    // Update URL to #optimize when viewing the budget page
-    if (typeof window !== 'undefined' && window.location.hash !== '#optimize') {
-      try { window.history.replaceState(null, '', '#optimize'); } catch (_) {}
-    }
-    const price = brand.avgProductPrice || 30;
-    const db = Math.round(monthlyBudget / 30);
-    const tiers = [
-      { name: 'Test', daily: 20, creatives: 3, desc: 'Prove it works', color: '#ffb400' },
-      { name: 'Growth', daily: 100, creatives: 5, desc: 'Scale what works', color: '#9b6dff' },
-      { name: 'Scale', daily: 500, creatives: 10, desc: 'Maximum velocity', color: '#34d399' },
-    ];
-
-    const roasLevels = [
-      { value: 0.5, label: '0.5x', color: '#34d399', why: 'Loss leader strategy. You lose money per sale but gain customers with high lifetime value. Only viable if your repeat purchase rate is strong.' },
-      { value: 1.0, label: '1.0x', color: '#34d399', why: 'Break-even. Every $1 in = $1 back. Use this if you\'re focused on customer acquisition and expect repeat purchases to make up the margin.' },
-      { value: 1.5, label: '1.5x', color: '#34d399', why: 'Conservative. Covers ad spend + Creatorship fee with slim margin. Good starting point if you want to be cautious while Meta\'s algorithm learns.' },
-      { value: 2.0, label: '2.0x', color: '#34d399', isCaiRec: true, why: 'Recommended starting target. $1 in, $2 back. Realistic for most DTC brands after 30-60 days. Leaves room for COGS, shipping, and profit.' },
-      { value: 2.5, label: '2.5x', color: '#ffb400', why: 'Ambitious but achievable. Strong target for brands with proven creatives and good LTV.' },
-      { value: 3.0, label: '3.0x', color: '#f87171', why: 'Aggressive. Achievable for products with strong hooks and low CPA, but may take 60+ days to reach. Meta may under-spend your budget if it can\'t find this return.' },
-    ];
-    const activeRoas = roasLevels.find(r => Math.abs(r.value - roasTarget) < 0.25) || roasLevels[3];
-
-    return (
-      <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <button onClick={() => { setMode(null); setCaiTab('analysis'); }} style={{ background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>← Back to analysis</button>
-          {(!hasMetaFull || !brand?.outreachAuthorized || !(brand?.emailVerified || profile?.emailVerified)) && (
-            <div style={{ background: 'linear-gradient(135deg, rgba(6,104,225,.08), rgba(155,109,255,.06))', border: '2px solid rgba(6,104,225,.2)', borderRadius: 14, padding: '28px 24px', marginBottom: 24 }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>{hasMetaFull ? 'Almost there — finish setup to launch' : 'Almost there — connect Meta to launch'}</div>
-              <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, marginBottom: 20 }}>{hasMetaFull ? 'Complete the remaining steps below, then set your budget and CAi handles the rest.' : 'Your report is ready. CAi just needs Meta access to build your campaign. Once connected, set your budget and CAi handles the rest.'}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-                <details style={{ borderRadius: 10, background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)', overflow: 'hidden' }}>
-                  <summary style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', cursor: 'pointer', listStyle: 'none' }}>
-                    <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>📋</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#4da6ff' }}>Don't have a Meta ads account? Here's how to set one up</div>
-                      <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>5-minute setup guide with direct links</div>
-                    </div>
-                    <span style={{ fontSize: 12, color: 'var(--cs-t4)', flexShrink: 0 }}>▾</span>
-                  </summary>
-                  <div style={{ padding: '16px', borderTop: '1px solid var(--cs-a06)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>1</div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Create a Facebook Page for your brand</div>
-                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Your ads run from this Page — it's the identity buyers see in their feed.</div>
-                          <a href="https://www.facebook.com/pages/create" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Create a Facebook Page →</a>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>2</div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Create an ad account in Meta Business Suite</div>
-                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>This is where Meta manages your ad spend and billing.</div>
-                          <a href="https://business.facebook.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Business Suite →</a>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>3</div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Add a payment method</div>
-                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Meta charges your card directly for ad spend. Creatorship charges 4% separately via Stripe.</div>
-                          <a href="https://business.facebook.com/billing_hub/payment_settings" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Add payment method →</a>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(6,104,225,.15)', color: '#4da6ff', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>4</div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)' }}>Copy your Facebook Page ID</div>
-                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Go to your Page → About → Page ID. You'll paste this in Step 2 below.</div>
-                          <a href="https://www.facebook.com/help/1503421039731588" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>How to find your Page ID →</a>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(52,211,153,.15)', color: '#34d399', fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>5</div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#34d399' }}>Come back and click "Connect →" below</div>
-                          <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 2 }}>Creatorship auto-detects your ad account. Approve permissions and you're ready.</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </details>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: bp.hasMetaToken ? 'rgba(52,211,153,.06)' : 'var(--cs-a04)', border: bp.hasMetaToken ? '1px solid rgba(52,211,153,.2)' : '1px solid var(--cs-a06)' }}>
-                  <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>{bp.hasMetaToken ? '✓' : '1'}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: bp.hasMetaToken ? '#34d399' : 'var(--cs-t1)' }}>Connect Meta Account</div>
-                    {!bp.hasMetaToken && (
-                      <>
-                        <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginTop: 2, lineHeight: 1.5 }}>Authorize Creatorship to manage ads on your behalf.</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '8px 12px', background: 'rgba(250,204,21,.08)', border: '1px solid rgba(250,204,21,.25)', borderRadius: 6 }}>
-                          <span style={{ fontSize: 14, flexShrink: 0 }}>⚠️</span>
-                          <span style={{ fontSize: 12, color: '#fbbf24', fontWeight: 600, lineHeight: 1.4 }}>Before you connect — copy your Facebook Page ID first. You'll paste it in Step 2. <a href="https://www.facebook.com/help/1503421039731588" target="_blank" rel="noopener noreferrer" style={{ color: '#60a5fa', fontWeight: 600 }}>How to find it →</a></span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {!bp.hasMetaToken && <a href={'/auth/meta?email=' + encodeURIComponent(brand?.email || '')} style={{ padding: '8px 18px', background: '#1877F2', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13, textDecoration: 'none' }}>Connect →</a>}
-                </div>
-                {metaHealthIssues && metaHealthIssues.length > 0 && (
-                  <div style={{ padding: '16px', background: 'rgba(239,68,68,.06)', border: '2px solid rgba(239,68,68,.2)', borderRadius: 12, marginBottom: 16 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#ef4444', marginBottom: 10 }}>⚠ Fix these before activating</div>
-                    {metaHealthIssues.map((issue, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'start', padding: '8px 0', borderTop: i > 0 ? '1px solid rgba(239,68,68,.1)' : 'none' }}>
-                        <span style={{ fontSize: 14, flexShrink: 0 }}>🔴</span>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{issue.title}</div>
-                          <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>{issue.message}</div>
-                          {issue.action === 'open_meta_billing' && (
-                            <a href={issue.actionUrl || 'https://business.facebook.com/billing_hub/payment_settings'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Billing Settings →</a>
-                          )}
-                          {issue.action === 'open_meta_business' && (
-                            <a href={issue.actionUrl || 'https://business.facebook.com'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Business Suite →</a>
-                          )}
-                          {issue.action === 'reconnect_meta' && (
-                            <a href={'/auth/meta?email=' + encodeURIComponent(brand?.email || '')} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Reconnect Meta →</a>
-                          )}
-                          {(issue.action === 'select_ad_account' || issue.action === 'select_page') && (
-                            <button type="button" onClick={() => setCaiTab(null)} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', textAlign: 'left' }}>Go to Account Settings →</button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    <button onClick={async () => {
-                      setMetaHealthIssues(null);
-                      try {
-                        const token = localStorage.getItem('creatorship_brand_token');
-                        const hc = await fetch('/api/meta-health-check?brandId=' + brand.id, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json());
-                        if (!hc.ok && hc.issues?.length > 0) {
-                          setMetaHealthIssues(hc.issues.filter(i => i.severity === 'critical'));
-                        }
-                      } catch (_) {}
-                    }} style={{ marginTop: 12, padding: '8px 16px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      I've fixed this — check again
-                    </button>
-                  </div>
-                )}
-                <div style={{ padding: '12px 14px', borderRadius: 10, background: bp.pageId ? 'rgba(52,211,153,.06)' : 'var(--cs-a03)', border: bp.pageId ? '1px solid rgba(52,211,153,.15)' : '1px solid var(--cs-a06)', opacity: bp.hasMetaToken ? 1 : 0.5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>{bp.pageId ? '✓' : '2'}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: bp.pageId ? '#34d399' : 'var(--cs-t1)' }}>Select Facebook Page{bp.pageId ? ': ' + (bp.pageName || bp.pageId) : ''}</div>
-                    </div>
-                  </div>
-                  {!bp.pageId && bp.hasMetaToken && (
-                    <div style={{ marginTop: 10, marginLeft: 34 }}>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          placeholder="Paste your Facebook Page ID"
-                          onKeyDown={async (e) => {
-                            if (e.key === 'Enter' && e.target.value.trim()) {
-                              const pid = e.target.value.trim();
-                              try {
-                                const token = localStorage.getItem('creatorship_brand_token');
-                                await fetch('/api/brand/me', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId: pid, pageName: 'FB Page ' + pid }) });
-                                setBrand(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
-                                if (setProfile) setProfile(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
-                              } catch (_) {}
-                            }
-                          }}
-                          style={{ flex: 1, padding: '8px 12px', background: 'var(--cs-a04)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t1)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            const input = e.target.parentElement.querySelector('input');
-                            if (input && input.value.trim()) {
-                              const pid = input.value.trim();
-                              const token = localStorage.getItem('creatorship_brand_token');
-                              fetch('/api/brand/me', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ pageId: pid, pageName: 'FB Page ' + pid }) })
-                                .then(() => {
-                                  setBrand(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
-                                  if (setProfile) setProfile(prev => (prev ? { ...prev, pageId: pid, pageName: 'FB Page ' + pid } : prev));
-                                }).catch(() => {});
-                            }
-                          }}
-                          style={{ padding: '8px 16px', background: '#1877F2', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                        >Save</button>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 4, marginBottom: 4, lineHeight: 1.5 }}>Your ads appear in feeds as posts from this Page — it's the identity behind every ad Meta shows to buyers.</div>
-                      <a href="https://www.facebook.com/help/1503421039731588" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#4da6ff', marginTop: 6, display: 'inline-block', textDecoration: 'none' }}>How to find your Facebook Page ID →</a>
-                    </div>
-                  )}
-                </div>
-                {/* Step 3: Authorize Creator Outreach */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', borderRadius: 10, background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t4)', flexShrink: 0, width: 28, textAlign: 'center' }}>3</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Authorize Creator Outreach</div>
-                    {!brand?.outreachAuthorized ? (
-                      <div>
-                        <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 4 }}>Allow Creatorship to contact creators on your behalf to license their TikTok content as Meta ads. No content is used without their signed agreement.</div>
-                        <button onClick={async () => {
-                          const confirmed = await showConfirm({
-                            title: 'Authorize Creator Outreach',
-                            message: 'By authorizing, you allow Creatorship to:\n\n' +
-                              '•  Contact TikTok creators who have made videos featuring your products\n' +
-                              '•  Introduce your brand and offer a paid content partnership\n' +
-                              '•  Request permission to use their content as paid Meta ads\n\n' +
-                              '**Your protections:**\n\n' +
-                              '•  No content is used without the creator\'s signed licensing agreement\n' +
-                              '•  All campaigns launch PAUSED — you review every ad before it goes live\n' +
-                              '•  Creators earn a commission on sales from their content\n\n' +
-                              '**This is required** because Meta\'s ad policies require documented rights to use third-party content in paid advertising.',
-                            confirmText: 'I Understand — Authorize',
-                            cancelText: 'Not right now',
-                          });
-                          if (!confirmed) return;
-                          try {
-                            const token = localStorage.getItem('creatorship_brand_token');
-                            await fetch('/api/brand/authorize-outreach', {
-                              method: 'POST',
-                              headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ brandId: brand.id }),
-                            });
-                            setBrand(prev => (prev ? { ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() } : prev));
-                            setProfile(prev => (prev ? { ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() } : prev));
-                          } catch (_) {}
-                        }} style={{ marginTop: 8, padding: '8px 20px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                          Authorize Outreach
-                        </button>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                        <span style={{ color: '#34d399', fontSize: 13 }}>✓</span>
-                        <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Authorized</span>
-                        <span style={{ fontSize: 11, color: 'var(--cs-t5)', marginLeft: 4 }}>{brand.outreachAuthorizedAt ? new Date(brand.outreachAuthorizedAt).toLocaleDateString() : ''}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {/* Step 4: Verify Email */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px', borderRadius: 10, background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t4)', flexShrink: 0, width: 28, textAlign: 'center' }}>4</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Verify Your Email</div>
-                    {(brand?.emailVerified || profile?.emailVerified) ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                        <span style={{ color: '#34d399', fontSize: 13 }}>✓</span>
-                        <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Email verified</span>
-                      </div>
-                    ) : (
-                      <div>
-                        <div style={{ fontSize: 12, color: 'var(--cs-t4)', lineHeight: 1.5, marginTop: 4 }}>Check your inbox for the verification link. This is required before CAi can activate campaigns.</div>
-                        <button onClick={async () => {
-                          try {
-                            const token = localStorage.getItem('creatorship_brand_token');
-                            await fetch('/api/auth/resend-verification', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                              body: JSON.stringify({ email: brand?.email || profile?.email }),
-                            });
-                            alert('Verification email sent! Check your inbox.');
-                          } catch (_) {}
-                        }} style={{ marginTop: 8, padding: '8px 20px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a10)', borderRadius: 6, color: 'var(--cs-t1)', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                          Resend Verification Email
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)' }}>
-                  <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>✅</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#34d399' }}>All campaigns launch PAUSED for your review</div>
-                    <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>No ads go live until you approve them. No surprise spend.</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        <div style={{ position: 'relative', ...(hasMetaFull ? {} : { filter: 'blur(3px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' }) }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 6 }}>Set Your Daily Budget</h2>
-          <p style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Start small, see results, scale up. No contracts. Pause anytime.</p>
-        </div>
-
-        {/* Daily Budget Tiers */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
-          {tiers.map(tier => {
-            const isSelected = Math.abs(db - tier.daily) < 10;
-            const salesDay = Math.round(tier.daily / (price * 0.35));
-            const revDay = salesDay * price;
-            return (
-              <button key={tier.name} onClick={() => setMonthlyBudget(tier.daily * 30)} style={{ padding: '18px 14px', borderRadius: 14, border: isSelected ? '2px solid ' + tier.color : '1px solid var(--cs-a08)', background: isSelected ? 'rgba(155,109,255,.06)' : 'var(--cs-card)', cursor: 'pointer', textAlign: 'center', fontFamily: 'inherit', position: 'relative', transition: 'all .15s' }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: tier.color, textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>{tier.name}</div>
-                <div className="mono" style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 2 }}>${tier.daily}<span style={{ fontSize: 13, color: 'var(--cs-t4)', fontWeight: 400 }}>/day</span></div>
-                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginBottom: 6 }}>{tier.creatives} creatives</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: isSelected ? tier.color : 'var(--cs-t3)' }}>{tier.desc}</div>
-                <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 4 }}>~{salesDay} sales/day · ${revDay}/day rev</div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Custom daily budget */}
-        <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Custom daily budget</span>
-            <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#34d399' }}>${db}/day</span>
-          </div>
-          <input type="range" min={600} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, cursor: 'pointer' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--cs-t5)', marginTop: 4 }}>
-            <span>$20/day</span>
-            <span className="mono" style={{ color: 'var(--cs-t4)' }}>${monthlyBudget.toLocaleString()}/mo</span>
-            <span>$1,000/day</span>
-          </div>
-        </div>
-
-        {/* ROAS with explanations */}
-        <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '14px 18px', marginBottom: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'var(--cs-t4)' }}>ROAS Target</span>
-            <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: roasTarget <= 2.0 ? '#34d399' : roasTarget <= 2.5 ? '#ffb400' : '#f87171' }}>{roasTarget.toFixed(1)}x</span>
-          </div>
-          <input type="range" min={0.5} max={3.0} step={0.1} value={roasTarget} onChange={e => setRoasTarget(+e.target.value)} style={{ width: '100%', accentColor: '#9b6dff', height: 6, cursor: 'pointer' }} />
-          <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
-            {roasLevels.map(r => (
-              <button key={r.value} onClick={() => setRoasTarget(r.value)} style={{ padding: '4px 10px', borderRadius: 6, border: Math.abs(roasTarget - r.value) < 0.15 ? '1px solid ' + r.color : '1px solid var(--cs-a08)', background: Math.abs(roasTarget - r.value) < 0.15 ? 'rgba(155,109,255,.08)' : 'transparent', color: Math.abs(roasTarget - r.value) < 0.15 ? r.color : 'var(--cs-t4)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{r.label}{r.isCaiRec && <span style={{ marginLeft: 4, fontSize: 8, fontWeight: 800, color: '#9b6dff', verticalAlign: 'super' }}>CAi</span>}</button>
-            ))}
-          </div>
-          {/* Active ROAS explanation */}
-          <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(155,109,255,.03)', border: '1px solid rgba(155,109,255,.06)', borderRadius: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: roasTarget <= 2.0 ? '#34d399' : roasTarget <= 2.5 ? '#ffb400' : '#f87171', marginBottom: 3 }}>{roasTarget.toFixed(1)}x — Every $1 spent → ${roasTarget.toFixed(1)} revenue</div>
-            <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>{activeRoas.why}</div>
-          </div>
-            {roasTarget > 2.5 && (
-              <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(255,180,0,.06)', border: '1px solid rgba(255,180,0,.15)', borderRadius: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#ffb400' }}>⚠ Aggressive target — {roasTarget.toFixed(1)}x is hard to sustain</div>
-                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>Most DTC brands on Meta achieve 1.5-2.5x. At {roasTarget.toFixed(1)}x, Meta may under-deliver your daily budget because it can't find enough buyers at that return. Consider starting at 2.0x and scaling up.</div>
-              </div>
-            )}
-        </div>
-
-          {/* ═══ LEARNING PHASE TIMELINE ═══ */}
-          <div style={{ background: 'rgba(255,180,0,.04)', border: '1px solid rgba(255,180,0,.12)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 10 }}>What to expect — <span style={{ background: 'linear-gradient(90deg, #9b6dff, #0668E1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>CAi Max</span> + Meta Advantage+ need time to learn</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>WEEK 1-2</div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>CAi Max and Meta Advantage+ are learning your audience. Expect your full ${db}/day budget to be spent — that's how the algorithm learns. ROAS will be 0.5x-1.0x. <span style={{ color: '#ffb400', fontWeight: 600 }}>You will likely lose money. This is normal and expected.</span></div>
-              </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#ffb400', background: 'rgba(255,180,0,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>WEEK 3-4</div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>CAi starts finding buyers and pauses underperformers automatically. ROAS climbs toward your {roasTarget.toFixed(1)}x target — but it's not guaranteed. CAi optimizes toward it over time.</div>
-              </div>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#34d399', background: 'rgba(52,211,153,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>MONTH 2+</div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>Steady state. Your {roasTarget.toFixed(1)}x target becomes realistic. You're always in control — lower budget, raise it, or pause everything from Settings. Changes hit Meta instantly.</div>
-              </div>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 8, fontStyle: 'italic' }}>Start at a level you're comfortable spending during the learning phase. Scale once CAi proves results.</div>
-          </div>
-
-        {/* ═══ REALISTIC PROJECTIONS WITH DELIVERY RATE ═══ */}
-        <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '20px', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Estimated range at ${db.toLocaleString()}/day</div>
-            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'var(--cs-a04)', color: 'var(--cs-t4)', fontWeight: 600 }}>ESTIMATES — NOT GUARANTEED</span>
-          </div>
-          {(() => {
-            const monthly = db * 30;
-            // Meta delivery rate — higher ROAS targets = lower delivery because Meta can't find enough buyers
-            const deliveryRate = roasTarget <= 1.5 ? 0.95 : roasTarget <= 2.0 ? 0.90 : roasTarget <= 2.5 ? 0.80 : roasTarget <= 3.0 ? 0.65 : 0.50;
-            const estimatedSpend = Math.round(monthly * deliveryRate);
-            const conservativeRoas = Math.max(roasTarget * 0.6, 0.8);
-            const estimatedRevLow = Math.round(estimatedSpend * conservativeRoas);
-            const estimatedRevHigh = Math.round(estimatedSpend * roasTarget);
-            return (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
-                  <div style={{ padding: '12px', background: 'var(--cs-a03)', borderRadius: 10, textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>Est. Monthly Spend</div>
-                    <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t1)' }}>${estimatedSpend.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--cs-t4)' }}>/mo</span></div>
-                    <div style={{ fontSize: 10, color: 'var(--cs-t5)', marginTop: 2 }}>{Math.round(deliveryRate * 100)}% delivery est.</div>
-                  </div>
-                  <div style={{ padding: '12px', background: 'var(--cs-a03)', borderRadius: 10, textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>Conservative Revenue</div>
-                    <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#ffb400' }}>${estimatedRevLow.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--cs-t4)' }}>/mo</span></div>
-                    <div style={{ fontSize: 10, color: 'var(--cs-t5)', marginTop: 2 }}>{conservativeRoas.toFixed(1)}x ROAS (learning)</div>
-                  </div>
-                  <div style={{ padding: '12px', background: 'var(--cs-a03)', borderRadius: 10, textAlign: 'center' }}>
-                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 4 }}>At Target Revenue</div>
-                    <div className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#34d399' }}>${estimatedRevHigh.toLocaleString()}<span style={{ fontSize: 11, color: 'var(--cs-t4)' }}>/mo</span></div>
-                    <div style={{ fontSize: 10, color: 'var(--cs-t5)', marginTop: 2 }}>{roasTarget}x ROAS (if achieved)</div>
-                  </div>
-                </div>
-                {deliveryRate < 0.85 && (
-                  <div style={{ padding: '10px 12px', background: 'rgba(250,204,21,.06)', border: '1px solid rgba(250,204,21,.15)', borderRadius: 8, marginBottom: 10 }}>
-                    <div style={{ fontSize: 12, color: '#fbbf24', lineHeight: 1.5 }}>
-                      <strong>Why {Math.round(deliveryRate * 100)}% delivery?</strong> At {roasTarget}x ROAS, Meta's algorithm restricts spending to only show ads to users likely to convert at that return. Higher targets = fewer qualifying impressions = less of your budget gets spent. This is normal — it means Meta is protecting your return, not wasting your money.
-                    </div>
-                  </div>
-                )}
-                <div style={{ fontSize: 11, color: 'var(--cs-t5)', lineHeight: 1.5, fontStyle: 'italic' }}>
-                  These are estimates based on category benchmarks and your ROAS target. Actual results depend on creative quality, product-market fit, and Meta's learning phase. Week 1-2 returns will be lower while the algorithm learns.
-                </div>
-              </>
-            );
-          })()}
-        </div>
-
-        {/* Activate or Connect Meta or Billing gate */}
-        {(() => {
-          const launchCount = brand?.launchCount || 0;
-          const hasStripe = !!(brand?.stripeCustomerId || brand?.billingConnected || brand?.billingEnabled);
-          const needsBilling = launchCount >= 3 && !hasStripe;
-          if (!hasMetaFull) return null; // will render Connect Meta block below
-          if (needsBilling) {
-            return (
-              <div style={{ padding: '20px', background: 'rgba(155,109,255,.04)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, textAlign: 'center', marginBottom: 16 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>You've used your 3 free launches!</div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginBottom: 16, lineHeight: 1.6 }}>
-                  To continue running campaigns, connect your billing. You'll only be charged 4% of managed ad spend — nothing until your ads actually run.
-                </div>
-                <button type="button" onClick={() => setBrandTab('settings')} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Connect Billing
-                </button>
-              </div>
-            );
-          }
-          return (
-            <>
-              {metaHealthIssues && metaHealthIssues.length > 0 && (
-                <div style={{ padding: '16px', background: 'rgba(239,68,68,.06)', border: '2px solid rgba(239,68,68,.2)', borderRadius: 12, marginBottom: 16 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#ef4444', marginBottom: 10 }}>⚠ Fix these before activating</div>
-                  {metaHealthIssues.map((issue, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'start', padding: '8px 0', borderTop: i > 0 ? '1px solid rgba(239,68,68,.1)' : 'none' }}>
-                      <span style={{ fontSize: 14, flexShrink: 0 }}>🔴</span>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{issue.title}</div>
-                        <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>{issue.message}</div>
-                        {issue.action === 'open_meta_billing' && (
-                          <a href={issue.actionUrl || 'https://business.facebook.com/billing_hub/payment_settings'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Billing Settings →</a>
-                        )}
-                        {issue.action === 'open_meta_business' && (
-                          <a href={issue.actionUrl || 'https://business.facebook.com'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Open Meta Business Suite →</a>
-                        )}
-                        {issue.action === 'reconnect_meta' && (
-                          <a href={'/auth/meta?email=' + encodeURIComponent(brand?.email || '')} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block' }}>Reconnect Meta →</a>
-                        )}
-                        {(issue.action === 'select_ad_account' || issue.action === 'select_page') && (
-                          <button type="button" onClick={() => setCaiTab(null)} style={{ fontSize: 12, color: '#4da6ff', marginTop: 4, display: 'inline-block', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', textAlign: 'left' }}>Go to Account Settings →</button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  <button onClick={async () => {
-                    setMetaHealthIssues(null);
-                    try {
-                      const token = localStorage.getItem('creatorship_brand_token');
-                      const hc = await fetch('/api/meta-health-check?brandId=' + brand.id, { headers: { 'Authorization': 'Bearer ' + token } }).then(r => r.json());
-                      if (!hc.ok && hc.issues?.length > 0) {
-                        setMetaHealthIssues(hc.issues.filter(i => i.severity === 'critical'));
-                      }
-                    } catch (_) {}
-                  }} style={{ marginTop: 12, padding: '8px 16px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t1)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    I've fixed this — check again
-                  </button>
-                </div>
-              )}
-              <div style={{ padding: '12px 16px', background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)', borderRadius: 10, marginBottom: 12, textAlign: 'center' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#34d399' }}>All campaigns and ads launch PAUSED</div>
-                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>You review and approve before anything goes live. No surprise spend.</div>
-              </div>
-              <button onClick={handleActivate} style={{ width: '100%', padding: '16px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 24px rgba(155,109,255,.2)' }}>
-                Activate CAi — ${db}/day
-              </button>
-              {launchCount < 3 && (
-                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 8, textAlign: 'center' }}>
-                  {3 - launchCount} free campaign{3 - launchCount !== 1 ? 's' : ''} remaining — no billing needed
-                </div>
-              )}
-            </>
-          );
-        })()}
-        </div>
-
-        {/* Trust Badges */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
-          {[
-            { icon: '⏸', text: 'All ads start PAUSED — you review and approve before going live' },
-            { icon: '🚫', text: 'No contracts. Cancel anytime.' },
-            { icon: '💳', text: '4% fee only when ads are running' },
-            { icon: '🔄', text: 'Lower budget or pause anytime in Settings' },
-          ].map((badge, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', fontSize: 12, color: 'var(--cs-t4)' }}>
-              <span style={{ fontSize: 13, flexShrink: 0 }}>{badge.icon}</span>{badge.text}
-            </div>
-          ))}
         </div>
       </div>
     );
