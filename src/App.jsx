@@ -779,7 +779,7 @@ function ForBrandsSection({ nav }) {
   const [openFaq, setOpenFaq] = useState(null);
 
   const steps = [
-    { num: '01', title: 'Connect TikTok + Meta', desc: 'One-time setup. 60 seconds.' },
+    { num: '01', title: 'Connect TikTok + Meta', desc: 'One-time setup. 30 seconds.' },
     { num: '02', title: 'CAi Scans Your Content', desc: 'CAi ranks every video by ad potential.' },
     { num: '03', title: 'CAi Builds Campaigns', desc: 'Copy, targeting, budget — all CAi-generated.' },
     { num: '04', title: 'You Review & Launch', desc: 'Edit anything, or just hit go.' },
@@ -821,7 +821,7 @@ function ForBrandsSection({ nav }) {
         </div>
         <div style={{ fontSize: 24, color: 'var(--cs-a15)' }}>→</div>
         <div style={{ textAlign: 'center' }}>
-          <div className="mono" style={{ fontSize: 32, fontWeight: 800, color: '#9b6dff' }}>~90 sec</div>
+          <div className="mono" style={{ fontSize: 32, fontWeight: 800, color: '#9b6dff' }}>~30 sec</div>
           <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>with CAi</div>
         </div>
       </div>
@@ -857,7 +857,7 @@ function ForBrandsSection({ nav }) {
         <div style={{ display: 'inline-block', padding: '6px 16px', borderRadius: 99, border: '1px solid var(--cs-a10)', fontSize: 13, color: 'var(--cs-t3)', marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' }}>Proven Results</div>
         <h2 className="heading-h2" style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 12, lineHeight: 1.2 }}>Built by a brand that scaled with creators</h2>
         <p style={{ color: 'var(--cs-t3)', fontSize: 16, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.7 }}>
-          Creatorship was born from running the exact playbook by hand — 6 people, 7 tools, weeks per campaign. Now CAi does it in 90 seconds.
+          Creatorship was born from running the exact playbook by hand — 6 people, 7 tools, weeks per campaign. Now CAi does it in 30 seconds.
         </p>
 
         <div className="gl" style={{ padding: 32, borderRadius: 16, maxWidth: 700, margin: '0 auto 32px', textAlign: 'left' }}>
@@ -890,7 +890,7 @@ function ForBrandsSection({ nav }) {
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'center' }}>
-            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>~90s</div>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>~30s</div>
             <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Average time to launch</div>
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -919,7 +919,7 @@ function ForBrandsSection({ nav }) {
           { q: 'Can I edit targeting and audiences?', a: 'Yes. CAi sets intelligent defaults based on your product category, price point, and creator content signals. But you can override any targeting parameter in Meta Ads Manager after launch.' },
           { q: 'What if I already run Meta ads?', a: 'Creatorship campaigns run alongside your existing campaigns. CAi creates new campaigns with a [CAi] prefix so you can easily identify them. Your existing campaigns are never touched.' },
           { q: 'Do creators need to approve their videos being used?', a: 'Yes. When a creator joins the Creatorship Creator Portal and connects their TikTok, they authorize their content for use in brand ad campaigns. Creators earn commission on every sale their content generates.' },
-          { q: 'How quickly can I launch my first campaign?', a: 'If your TikTok Shop and Meta accounts are connected, CAi can build your first campaign in about 90 seconds. Connect both accounts, click "Let CAi Run," review the campaign, and launch.' },
+          { q: 'How quickly can I launch my first campaign?', a: 'If your TikTok Shop and Meta accounts are connected, CAi can build your first campaign in about 30 seconds. Connect both accounts, click "Let CAi Run," review the campaign, and launch.' },
         ].map((faq, i) => (
           <div key={i} className="gl" style={{ marginBottom: 8, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
             <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -10339,7 +10339,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#9b6dff', marginBottom: 8 }}>Building Your CAi Campaign</div>
           <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 500, margin: '0 auto' }}>
-            CAi is downloading your TikTok videos, formatting them for Meta, generating ad copy, and setting up your campaign. This takes 60-120 seconds.
+            CAi is downloading your TikTok videos, formatting them for Meta, generating ad copy, and setting up your campaign. This takes about 30 seconds.
           </div>
           <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 8 }}>You can leave this page — we'll email you when it's ready.</div>
         </div>
@@ -13892,7 +13892,7 @@ function AdminRoadmapTab() {
 
     {S.phase('s4','#9b6dff','Agency Platform','May 1-Jun 1','TARGET')}
     {openPhase==='s4'&&<div style={{border:'1px solid #9b6dff30',borderTop:'none',borderRadius:'0 0 14px 14px',overflow:'hidden',marginBottom:10}}>
-      {S.sub('s4-auto','Zero-Touch Brand Experience',<>{S.item('s4-onboard-90s','90-second onboarding','Signup > OAuth > budget > AI takes over.','UI')}{S.item('s4-ai-welcome','AI welcome analysis','"47 creators, 312 videos, 23 high-potential."','AI')}{S.item('s4-auto-outreach','Auto outreach pipeline','Day 1/3/7 licensing invite sequence.','AI')}{S.item('s4-continuous','24/7 campaign management','Scan > plan > launch > optimize > report.','AI')}</>)}
+      {S.sub('s4-auto','Zero-Touch Brand Experience',<>{S.item('s4-onboard-90s','30-second onboarding','Signup > OAuth > budget > AI takes over.','UI')}{S.item('s4-ai-welcome','AI welcome analysis','"47 creators, 312 videos, 23 high-potential."','AI')}{S.item('s4-auto-outreach','Auto outreach pipeline','Day 1/3/7 licensing invite sequence.','AI')}{S.item('s4-continuous','24/7 campaign management','Scan > plan > launch > optimize > report.','AI')}</>)}
       {S.sub('s4-ml','ML Model: CAi v2',<>{S.item('s4-ml-roas','Custom ROAS prediction','After 100+ campaigns. Video features > ROAS.','AI')}{S.item('s4-ml-copy','Ad copy optimization','A/B feedback loop. Better per category.','AI')}{S.item('s4-ml-audience','Audience prediction','TikTok followers > best Meta audience.','AI')}</>)}
       {S.sub('s4-scale','Scale to 50 Brands',<>{S.item('s4-self-serve','Self-serve funnel','Zero sales calls. Signup to live in 24hrs.','BIZ')}{S.item('s4-pricing','$0 upfront, 4% of spend','First 3 free.','BIZ')}{S.item('s4-first10','First 10 via outreach','DM DTC brands with 10+ creators.','BIZ')}{S.item('s4-scale50','Scale to 50 via referrals','Case studies, communities.','BIZ')}</>)}
       {S.sub('s4-tax','Tax & Compliance',<>{S.item('s4-1099-annual','Annual 1099-NEC filing','Stripe Connect 1099. ~$3/form.','PAY','https://stripe.com/docs/connect/1099-tax-reporting')}{S.item('s4-accounting','QuickBooks integration','Sync Stripe revenue + expenses.','PAY','https://quickbooks.intuit.com')}</>)}

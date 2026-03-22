@@ -6615,10 +6615,13 @@ app.post('/api/cai/deep-dive', authBrand, requireRole('owner', 'admin'), async (
           const spUrl = sp.url || sp.product_url || (sp.id ? 'https://www.tiktok.com/view/product/' + sp.id : null);
           if (!spUrl) continue;
           try {
-            const pvResp = await fetch('https://api.scrapecreators.com/v1/tiktok/product?url=' + encodeURIComponent(spUrl) + '&count=20&region=US', { headers: { 'x-api-key': sk } });
+            const pvResp = await fetch('https://api.scrapecreators.com/v1/tiktok/product?url=' + encodeURIComponent(spUrl) + '&get_related_videos=true&count=20&region=US', { headers: { 'x-api-key': sk } });
             if (!pvResp.ok) continue;
             const pvData = await pvResp.json();
-            const pvVideos = pvData.videos || pvData.aweme_list || pvData.data || [];
+            const pvVideos = [
+              ...(pvData.related_videos || []),
+              ...(pvData.videos || pvData.aweme_list || pvData.data || []),
+            ];
             for (const rv of pvVideos) {
               const rvId = String(rv.aweme_id || rv.id || '');
               if (!rvId || affiliateCreatorVideos.some(v => String(v.id) === rvId)) continue;
@@ -6629,21 +6632,22 @@ app.post('/api/cai/deep-dive', authBrand, requireRole('owner', 'admin'), async (
               affiliateCreatorVideos.push({
                 id: rvId,
                 desc: (rv.desc || rv.title || '').slice(0, 300),
-                views: rvStats.play_count || rvStats.playCount || rv.views || 0,
-                likes: rvStats.digg_count || rvStats.diggCount || rv.likes || 0,
-                shares: rvStats.share_count || rvStats.shareCount || rv.shares || 0,
+                views: rvStats.play_count || rvStats.playCount || rv.views || rv.play_count || 0,
+                likes: rvStats.digg_count || rvStats.diggCount || rv.likes || rv.digg_count || 0,
+                shares: rvStats.share_count || rvStats.shareCount || rv.shares || rv.share_count || 0,
                 comments: rvStats.comment_count || rvStats.commentCount || rv.comments || 0,
                 cover: rv.video?.cover?.url_list?.[0] || rv.video?.origin_cover?.url_list?.[0] || rv.cover || '',
                 playUrl: rv.video?.play_addr?.url_list?.[0] || '',
                 downloadUrl: rv.video?.download_addr?.url_list?.[0] || '',
                 authorHandle: rvAuthor,
+                createTime: rv.create_time || rv.createTime || 0,
                 _source: 'creator_affiliate',
                 video: rv.video || null,
               });
             }
           } catch (pvErr) { /* skip */ }
         }
-        console.log('[deep-dive] Shop search fallback — affiliate creator videos now:', affiliateCreatorVideos.length);
+        console.log('[deep-dive] Shop search fallback found', affiliateCreatorVideos.length, 'videos');
       }
     } catch (ssErr) {
       console.error('[deep-dive] Shop search fallback error:', ssErr.message);
