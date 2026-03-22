@@ -8438,7 +8438,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             </div>
           )}
-        <div style={{ position: 'relative', ...(hasMetaFull ? {} : { filter: 'blur(3px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' }) }}>
+        <div style={{ position: 'relative', display: (activating || buildInProgress) ? 'none' : undefined, ...(!hasMetaFull ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {}) }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 6 }}>Set Your Daily Budget</h2>
           <p style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Start small, see results, scale up. No contracts. Pause anytime.</p>
@@ -8568,6 +8568,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             );
           })()}
         </div>
+        </div>
 
         {/* Activate or Connect Meta or Billing gate */}
         {(() => {
@@ -8632,7 +8633,22 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#34d399' }}>All campaigns and ads launch PAUSED</div>
                 <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>You review and approve before anything goes live. No surprise spend.</div>
               </div>
-              <button onClick={handleActivate} style={{ width: '100%', padding: '16px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 24px rgba(155,109,255,.2)' }}>
+              {(activating || buildInProgress) && (
+                <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, padding: 24, marginBottom: 20, maxHeight: 400, overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t0)' }}>CAi is building your campaign</div>
+                  </div>
+                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, lineHeight: 1.8, color: 'var(--cs-t3)' }}>
+                    {terminalLines.slice(-20).map((line, i) => (
+                      <div key={i} style={{ color: line.type === 'success' ? '#34d399' : line.type === 'error' || line.type === 'warn' ? '#f87171' : line.type === 'highlight' ? '#9b6dff' : line.type === 'phase' ? '#0668E1' : 'var(--cs-t3)', fontWeight: line.type === 'phase' || line.type === 'success' ? 700 : 400, marginTop: line.type === 'spacer' ? 8 : 0 }}>
+                        {line.type === 'spacer' ? '' : (line.text != null ? line.text : line)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <button onClick={handleActivate} disabled={activating} style={{ width: '100%', padding: '16px 0', background: activating ? 'var(--cs-a06)' : 'linear-gradient(135deg, #9b6dff, #0668E1)', color: activating ? 'var(--cs-t5)' : '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: activating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: activating ? 'none' : '0 4px 24px rgba(155,109,255,.2)' }}>
                 Activate CAi — ${db}/day
               </button>
               {launchCount < 3 && (
@@ -8643,7 +8659,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </>
           );
         })()}
-        </div>
 
         {/* Trust Badges */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
