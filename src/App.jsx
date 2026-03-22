@@ -5338,6 +5338,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
   CAMPAIGNS TAB — CAi-managed campaign history
 ══════════════════════════════════════════════════════*/
 function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiTab, refresh, adAccount, tiktokVideos = [], caiData, brand }) {
+  const caiCampaign = caiData?.campaign;
   const toast = useToast();
   const [filter, setFilter] = useState('all');
   const [deletingId, setDeletingId] = useState(null);
@@ -5359,7 +5360,6 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
   };
 
   const caiActive = caiData?.isActive;
-  const caiCampaign = caiData?.campaign;
   const caiCreatives = caiData?.creatives || [];
   const perf = caiData?.performance || {};
   const today = perf.today || {};
