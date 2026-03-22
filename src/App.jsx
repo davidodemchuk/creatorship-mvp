@@ -9773,19 +9773,78 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       </div>
                       {(brand?.emailVerified || profile?.emailVerified) ? <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Verified</span> : <span style={{ fontSize: 13, color: '#f5a623', fontWeight: 600 }}>Pending</span>}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)' }}>
-                      <div style={{ fontSize: 20, flexShrink: 0, width: 32, textAlign: 'center' }}>{brand?.outreachAuthorized ? '\u2705' : '\u0033\uFE0F\u20E3'}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Authorize Creator Outreach</div>
-                        {!brand?.outreachAuthorized && <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Allow CAi to contact creators on your behalf</div>}
+                    <div style={{ borderRadius: 12, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
+                        <div style={{ fontSize: 20, flexShrink: 0, width: 32, textAlign: 'center' }}>{brand?.outreachAuthorized ? '\u2705' : '\u0033\uFE0F\u20E3'}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Authorize Creator Outreach</div>
+                          {!brand?.outreachAuthorized && <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Required — read and accept the agreement below</div>}
+                        </div>
+                        {brand?.outreachAuthorized && <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Authorized</span>}
                       </div>
-                      {brand?.outreachAuthorized ? <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Authorized</span> : (
-                        <button onClick={async () => {
-                          const token = localStorage.getItem('creatorship_brand_token');
-                          await fetch('/api/brand/authorize-outreach', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand?.id }) });
-                          setBrand(prev => ({ ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() }));
-                          setProfile(prev => ({ ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() }));
-                        }} style={{ padding: '8px 16px', borderRadius: 8, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Authorize</button>
+                      {!brand?.outreachAuthorized && (
+                        <div style={{ padding: '0 16px 16px' }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>Creator Outreach Authorization Agreement</div>
+                          <div
+                            onScroll={(e) => {
+                              const t = e.target;
+                              const { scrollTop, clientHeight, scrollHeight } = t;
+                              if (scrollTop + clientHeight >= scrollHeight - 5) {
+                                setExpandedCamps(prev => ({ ...prev, outreach_scrolled: true }));
+                              }
+                            }}
+                            style={{ maxHeight: 220, overflowY: 'auto', border: '1px solid var(--cs-a08)', borderRadius: 8, padding: 14, marginBottom: 12, fontSize: 12, color: 'var(--cs-t3)', lineHeight: 1.7, background: 'var(--cs-a02)' }}
+                          >
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8, fontSize: 13 }}>BRAND CREATOR OUTREACH AUTHORIZATION</div>
+                            <p style={{ marginBottom: 10 }}>By authorizing creator outreach, you (&quot;Brand&quot;) authorize Creatorship LLC (&quot;Creatorship&quot;), a South Carolina limited liability company, to act on your behalf in contacting, negotiating with, and managing relationships with TikTok content creators (&quot;Creators&quot;) for the purpose of licensing their content for use in paid Meta advertising campaigns.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>1. SCOPE OF AUTHORIZATION</div>
+                            <p style={{ marginBottom: 10 }}>You authorize Creatorship to: (a) Identify and contact TikTok creators who have published content featuring your products or brand; (b) Introduce your brand and propose paid content licensing partnerships; (c) Negotiate commission rates and campaign terms on your behalf, subject to the default commission rate set in your account settings; (d) Present creator content and performance metrics to you for approval before any paid campaign launch; (e) Execute content licensing agreements with creators who agree to participate.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>2. CONTENT RIGHTS AND LICENSING</div>
+                            <p style={{ marginBottom: 10 }}>No creator content will be used in any paid advertising campaign without: (a) The creator&apos;s explicit, signed licensing agreement granting usage rights; (b) Your approval of the specific creative asset for use in paid campaigns. All content licensing agreements executed by Creatorship on your behalf will include standard content usage rights limited to paid social media advertising on Meta platforms (Facebook and Instagram). Creatorship does not acquire or transfer ownership of any creator content.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>3. CAMPAIGN CONTROLS AND BRAND PROTECTIONS</div>
+                            <p style={{ marginBottom: 10 }}>All campaigns created by CAi on your behalf will launch in a PAUSED state. You must explicitly activate each campaign before any ad spend occurs. You retain full control over: daily budget and ROAS targets; which creator videos are included in campaigns; campaign activation, pausing, and termination. Creatorship will never authorize ad spend without your explicit approval.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>4. CREATOR COMPENSATION</div>
+                            <p style={{ marginBottom: 10 }}>Creators will be compensated via a commission on sales generated through their content, as tracked by Meta&apos;s conversion API. Commission rates are set per-creator in the licensing agreement and default to the rate configured in your Creatorship account settings. You are responsible for ensuring sufficient funds are available for creator payouts.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>5. COMPLIANCE AND ADVERTISING STANDARDS</div>
+                            <p style={{ marginBottom: 10 }}>All outreach conducted by Creatorship on your behalf will comply with: Meta&apos;s advertising policies and terms of service; FTC guidelines on endorsements and testimonials (16 CFR Part 255); applicable state and federal advertising regulations. Creator content used in ads will include appropriate disclosures as required by law.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>6. DATA AND PRIVACY</div>
+                            <p style={{ marginBottom: 10 }}>Creatorship will only collect and process creator data necessary for outreach and campaign management. Creator contact information obtained through outreach will not be shared with third parties. All data handling complies with applicable privacy laws.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>7. TERMINATION</div>
+                            <p style={{ marginBottom: 10 }}>You may revoke this authorization at any time by disabling creator outreach in your account settings. Revocation will not affect any existing licensing agreements or active campaigns already in progress. Upon revocation, Creatorship will cease all new outreach activities on your behalf within 48 hours.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>8. LIMITATION OF LIABILITY</div>
+                            <p style={{ marginBottom: 10 }}>Creatorship&apos;s liability under this authorization is limited to the fees paid by you to Creatorship in the twelve (12) months preceding any claim. Creatorship is not liable for any creator&apos;s failure to perform, content quality issues, or third-party claims arising from creator content.</p>
+
+                            <div style={{ fontWeight: 700, color: 'var(--cs-t2)', marginBottom: 4, marginTop: 12 }}>9. ELECTRONIC SIGNATURE</div>
+                            <p style={{ marginBottom: 10 }}>By checking the box below and clicking &quot;I Understand — Authorize,&quot; you acknowledge that your electronic acceptance constitutes a legally binding signature and that you consent to conducting this transaction electronically pursuant to the Electronic Signatures in Global and National Commerce Act (E-SIGN Act) and applicable state law.</p>
+
+                            <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 12, paddingTop: 8, borderTop: '1px solid var(--cs-a06)' }}>Contact: support@creatorship.app | Creatorship LLC, Greenville, South Carolina</div>
+                          </div>
+                          {!expandedCamps?.outreach_scrolled && (
+                            <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginBottom: 8, textAlign: 'center' }}>Scroll to the bottom of the agreement to continue</div>
+                          )}
+                          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: expandedCamps?.outreach_scrolled ? 'pointer' : 'not-allowed', marginBottom: 12, opacity: expandedCamps?.outreach_scrolled ? 1 : 0.4 }}>
+                            <input type="checkbox" checked={!!expandedCamps?.outreach_agreed} onChange={(e) => { if (expandedCamps?.outreach_scrolled) setExpandedCamps(prev => ({ ...prev, outreach_agreed: e.target.checked })); }} disabled={!expandedCamps?.outreach_scrolled} style={{ marginTop: 2, accentColor: '#9b6dff' }} />
+                            <span style={{ fontSize: 12, color: 'var(--cs-t2)', lineHeight: 1.5 }}>I have read and agree to the Creator Outreach Authorization Agreement. I authorize Creatorship LLC to contact creators and negotiate content licensing on my behalf under the terms described above.</span>
+                          </label>
+                          <button
+                            onClick={async () => {
+                              const token = localStorage.getItem('creatorship_brand_token');
+                              await fetch('/api/brand/authorize-outreach', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand?.id }) });
+                              setBrand(prev => ({ ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() }));
+                              setProfile(prev => ({ ...prev, outreachAuthorized: true, outreachAuthorizedAt: new Date().toISOString() }));
+                            }}
+                            disabled={!expandedCamps?.outreach_agreed}
+                            style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: 'none', background: expandedCamps?.outreach_agreed ? 'linear-gradient(135deg, #9b6dff, #0668E1)' : 'var(--cs-a06)', color: expandedCamps?.outreach_agreed ? '#fff' : 'var(--cs-t5)', fontSize: 14, fontWeight: 700, cursor: expandedCamps?.outreach_agreed ? 'pointer' : 'not-allowed', fontFamily: 'inherit', transition: 'all .2s' }}
+                          >I Understand — Authorize</button>
+                        </div>
                       )}
                     </div>
                   </div>
