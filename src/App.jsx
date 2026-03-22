@@ -5373,6 +5373,8 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
   const [filter, setFilter] = useState('all');
   const [deletingId, setDeletingId] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [goLiveBusy, setGoLiveBusy] = useState(false);
+  const [pauseBusy, setPauseBusy] = useState(false);
 
   const handleDeleteFailedCampaign = async (c) => {
     const doDelete = await showConfirm({ title: 'Delete Campaign', message: 'This will permanently delete this failed campaign.', confirmText: 'Delete', destructive: true }); if (!doDelete) return;
@@ -5465,12 +5467,49 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 10 }}>Active Campaign</div>
         <div style={{ background: 'var(--cs-card)', border: '1px solid rgba(155,109,255,.12)', borderRadius: 12, padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 12, flexWrap: 'wrap' }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>[CAi] {brand?.brandName || brand?.storeName || 'Brand'} — Always On</div>
               <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>Campaign ID: {caiCampaign.id} · Created {caiCampaign.createdAt ? new Date(caiCampaign.createdAt).toLocaleDateString() : 'recently'}</div>
             </div>
-            <a href={'https://www.facebook.com/adsmanager/manage/campaigns?act=' + (adAccount || '').replace('act_', '') + '&selected_campaign_ids=' + caiCampaign.id} target="_blank" rel="noopener" style={{ fontSize: 12, color: '#4da6ff', textDecoration: 'none' }}>Meta ↗</a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {caiActive ? (
+                <button
+                  type="button"
+                  disabled={pauseBusy}
+                  onClick={async () => {
+                    const ok = await showConfirm({ title: 'Pause campaign', message: 'Your Meta campaign will be paused. You can go live again anytime.', confirmText: 'Pause', destructive: true });
+                    if (!ok) return;
+                    setPauseBusy(true);
+                    try {
+                      const token = localStorage.getItem('creatorship_brand_token');
+                      const res = await fetch('/api/cai/deactivate', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId }) });
+                      const data = await res.json();
+                      if (data.error) { alert(data.error); return; }
+                      if (refresh) refresh(); else window.location.reload();
+                    } finally { setPauseBusy(false); }
+                  }}
+                  style={{ padding: '6px 16px', borderRadius: 8, background: 'rgba(239,68,68,.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,.25)', fontSize: 13, fontWeight: 700, cursor: pauseBusy ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: pauseBusy ? 0.7 : 1 }}
+                >{pauseBusy ? '…' : 'Pause'}</button>
+              ) : (caiData?.processingStatus === 'complete' || caiCreatives.length > 0) ? (
+                <button
+                  type="button"
+                  disabled={goLiveBusy}
+                  onClick={async () => {
+                    setGoLiveBusy(true);
+                    try {
+                      const token = localStorage.getItem('creatorship_brand_token');
+                      const res = await fetch('/api/cai/go-live', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId }) });
+                      const data = await res.json();
+                      if (data.error) { alert(data.error); return; }
+                      if (refresh) refresh(); else window.location.reload();
+                    } finally { setGoLiveBusy(false); }
+                  }}
+                  style={{ padding: '6px 16px', borderRadius: 8, background: 'linear-gradient(135deg,#34d399,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: goLiveBusy ? 'wait' : 'pointer', fontFamily: 'inherit', opacity: goLiveBusy ? 0.85 : 1 }}
+                >{goLiveBusy ? '…' : 'Go Live'}</button>
+              ) : null}
+              <a href={'https://www.facebook.com/adsmanager/manage/campaigns?act=' + (adAccount || '').replace('act_', '') + '&selected_campaign_ids=' + caiCampaign.id} target="_blank" rel="noopener" style={{ fontSize: 12, color: '#4da6ff', textDecoration: 'none' }}>Meta ↗</a>
+            </div>
           </div>
           {/* Creatives in this campaign */}
           {caiCreatives.length > 0 && (
@@ -9383,12 +9422,28 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   onClick={async (e) => {
                     e.stopPropagation();
                     if (!alwaysOnCampaignId) return;
-                    const currentStatus = isActive ? 'ACTIVE' : 'PAUSED';
-                    if (currentStatus !== 'ACTIVE') {
-                      if (!confirm('Activate this campaign? Meta will start spending immediately.')) return;
+                    if (isActive) {
+                      const doPause = await showConfirm({ title: 'Pause campaign', message: 'Your Meta campaign will be paused. You can go live again anytime.', confirmText: 'Pause', destructive: true });
+                      if (!doPause) return;
+                      setToggling(t => ({ ...t, [alwaysOnCampaignId]: true }));
+                      try {
+                        const r = await fetch('/api/cai/deactivate', { method: 'POST', headers, body: JSON.stringify({ brandId: brand.id }) });
+                        const d = await r.json();
+                        if (d.error) { toast.error(d.error); return; }
+                        setTimeout(() => window.location.reload(), 800);
+                      } catch (err) { toast.error(err.message || 'Pause failed'); }
+                      finally { setToggling(t => ({ ...t, [alwaysOnCampaignId]: false })); }
+                      return;
                     }
-                    const ok = await toggleCamp(alwaysOnCampaignId, currentStatus);
-                    if (ok) setTimeout(() => window.location.reload(), 1000);
+                    if (!confirm('Go live on Meta? Ads will start delivering and spending will begin.')) return;
+                    setToggling(t => ({ ...t, [alwaysOnCampaignId]: true }));
+                    try {
+                      const r = await fetch('/api/cai/go-live', { method: 'POST', headers, body: JSON.stringify({ brandId: brand.id }) });
+                      const d = await r.json();
+                      if (d.error) { toast.error(d.error); return; }
+                      setTimeout(() => window.location.reload(), 800);
+                    } catch (err) { toast.error(err.message || 'Go live failed'); }
+                    finally { setToggling(t => ({ ...t, [alwaysOnCampaignId]: false })); }
                   }}
                   style={{
                     padding: '4px 12px',
@@ -9397,14 +9452,14 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     fontWeight: 700,
                     cursor: 'pointer',
                     fontFamily: 'inherit',
-                    background: isActive ? 'rgba(239,68,68,.08)' : 'rgba(52,211,153,.1)',
+                    background: isActive ? 'rgba(239,68,68,.08)' : 'linear-gradient(135deg, rgba(52,211,153,.25), rgba(6,104,225,.2))',
                     color: isActive ? '#ef4444' : '#34d399',
-                    border: '1px solid ' + (isActive ? 'rgba(239,68,68,.2)' : 'rgba(52,211,153,.25)'),
+                    border: '1px solid ' + (isActive ? 'rgba(239,68,68,.2)' : 'rgba(52,211,153,.35)'),
                     opacity: (!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId]) ? 0.6 : 1,
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId] ? '...' : isActive ? 'Pause' : 'Activate'}
+                  {!alwaysOnCampaignId || !!toggling[alwaysOnCampaignId] ? '...' : isActive ? 'Pause' : 'Go Live'}
                 </button>
               </div>
 

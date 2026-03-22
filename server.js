@@ -7458,7 +7458,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
           };
           const adName = '[CAi] ' + (pick.tier || 'ad') + ' — ' + (video.authorHandle || 'creator');
           const cr = await metaPost(adAccount + '/adcreatives', { name: adName, object_story_spec: JSON.stringify(spec), access_token: metaToken });
-          const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: ids.adset, creative: JSON.stringify({ creative_id: cr.id }), status: 'ACTIVE', access_token: metaToken });
+          const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: ids.adset, creative: JSON.stringify({ creative_id: cr.id }), status: 'PAUSED', access_token: metaToken });
           dbg('Ad created ' + video.id + ': adId=' + ad.id + ' creativeId=' + cr.id);
 
           // Save each creative immediately as it completes (guard against stale generation)
@@ -7469,7 +7469,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
               creator: video.authorHandle || 'creator', hookScore: pick.hookScore || 70,
               hookReason: pick.hookReason || '', tier: pick.tier || 'test',
               dailyBudget: pick.dailyBudget || 30, primaryText: pick.primaryText || '',
-              headline: pick.headline || '', status: 'active',
+              headline: pick.headline || '', status: 'paused',
               addedAt: new Date().toISOString(), daysActive: 0, lastMetrics: {},
             });
             done++;
@@ -7492,31 +7492,8 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
         finalBrand.cai.processingProgress = { total: topPicks.length, done, errors };
         finalBrand.cai.debugLog = debugLog;
         if (finalBrand.cai.creatives.length > 0) {
-          finalBrand.cai.activityLog.push({ type: 'processing_complete', ts: new Date().toISOString(), msg: finalBrand.cai.creatives.length + ' ads ready, ' + errors + ' failed' });
-          // ═══ UNPAUSE: Set campaign + adset + all ads to ACTIVE on Meta ═══
-          try {
-            const mt = finalBrand.metaToken;
-            const campId = finalBrand.cai.campaign?.id;
-            const asId = finalBrand.cai.campaign?.adsetId;
-            if (mt && campId) {
-              await metaPost(campId, { status: 'ACTIVE', access_token: mt });
-              console.log('[cai-activate-bg] Campaign UNPAUSED:', campId);
-            }
-            if (mt && asId) {
-              await metaPost(asId, { status: 'ACTIVE', access_token: mt });
-              console.log('[cai-activate-bg] Adset UNPAUSED:', asId);
-            }
-            for (const cr of finalBrand.cai.creatives) {
-              if (cr.adId && mt) {
-                try { await metaPost(cr.adId, { status: 'ACTIVE', access_token: mt }); } catch (_) {}
-              }
-            }
-            console.log('[cai-activate-bg] All ads UNPAUSED');
-            finalBrand.cai.activityLog.push({ type: 'campaign_live', ts: new Date().toISOString(), msg: 'Campaign and ' + finalBrand.cai.creatives.length + ' ads set to ACTIVE on Meta' });
-          } catch (unpauseErr) {
-            console.error('[cai-activate-bg] Unpause failed:', unpauseErr.message);
-            finalBrand.cai.activityLog.push({ type: 'unpause_failed', ts: new Date().toISOString(), msg: 'Auto-unpause failed: ' + unpauseErr.message });
-          }
+          // Campaign stays PAUSED — brand must click "Go Live" in Creatorship to activate
+          finalBrand.cai.activityLog.push({ type: 'processing_complete', ts: new Date().toISOString(), msg: finalBrand.cai.creatives.length + ' ads ready for review — campaign is PAUSED on Meta' + (errors ? ' (' + errors + ' failed)' : '') });
         } else {
           finalBrand.cai.activityLog.push({ type: 'processing_error', ts: new Date().toISOString(), msg: 'All ' + topPicks.length + ' video downloads failed. Check debugLog for details.' });
         }
@@ -8123,10 +8100,49 @@ app.post('/api/cai/deactivate', authBrand, requireRole('editor'), async (req, re
       console.log('[cai-deactivate] Campaign PAUSED on Meta:', brand.cai.campaign.id);
     } catch (e) { console.error('[cai-deactivate] Meta pause failed:', e.message); }
   }
-  if (brand.cai) { brand.cai.isActive = false; brand.cai.deactivatedAt = new Date().toISOString(); }
+  if (brand.cai) {
+    brand.cai.isActive = false;
+    brand.cai.deactivatedAt = new Date().toISOString();
+    for (const cr of (brand.cai.creatives || [])) { if (cr) cr.status = 'paused'; }
+  }
   await auditLog(brand.id, 'cai_deactivated', {});
   await saveBrand(brand);
   res.json({ success: true });
+});
+
+// Go Live — unpause campaign, adset, and all ads on Meta (brand explicitly activates after review)
+app.post('/api/cai/go-live', authBrand, requireRole('editor'), async (req, res) => {
+  try {
+    const brandId = req.brandAuth?.brandId || req.body.brandId;
+    const brand = await getBrandById(brandId);
+    if (!brand) return res.status(404).json({ error: 'Brand not found' });
+    if (!brand?.cai?.campaign?.id) return res.json({ error: 'No campaign found' });
+
+    const mt = brand.metaToken;
+    if (!mt) return res.json({ error: 'No Meta token' });
+    const campId = brand.cai.campaign.id;
+    const asId = brand.cai.campaign.adsetId;
+
+    await metaPost(campId, { status: 'ACTIVE', access_token: mt });
+    if (asId) await metaPost(asId, { status: 'ACTIVE', access_token: mt });
+    for (const cr of (brand.cai.creatives || [])) {
+      if (cr.adId) {
+        try { await metaPost(cr.adId, { status: 'ACTIVE', access_token: mt }); } catch (_) {}
+      }
+    }
+
+    for (const cr of (brand.cai.creatives || [])) { if (cr) cr.status = 'active'; }
+    brand.cai.isActive = true;
+    brand.cai.activityLog = brand.cai.activityLog || [];
+    brand.cai.activityLog.push({ type: 'campaign_live', ts: new Date().toISOString(), msg: 'Campaign activated by brand — all ads now live on Meta' });
+    await saveBrand(brand);
+
+    console.log('[cai] go-live: Campaign ACTIVATED', campId);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[cai] go-live error:', e.message);
+    res.json({ error: e.message });
+  }
 });
 
 // ═══ FULL RESET — Clear ALL CAi data, return brand to pre-analysis state ═══
