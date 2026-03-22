@@ -6917,18 +6917,7 @@ app.post('/api/cai/activate', authBrand, requireRole('owner', 'admin'), async (r
     }
   }
 
-  // Billing gate: first activation free; further activations require Stripe (not for budget-only adjust above)
-  const activationCount = brand.activationCount || 0;
-  const hasStripe = !!(brand.stripeCustomerId && brand.billingEnabled);
-  const freeActivations = 1;
-  if (activationCount >= freeActivations && !hasStripe) {
-    return res.status(402).json({
-      error: 'Connect Stripe to launch more campaigns. Your first campaign was free — to keep running ads, connect billing.',
-      needsBilling: true,
-      activationCount,
-      freeActivations,
-    });
-  }
+  // Billing / Stripe gate is enforced at Go Live (see /api/cai/go-live), not at build — brands can build PAUSED campaigns for free.
 
   if (!metaToken || !adAccount) return res.status(400).json({ error: 'Connect Meta Ads in Settings first' });
   if (!pageId) return res.status(400).json({ error: 'Select a Meta Page in Settings first' });
@@ -7381,6 +7370,15 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
         if (!video) { dbg('SKIP ' + pick.videoId + ': not found in allVideos'); errors++; done++; continue; }
 
         try {
+          // Free tier: only create up to FREE_AD_LIMIT ads if no billing
+          const FREE_AD_LIMIT = 3;
+          const brandForLimit = await getBrandById(brandId);
+          const currentAdCount = (brandForLimit?.cai?.creatives || []).filter(c => c.adId).length;
+          if (!brandForLimit.billingEnabled && currentAdCount >= FREE_AD_LIMIT) {
+            dbg(`Free tier limit reached (${FREE_AD_LIMIT} ads). Skipping remaining videos.`);
+            break;
+          }
+
           // ═══ WATERMARK-SAFE: Prefer play_addr / nwm; download_addr may be watermarked ═══
           const cleanResult = await getCleanVideoUrl(video, process.env.SCRAPE_KEY);
           let videoUrl = cleanResult.url || freshVideosMap[String(video.id)];
@@ -7994,6 +7992,12 @@ async function caiAddCreativeToCampaign(brand, campaignLocalId, videoId, primary
   const video = allVideos.find(v => String(v.id) === String(videoId));
   if (!video) throw new Error('Video not found in content pool');
 
+  const FREE_AD_LIMIT_MULTI = 3;
+  const primaryAdCount = (brand.cai?.creatives || []).filter(c => c.adId).length;
+  if (!brand.billingEnabled && primaryAdCount >= FREE_AD_LIMIT_MULTI) {
+    throw new Error('Free tier includes ' + FREE_AD_LIMIT_MULTI + ' ads. Connect billing in Account settings to add more.');
+  }
+
   let videoUrl = video.downloadUrl || '';
   const handle = video.authorHandle || brand.tikTokStorePageUrl?.match(/@([^/?]+)/)?.[1] || brand.tikTokStorePageUrl?.match(/\/shop\/store\/([^/]+)/)?.[1] || (brand.storeName || brand.brandName || '').toLowerCase().replace(/\s+/g, '');
   const scrapeKey = process.env.SCRAPE_KEY;
@@ -8039,7 +8043,7 @@ async function caiAddCreativeToCampaign(brand, campaignLocalId, videoId, primary
     name: '[CAi] ' + (video.authorHandle || 'creator') + ' — ' + (video.desc || '').slice(0, 30),
     adset_id: adsetId,
     creative: JSON.stringify({ creative_id: cr.id }),
-    status: 'ACTIVE',
+    status: 'PAUSED',
     access_token: metaToken,
   });
 
@@ -8055,7 +8059,7 @@ async function caiAddCreativeToCampaign(brand, campaignLocalId, videoId, primary
     hookReason: null,
     primaryText: text,
     headline: head,
-    status: 'active',
+    status: 'paused',
     addedAt: new Date().toISOString(),
     lastMetrics: {},
   });
@@ -8122,6 +8126,31 @@ app.post('/api/cai/go-live', authBrand, requireRole('editor'), async (req, res) 
     if (!mt) return res.json({ error: 'No Meta token' });
     const campId = brand.cai.campaign.id;
     const asId = brand.cai.campaign.adsetId;
+
+    // --- BILLING GATE ---
+    const activeAdsCount = (brand.cai.creatives || []).filter(c => c.adId && c.status !== 'deleted' && c.status !== 'archived').length;
+    const hasBilling = !!brand.billingEnabled;
+    const FREE_AD_LIMIT = 3;
+
+    if (!hasBilling && activeAdsCount > FREE_AD_LIMIT) {
+      return res.json({
+        error: `Free tier includes ${FREE_AD_LIMIT} active ads. You have ${activeAdsCount} ads. Connect billing in Account settings to go live with all your ads.`,
+        requiresBilling: true,
+        activeAdsCount,
+        freeLimit: FREE_AD_LIMIT
+      });
+    }
+
+    // --- MINIMUM BUDGET CHECK ---
+    const dailyBudget = brand.cai?.monthlyBudget ? Math.round(brand.cai.monthlyBudget / 30) : 0;
+    if (dailyBudget < 20) {
+      return res.json({
+        error: 'Minimum $20/day budget required for Meta\'s algorithm to optimize across your creatives. Update your budget in the Optimize tab.',
+        requiresBudgetIncrease: true,
+        currentDaily: dailyBudget,
+        minimumDaily: 20
+      });
+    }
 
     await metaPost(campId, { status: 'ACTIVE', access_token: mt });
     if (asId) await metaPost(asId, { status: 'ACTIVE', access_token: mt });
@@ -8671,6 +8700,11 @@ app.get('/api/cai/recommendations', authBrand, async (req, res) => {
 // ═══ SHARED: Add a video to an active CAi campaign (used by both /api/cai/add-creative and /api/launch routing) ═══
 async function caiAddCreativeToActiveCampaign(brand, videoId, primaryText, headline) {
   if (!brand?.cai?.campaign?.id) throw new Error('No active campaign. Activate CAi first.');
+  const FREE_AD_LIMIT = 3;
+  const adCount = (brand.cai.creatives || []).filter(c => c.adId).length;
+  if (!brand.billingEnabled && adCount >= FREE_AD_LIMIT) {
+    throw new Error('Free tier includes ' + FREE_AD_LIMIT + ' ads. Connect billing in Account settings to add more.');
+  }
   const metaToken = brand.metaToken;
   const adAccount = brand.adAccount;
   const pageId = brand.pageId;
@@ -8738,14 +8772,14 @@ async function caiAddCreativeToActiveCampaign(brand, videoId, primaryText, headl
   };
   const adName = '[CAi] ' + (video.authorHandle || 'creator');
   const cr = await metaPost(adAccount + '/adcreatives', { name: adName, object_story_spec: JSON.stringify(spec), access_token: metaToken });
-  const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: adsetId, creative: JSON.stringify({ creative_id: cr.id }), status: 'ACTIVE', access_token: metaToken });
+  const ad = await metaPost(adAccount + '/ads', { name: adName, adset_id: adsetId, creative: JSON.stringify({ creative_id: cr.id }), status: 'PAUSED', access_token: metaToken });
 
   // Update brand CAi state
   brand.cai.creatives = brand.cai.creatives || [];
   brand.cai.creatives.push({
     videoId: video.id, adId: ad.id, creativeId: cr.id, metaVideoId,
     creator: video.authorHandle || 'creator', hookScore: 0, tier: 'test',
-    status: 'active', addedAt: new Date().toISOString(), daysActive: 0, lastMetrics: {},
+    status: 'paused', addedAt: new Date().toISOString(), daysActive: 0, lastMetrics: {},
   });
 
   // Increase campaign budget ($30/day per new creative)
@@ -9480,24 +9514,7 @@ app.post('/api/launch', authBrand, requireRole('editor'), async (req, res) => {
     }
   }
   if (!metaToken || !adAccount) return res.status(400).json({ error: 'metaToken and adAccount required — connect Meta API in Settings' });
-  // Check free launch limit if billing is not set up
-  if (brandId) {
-    const b = await getBrandById(brandId);
-    if (b) {
-      const freeLaunchLimit = 3;
-      const freeLaunchesUsed = b.freeLaunchesUsed || 0;
-      const hasBilling = !!b.billingEnabled;
-
-      if (!hasBilling && freeLaunchesUsed >= freeLaunchLimit) {
-        return res.status(402).json({
-          error: 'Free launches used up. Add a payment method in Settings → Billing to continue launching campaigns.',
-          freeLaunchesUsed,
-          freeLaunchLimit,
-          requiresBilling: true
-        });
-      }
-    }
-  }
+  // Free launch billing gate removed — billing is enforced at CAi Go Live (/api/cai/go-live).
   const scan = getScanForBrand(brandId);
   const deep = getDeepScanForBrand(brandId);
   const allVideos = [
@@ -9742,9 +9759,7 @@ app.post('/api/launch', authBrand, requireRole('editor'), async (req, res) => {
       if (brandForCount) {
         brandForCount.launchCount = (brandForCount.launchCount || 0) + 1;
         brandForCount.activationCount = (brandForCount.activationCount || 0) + 1;
-        if (!brandForCount.billingEnabled) {
-          brandForCount.freeLaunchesUsed = (brandForCount.freeLaunchesUsed || 0) + 1;
-        }
+        // brandForCount.freeLaunchesUsed = (brandForCount.freeLaunchesUsed || 0) + 1; // removed — billing gate at Go Live
         await saveBrand(brandForCount);
       }
     }

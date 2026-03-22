@@ -5370,6 +5370,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
   CAMPAIGNS TAB — CAi-managed campaign history
 ══════════════════════════════════════════════════════*/
 function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiTab, refresh, adAccount, tiktokVideos = [], caiData, brand }) {
+  const toast = useToast();
   const [filter, setFilter] = useState('all');
   const [deletingId, setDeletingId] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -5501,7 +5502,17 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
                       const token = localStorage.getItem('creatorship_brand_token');
                       const res = await fetch('/api/cai/go-live', { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId }) });
                       const data = await res.json();
-                      if (data.error) { alert(data.error); return; }
+                      if (data.error) {
+                        if (data.requiresBilling) {
+                          if (confirm(data.error + '\n\nGo to Account settings to connect billing?')) {
+                            setCaiTab && setCaiTab(null);
+                            setBrandTab && setBrandTab('settings');
+                          }
+                        } else {
+                          toast.error(data.error);
+                        }
+                        return;
+                      }
                       if (refresh) refresh(); else window.location.reload();
                     } finally { setGoLiveBusy(false); }
                   }}
@@ -7477,7 +7488,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   });
   useEffect(() => {
     if (caiData?.monthlyBudget && caiData.monthlyBudget > 0) {
-      setMonthlyBudget(prev => prev === 3000 ? caiData.monthlyBudget : prev);
+      const mb = Math.max(caiData.monthlyBudget, 600); // $20/day minimum ($600/mo)
+      setMonthlyBudget(prev => prev === 3000 ? mb : prev);
     }
     if (caiData?.roasTarget && caiData.roasTarget > 0) {
       setRoasTarget(prev => prev === 2.0 ? caiData.roasTarget : prev);
@@ -7937,13 +7949,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     }
     if (!brand?.emailVerified && !profile?.emailVerified) {
       setActivationResult({ error: 'Please verify your email (Step 4) before activating CAi.' });
-      setActivating(false);
-      if (setBuildInProgress) setBuildInProgress(false);
-      if (setBuildInfo) setBuildInfo(null);
-      return;
-    }
-    if ((brand.launchCount || 0) >= 3 && !brand.stripeCustomerId && !brand.billingConnected && !brand.billingEnabled) {
-      setActivationResult({ error: 'Please connect billing to continue. You have used all 3 free launches.' });
       setActivating(false);
       if (setBuildInProgress) setBuildInProgress(false);
       if (setBuildInfo) setBuildInfo(null);
@@ -9812,7 +9817,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <button onClick={() => { setMode(null); setCaiSubTab('analysis'); }} style={{ background: 'none', border: 'none', color: 'var(--cs-t3)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>Back to analysis</button>
                 <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.08), rgba(6,104,225,.06))', border: '1px solid rgba(155,109,255,.25)', borderRadius: 16, padding: 28, marginBottom: 20 }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 6 }}>Almost there — finish setup to launch</div>
-                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>Complete the steps below, then set your budget and CAi handles the rest.</div>
+                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 8 }}>Complete the steps below, then set your budget and CAi handles the rest.</div>
+                  <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginBottom: 20, padding: '8px 12px', borderRadius: 8, background: 'var(--cs-a04)', border: '1px solid var(--cs-a06)' }}>Free tier: 3 active ads included. No credit card required. Connect billing anytime to unlock your full content library.</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderRadius: 12, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)' }}>
                       <div style={{ fontSize: 20, flexShrink: 0, width: 32, textAlign: 'center' }}>{brand?.hasMetaToken ? '\u2705' : '\u0031\uFE0F\u20E3'}</div>
@@ -9940,9 +9946,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <span className="mono" style={{ fontSize: 14, color: 'var(--cs-t4)' }}>${monthlyBudget.toLocaleString()}/mo</span>
             </div>
             <span className="mono" style={{ fontSize: 32, fontWeight: 800, color: '#34d399' }}>${Math.round(monthlyBudget / 30)}<span style={{ fontSize: 14, color: 'var(--cs-t4)', fontWeight: 400 }}>/day</span></span>
-            <input type="range" min={300} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, marginTop: 12, cursor: 'pointer' }} />
+            <input type="range" min={600} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, marginTop: 12, cursor: 'pointer' }} />
             <div className="cai-pill-row" style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-              {[{d:10,m:300},{d:25,m:750},{d:50,m:1500},{d:100,m:3000},{d:167,m:5000},{d:333,m:10000},{d:500,m:15000}].map(v => <button key={v.m} onClick={() => setMonthlyBudget(v.m)} style={pillSt(Math.abs(monthlyBudget-v.m)<50)}>${v.d}/d</button>)}
+              {[{d:20,m:600},{d:25,m:750},{d:50,m:1500},{d:100,m:3000},{d:167,m:5000},{d:333,m:10000},{d:500,m:15000}].map(v => <button key={v.m} onClick={() => setMonthlyBudget(v.m)} style={pillSt(Math.abs(monthlyBudget-v.m)<50)}>${v.d}/d</button>)}
             </div>
             {/* Budget context — volume-first */}
             <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, fontSize: 13, lineHeight: 1.5, background: Math.round(monthlyBudget/30) < 25 ? 'rgba(255,180,0,.05)' : Math.round(monthlyBudget/30) < 50 ? 'rgba(6,104,225,.04)' : Math.round(monthlyBudget/30) < 100 ? 'rgba(52,211,153,.04)' : Math.round(monthlyBudget/30) < 300 ? 'rgba(52,211,153,.06)' : 'rgba(155,109,255,.04)', border: '1px solid ' + (Math.round(monthlyBudget/30) < 25 ? 'rgba(255,180,0,.12)' : Math.round(monthlyBudget/30) < 50 ? 'rgba(6,104,225,.1)' : Math.round(monthlyBudget/30) < 300 ? 'rgba(52,211,153,.1)' : 'rgba(155,109,255,.1)'), color: Math.round(monthlyBudget/30) < 25 ? '#ffb400' : Math.round(monthlyBudget/30) < 50 ? '#4da6ff' : Math.round(monthlyBudget/30) < 300 ? '#34d399' : '#9b6dff' }}>
@@ -10917,7 +10923,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const price = brand.avgProductPrice || 30;
     const db = Math.round(monthlyBudget / 30);
     const tiers = [
-      { name: 'Test', daily: 25, creatives: 3, desc: 'Prove it works', color: '#ffb400' },
+      { name: 'Test', daily: 20, creatives: 3, desc: 'Prove it works', color: '#ffb400' },
       { name: 'Growth', daily: 100, creatives: 5, desc: 'Scale what works', color: '#9b6dff' },
       { name: 'Scale', daily: 500, creatives: 10, desc: 'Maximum velocity', color: '#34d399' },
     ];
@@ -11212,9 +11218,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             <span style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Custom daily budget</span>
             <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: '#34d399' }}>${db}/day</span>
           </div>
-          <input type="range" min={300} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, cursor: 'pointer' }} />
+          <input type="range" min={600} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, cursor: 'pointer' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--cs-t5)', marginTop: 4 }}>
-            <span>$10/day</span>
+            <span>$20/day</span>
             <span className="mono" style={{ color: 'var(--cs-t4)' }}>${monthlyBudget.toLocaleString()}/mo</span>
             <span>$1,000/day</span>
           </div>
