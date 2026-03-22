@@ -5544,6 +5544,44 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
       </div>
     )}
 
+    {/* LOCKED VIDEOS — free tier upsell (only after a campaign has built ads; avoids “all locked” before first build) */}
+    {!brand?.billingEnabled && caiCampaign?.id && (caiData?.creatives || []).length > 0 && (() => {
+      const topPicks = brand?.caiDeepDive?.analysis?.topPicks || [];
+      const creativeVideoIds = new Set((caiData?.creatives || []).map(c => String(c.videoId)));
+      const lockedVideos = topPicks.filter(p => !creativeVideoIds.has(String(p.videoId)));
+      if (lockedVideos.length === 0) return null;
+      return (
+        <div style={{ marginTop: 20, padding: 24, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)' }}>{lockedVideos.length} more video{lockedVideos.length !== 1 ? 's' : ''} ready to launch</div>
+              <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Meta&apos;s algorithm performs best with 10+ creatives. Unlock your full content library.</div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#9b6dff', padding: '4px 10px', borderRadius: 6, background: 'rgba(155,109,255,.1)', border: '1px solid rgba(155,109,255,.2)', textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>Free Tier</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8, marginBottom: 16 }}>
+            {lockedVideos.map((pick, idx) => {
+              const vid = tiktokVideos.find(v => String(v.id) === String(pick.videoId));
+              const coverUrl = vid?.cover || vid?.coverHd || pick.coverUrl;
+              return (
+                <div key={pick.videoId || idx} style={{ position: 'relative', width: '100%', aspectRatio: '9/16', borderRadius: 8, overflow: 'hidden', background: 'var(--cs-a04)' }}>
+                  {coverUrl && <img src={coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(2px) grayscale(60%)', opacity: 0.4 }} />}
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F512;</div>
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 4, left: 4, right: 4, textAlign: 'center' }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{pick.tier || 'locked'}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <button type="button" onClick={() => { setCaiTab && setCaiTab(null); setBrandTab && setBrandTab('settings'); }} style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: '1px solid #9b6dff', background: 'rgba(155,109,255,.08)', color: '#9b6dff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Connect Billing to Unlock All Videos</button>
+          <div style={{ fontSize: 12, color: 'var(--cs-t5)', textAlign: 'center', marginTop: 8 }}>No monthly fee. 4% of managed Meta ad spend — only when your ads are running.</div>
+        </div>
+      );
+    })()}
+
     {/* Campaign History */}
     <div style={{ marginBottom: 12 }}>
       <button onClick={() => setShowHistory(!showHistory)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0' }}>
