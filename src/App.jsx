@@ -9919,16 +9919,54 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   </div>
                 </div>
               </div>
+            ) : !caiData?.campaign?.id && !activeCreativeCount && brand?.hasMetaToken && (brand?.emailVerified || profile?.emailVerified) && brand?.outreachAuthorized ? (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.08), rgba(6,104,225,.06))', border: '1px solid rgba(155,109,255,.25)', borderRadius: 16, padding: 28, marginBottom: 20 }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 6 }}>Ready to launch</div>
+                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>Set your daily budget and ROAS target below, then hit Activate. CAi will build your campaign, upload creatives to Meta, and launch everything PAUSED for your review.</div>
+                </div>
+                <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, padding: 24, marginBottom: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Daily Budget</label>
+                    <span className="mono" style={{ fontSize: 32, fontWeight: 800, color: '#34d399' }}>${Math.round(monthlyBudget / 30)}<span style={{ fontSize: 14, color: 'var(--cs-t4)', fontWeight: 400 }}>/day</span></span>
+                  </div>
+                  <span className="mono" style={{ fontSize: 14, color: 'var(--cs-t4)' }}>${monthlyBudget.toLocaleString()}/mo</span>
+                  <input type="range" min={600} max={30000} step={30} value={monthlyBudget} onChange={e => setMonthlyBudget(+e.target.value)} style={{ width: '100%', accentColor: '#34d399', height: 6, marginTop: 12, cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--cs-t5)', marginTop: 4 }}>
+                    <span>$20/day</span>
+                    <span>$1,000/day</span>
+                  </div>
+                </div>
+                <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                    <label style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>ROAS Target</label>
+                    <span className="mono" style={{ fontSize: 24, fontWeight: 800, color: '#9b6dff' }}>{roasTarget.toFixed(1)}x</span>
+                  </div>
+                  <input type="range" min={0.5} max={5} step={0.1} value={roasTarget} onChange={e => setRoasTarget(+e.target.value)} style={{ width: '100%', accentColor: '#9b6dff', height: 6, cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    {[0.5, 1.0, 1.5, 2.0, 2.5, 3.0].map(v => (
+                      <button key={v} type="button" onClick={() => setRoasTarget(v)} style={{ padding: '4px 10px', borderRadius: 6, border: Math.abs(roasTarget - v) < 0.05 ? '1px solid #9b6dff' : '1px solid var(--cs-a06)', background: Math.abs(roasTarget - v) < 0.05 ? 'rgba(155,109,255,.15)' : 'var(--cs-a04)', color: Math.abs(roasTarget - v) < 0.05 ? '#9b6dff' : 'var(--cs-t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{v}x{v === 2.0 ? ' CAi' : ''}</button>
+                    ))}
+                  </div>
+                </div>
+                <button type="button" onClick={handleActivate} disabled={activating} style={{ width: '100%', padding: '16px 0', borderRadius: 12, border: 'none', background: activating ? 'var(--cs-a06)' : 'linear-gradient(135deg, #9b6dff, #0668E1)', color: activating ? 'var(--cs-t5)' : '#fff', fontSize: 16, fontWeight: 800, cursor: activating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'all .2s' }}>
+                  {activating ? 'Building Campaign...' : `Activate CAi — $${Math.round(monthlyBudget / 30)}/day`}
+                </button>
+                <div style={{ fontSize: 12, color: 'var(--cs-t5)', textAlign: 'center', marginTop: 8 }}>Campaign launches PAUSED. You review every ad before it goes live.</div>
+                {activationResult?.error && (
+                  <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)', fontSize: 13, color: '#f87171' }}>{activationResult.error}</div>
+                )}
+              </div>
             ) : !caiData?.campaign?.id && !activeCreativeCount ? (
-              <div className="gl" style={{ padding: 32, borderRadius: 16, textAlign: 'center', marginBottom: 20 }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>&#x2699;&#xFE0F;</div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 10 }}>No active campaign to optimize</h3>
-                <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.6, maxWidth: 400, margin: 'auto' }}>
-                  Once you build a campaign, this tab lets you adjust your daily budget, ROAS target, and automation settings. Changes sync directly to Meta in real time.
+              <div className="gl" style={{ padding: 32, borderRadius: 16, textAlign: 'center', marginBottom: 24 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>&#x2699;&#xFE0F;</div>
+                <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>No active campaign to optimize</h3>
+                <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 440, margin: '0 auto 20px' }}>
+                  Once you build a campaign, this tab lets you adjust your daily budget, ROAS target, and automation settings. Changes sync directly to Meta in real-time.
                 </p>
-                <button onClick={() => setCaiSubTab('dashboard')} style={{
-                  padding: '14px 32px',
-                  borderRadius: 12,
+                <button type="button" onClick={() => setCaiSubTab('dashboard')} style={{
+                  padding: '12px 28px',
+                  borderRadius: 10,
                   background: 'linear-gradient(135deg, #9b6dff, #0668E1)',
                   color: '#fff',
                   border: 'none',
