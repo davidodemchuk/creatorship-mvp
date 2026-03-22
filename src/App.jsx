@@ -9812,6 +9812,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             ) : null}
 
+            <div style={mode === 'auto' && (!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {}}>
           {caiData?.campaign?.id && activeCreativeCount > 0 && (
             <>
           {/* ─── Daily Budget (first so users see it after Meta connect) ─── */}
@@ -10083,6 +10084,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </button>
             <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 6 }}>Re-run Analysis rebuilds your brand report. Deactivate pauses campaigns on Meta. Full Reset deletes everything.</div>
           </div>
+            </div>
         </>)}
       </div>
     );
