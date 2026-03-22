@@ -9812,7 +9812,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         {/* ═══ OPTIMIZE TAB — Budget/ROAS first so post-OAuth lands on them ═══ */}
         {caiSubTab === 'optimize' && (
           <>
-            {mode === 'auto' && (!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? (
+            {!caiData?.campaign?.id && (!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? (
               <div style={{ maxWidth: 600, margin: '0 auto', padding: '20px 0' }}>
                 <button onClick={() => { setMode(null); setCaiSubTab('analysis'); }} style={{ background: 'none', border: 'none', color: 'var(--cs-t3)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 16, padding: 0 }}>Back to analysis</button>
                 <div style={{ background: 'linear-gradient(135deg, rgba(155,109,255,.08), rgba(6,104,225,.06))', border: '1px solid rgba(155,109,255,.25)', borderRadius: 16, padding: 28, marginBottom: 20 }}>
