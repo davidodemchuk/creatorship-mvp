@@ -8036,6 +8036,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               addLine(newCount > 0 ? '✓ CAi is active. Click below to view your dashboard.' : '⚠ No ads created. Go to Settings to deactivate and try again.', newCount > 0 ? 'success' : 'error');
               setCaiData(status);
               if (setCaiStatusActive) setCaiStatusActive(!!status?.isActive);
+              if (status.processingStatus === 'complete' && setBuildInfo) setBuildInfo({ phase: 'complete', startedAt: Date.now() });
+              else if (status.processingStatus === 'error' && setBuildInfo) setBuildInfo(null);
               break;
             }
 
@@ -8075,14 +8077,16 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       } else {
         addLine('  ✗ ' + (d.error || 'Activation failed'), 'error');
         setActivationResult(d);
+        if (setBuildInfo) setBuildInfo(null);
       }
     } catch (e) {
       addLine('  ✗ Network error: ' + e.message, 'error');
       setActivationResult({ error: e.message });
+      if (setBuildInfo) setBuildInfo(null);
     }
     setActivating(false);
     if (setBuildInProgress) setBuildInProgress(false);
-    if (setBuildInfo) setBuildInfo(null);
+    // Don't clear buildInfo here — phase:'complete' persists for success banner in BrandDashboardView; errors clear buildInfo in the poll loop
   };
 
   // Deactivate
@@ -11987,6 +11991,19 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           >
             View Progress
           </button>
+        </div>
+      </div>
+    )}
+    {!buildInProgress && buildInfo?.phase === 'complete' && (
+      <div style={{ position: 'sticky', top: 52, zIndex: 20, maxWidth: 800, margin: '0 auto', padding: '8px 16px', animation: 'fadeUp .4s ease' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(52,211,153,.12), rgba(6,104,225,.08))', border: '1px solid rgba(52,211,153,.3)', backdropFilter: 'blur(12px)' }}>
+          <div style={{ fontSize: 24 }}>&#x2705;</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#34d399' }}>Campaign built successfully</div>
+            <div style={{ fontSize: 13, color: 'var(--cs-t3)' }}>Your ads are paused on Meta — review and activate when ready.</div>
+          </div>
+          <button type="button" onClick={() => { setBuildInfo(null); setCaiTab('campaigns'); }} style={{ padding: '8px 20px', borderRadius: 8, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>View Campaigns</button>
+          <button type="button" onClick={() => setBuildInfo(null)} style={{ background: 'none', border: 'none', color: 'var(--cs-t5)', fontSize: 16, cursor: 'pointer', padding: '4px 8px' }} aria-label="Dismiss">&#x2715;</button>
         </div>
       </div>
     )}
