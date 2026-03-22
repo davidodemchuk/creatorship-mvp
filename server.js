@@ -6601,6 +6601,55 @@ app.post('/api/cai/deep-dive', authBrand, requireRole('owner', 'admin'), async (
     } catch (e) { console.error('[cai-deep-dive] Affiliate video fetch failed:', e.message); }
   }
 
+  // FALLBACK: If no brand videos AND no affiliate videos, try shop product search
+  if (!tiktokVideos.length && !affiliateCreatorVideos.length && sk) {
+    console.log('[deep-dive] No videos from handle or affiliate fetch — trying shop product search fallback');
+    try {
+      const shopSearchUrl = 'https://api.scrapecreators.com/v1/tiktok/shop/search?query=' + encodeURIComponent(brand.brandName || brand.storeName || '') + '&region=US&count=30';
+      const ssResp = await fetch(shopSearchUrl, { headers: { 'x-api-key': sk } });
+      if (ssResp.ok) {
+        const ssData = await ssResp.json();
+        const shopSearchProducts = ssData.products || ssData.data || [];
+        // Try fetching videos for first products with usable URLs
+        for (const sp of shopSearchProducts.slice(0, 5)) {
+          const spUrl = sp.url || sp.product_url || (sp.id ? 'https://www.tiktok.com/view/product/' + sp.id : null);
+          if (!spUrl) continue;
+          try {
+            const pvResp = await fetch('https://api.scrapecreators.com/v1/tiktok/product?url=' + encodeURIComponent(spUrl) + '&count=20&region=US', { headers: { 'x-api-key': sk } });
+            if (!pvResp.ok) continue;
+            const pvData = await pvResp.json();
+            const pvVideos = pvData.videos || pvData.aweme_list || pvData.data || [];
+            for (const rv of pvVideos) {
+              const rvId = String(rv.aweme_id || rv.id || '');
+              if (!rvId || affiliateCreatorVideos.some(v => String(v.id) === rvId)) continue;
+              const rvStats = rv.statistics || rv.stats || {};
+              const rvAuthor = rv.author?.unique_id || rv.author?.uniqueId || rv.creator || 'creator';
+              const normRvAuthor = normalizeHandleEarly(rvAuthor);
+              if (brandHandlesForCreator.has(normRvAuthor)) continue;
+              affiliateCreatorVideos.push({
+                id: rvId,
+                desc: (rv.desc || rv.title || '').slice(0, 300),
+                views: rvStats.play_count || rvStats.playCount || rv.views || 0,
+                likes: rvStats.digg_count || rvStats.diggCount || rv.likes || 0,
+                shares: rvStats.share_count || rvStats.shareCount || rv.shares || 0,
+                comments: rvStats.comment_count || rvStats.commentCount || rv.comments || 0,
+                cover: rv.video?.cover?.url_list?.[0] || rv.video?.origin_cover?.url_list?.[0] || rv.cover || '',
+                playUrl: rv.video?.play_addr?.url_list?.[0] || '',
+                downloadUrl: rv.video?.download_addr?.url_list?.[0] || '',
+                authorHandle: rvAuthor,
+                _source: 'creator_affiliate',
+                video: rv.video || null,
+              });
+            }
+          } catch (pvErr) { /* skip */ }
+        }
+        console.log('[deep-dive] Shop search fallback — affiliate creator videos now:', affiliateCreatorVideos.length);
+      }
+    } catch (ssErr) {
+      console.error('[deep-dive] Shop search fallback error:', ssErr.message);
+    }
+  }
+
   const allVideos = [
     ...tiktokVideos.map(v => ({
       id: v.id, desc: (v.desc || '').slice(0, 200), views: v.views || 0, likes: v.likes || 0,

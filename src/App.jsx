@@ -8363,7 +8363,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 cursor: 'pointer',
                 fontFamily: 'inherit',
               }}>Build My Campaign</button>
-              <div style={{ marginTop: 10, fontSize: 12, color: 'var(--cs-t4)' }}>Takes ~90 seconds. Campaign lands in Meta paused — you approve before anything goes live.</div>
+              <div style={{ marginTop: 10, fontSize: 12, color: 'var(--cs-t4)' }}>Takes ~30 seconds. Campaign lands in Meta paused — you approve before anything goes live.</div>
             </div>
           )}
 
@@ -10253,7 +10253,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8, lineHeight: 1.3 }}>This isn't AI slop.</h2>
-          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}><span style={CAI_BRAND}>Give CAi 90 seconds to build a custom analysis of {brand?.brandName || brand?.storeName || 'your brand'}.</span></h2>
+          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}><span style={CAI_BRAND}>Give CAi 30 seconds to build a custom analysis of {brand?.brandName || brand?.storeName || 'your brand'}.</span></h2>
           <p style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 520, margin: '0 auto' }}>CAi is downloading your videos, analyzing every piece of content for Meta ad potential, building targeting around your audience, and constructing a full campaign — from scratch, for {brand?.brandName || brand?.storeName || 'your brand'}.</p>
         </div>
         {/* Terminal header */}
@@ -10493,7 +10493,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           <div style={{ fontSize: 40, marginBottom: 16, animation: 'pulse 2s ease-in-out infinite' }}>&#9881;</div>
           <h3 style={{ fontSize: 20, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 8 }}>CAi is building your campaign</h3>
           <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, maxWidth: 400, margin: '0 auto' }}>
-            Your deep dive analysis and campaign are being built right now. This takes about 60 seconds. Switch to the Dashboard tab to see live progress.
+            Your deep dive analysis and campaign are being built right now. This takes about 30 seconds. Switch to the Dashboard tab to see live progress.
           </p>
           <button onClick={() => setCaiSubTab('dashboard')} style={{ marginTop: 20, padding: '10px 24px', borderRadius: 10, background: '#0668E1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
             View Build Progress
@@ -10505,7 +10505,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         <div style={{ maxWidth: 660, margin: '0 auto', padding: '40px 20px', textAlign: 'center' }}>
           <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
           <h2 style={{ fontSize: 'clamp(20px, 3vw, 26px)', fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8 }}>Building your campaign...</h2>
-          <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 24 }}>CAi is analyzing your content, building targeting, and designing your ad campaign. This takes about 60 seconds.</p>
+          <p style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 24 }}>CAi is analyzing your content, building targeting, and designing your ad campaign. This takes about 30 seconds.</p>
           <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 10, padding: '16px 20px', textAlign: 'left', maxHeight: 300, overflowY: 'auto' }}>
             <div style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--cs-t3)', lineHeight: 1.8 }}>
               {(terminalLines || []).map((line, i) => (
@@ -10564,7 +10564,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       disabled={!canDoAction('run_deep_dive')}
                       style={{ padding: '18px 48px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', fontSize: 17, fontWeight: 800, cursor: !canDoAction('run_deep_dive') ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(155,109,255,.3)', opacity: !canDoAction('run_deep_dive') ? 0.55 : 1 }}
                     >Build My Report + Ad Campaign</button>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t5)', marginTop: 10 }}>Takes 60 seconds. No campaigns created. No money spent.</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t5)', marginTop: 10 }}>Takes 30 seconds. No campaigns created. No money spent.</div>
                     {!canDoAction('run_deep_dive') && <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 8 }}>View only. Ask an owner/admin to run CAi.</div>}
                   </div>
                 </div>
@@ -12031,7 +12031,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
               {buildInfo?.videoCount ? buildInfo.videoCount + ' videos being processed' : 'Processing your content'}
               {' · '}
               {buildInfo?.phase === 'deep-dive' ? 'Est. ~30 seconds'
-                : buildInfo?.phase === 'activating' ? 'Est. ~90 seconds'
+                : buildInfo?.phase === 'activating' ? 'Est. ~30 seconds'
                   : buildInfo?.phase === 'uploading' ? 'Est. 2-5 minutes · You\'ll get an email when done'
                     : 'Almost done'}
             </div>
@@ -13877,7 +13877,7 @@ function AdminRoadmapTab() {
     {S.phase('s2','#ffb400','Launch Ready','Mar 17-31','NOW')}
     {openPhase==='s2'&&<div style={{border:'1px solid #ffb40030',borderTop:'none',borderRadius:'0 0 14px 14px',overflow:'hidden',marginBottom:10}}>
       {S.sub('s2-prod','Production Launch',<>{S.item('s2-tt-demo','TikTok developer demo video','Record walkthrough of OAuth flow + platform features for TikTok review','BIZ')}{S.item('s2-tt-submit','Submit TikTok app for production approval','Upload demo video, app description, privacy policy, terms of service','BIZ')}{S.item('s2-tt-approval','TikTok production app approved','Real users can OAuth with TikTok — no more sandbox limitations','API')}{S.item('s2-stripe-live','Stripe test → live switch','Enable real 4% billing on managed Meta ad spend','PAY')}{S.item('s2-first-brand','First paying brand onboarded','End-to-end: signup → connect TikTok/Meta → CAi activated → ads running → billing active','BIZ')}{S.item('s2-mobile','Mobile responsive','Full mobile experience — dashboard, campaigns, content all work on phone','UI')}{S.item('s2-drag-drop','Drag & drop video upload','Drop MP4 files directly into Uploads tab with progress indicator','UI')}{S.item('s2-video-player','Video player modal','Click any thumbnail → inline video player with autoplay and creator info','UI')}{S.item('s2-bulk-upload','Bulk creative add','Select 20-100 videos at once → one-click add all to campaign','UI')}</>)}
-      {S.sub('s2-bugs','Bug Fixes & Polish',<>{S.item('s2-creator-handle-fix','Fix creator handle extraction','Use URL-extracted handles instead of display names in outreach','API')}{S.item('s2-hard-refresh-fix','Fix hard refresh routing','CAi tab hashes intercepted before old BRAND_TAB_IDS check','UI')}{S.item('s2-thumbnail-fix','Fix creator content thumbnails','More fallback paths for cover extraction from ScrapeCreators','API')}{S.item('s2-meta-thumbnail','Fix Meta ad thumbnail error','Add image_url to caiAddCreativeToCampaign — fixes error 1443226','API')}{S.item('s2-self-serve-onboard','Self-serve onboarding flow','Brand signs up → guided setup → CAi activated in under 90 seconds','UI')}{S.item('s2-welcome-email','Welcome email sequence','Day 0: welcome + setup guide. Day 3: check-in. Day 7: performance tips','API')}{S.item('s2-onboard-walkthrough','In-app walkthrough','Step-by-step guided tour on first login — highlight key features','UI')}</>)}
+      {S.sub('s2-bugs','Bug Fixes & Polish',<>{S.item('s2-creator-handle-fix','Fix creator handle extraction','Use URL-extracted handles instead of display names in outreach','API')}{S.item('s2-hard-refresh-fix','Fix hard refresh routing','CAi tab hashes intercepted before old BRAND_TAB_IDS check','UI')}{S.item('s2-thumbnail-fix','Fix creator content thumbnails','More fallback paths for cover extraction from ScrapeCreators','API')}{S.item('s2-meta-thumbnail','Fix Meta ad thumbnail error','Add image_url to caiAddCreativeToCampaign — fixes error 1443226','API')}{S.item('s2-self-serve-onboard','Self-serve onboarding flow','Brand signs up → guided setup → CAi activated in under 30 seconds','UI')}{S.item('s2-welcome-email','Welcome email sequence','Day 0: welcome + setup guide. Day 3: check-in. Day 7: performance tips','API')}{S.item('s2-onboard-walkthrough','In-app walkthrough','Step-by-step guided tour on first login — highlight key features','UI')}</>)}
     </div>}
 
     {S.phase('s3','#0668E1','Scale Infrastructure','Apr 1-30','NEXT')}
