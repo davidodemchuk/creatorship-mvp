@@ -8168,7 +8168,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     }
     setActivating(false);
     if (setBuildInProgress) setBuildInProgress(false);
-    // Don't clear buildInfo here — phase:'complete' persists for success banner in BrandDashboardView; errors clear buildInfo in the poll loop
+    // Don't clear buildInfo if build succeeded — let completion banner show
   };
 
   // Deactivate
@@ -11790,7 +11790,8 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
       setBuildInfo(prev => prev || { phase: 'uploading', videoCount: brand?.cai?.creatives?.length || 0, startedAt: Date.now() });
     } else if (brand?.cai?.processingStatus === 'complete' && buildInProgress && buildInfo?.phase === 'uploading') {
       setBuildInProgress(false);
-      setBuildInfo(null);
+      // Show completion banner (don't null — same as handleActivate: persist until dismiss / View Campaigns)
+      setBuildInfo({ phase: 'complete', startedAt: Date.now() });
     }
   }, [brand?.cai?.processingStatus, brand?.cai?.creatives?.length, buildInProgress, buildInfo?.phase]);
 
