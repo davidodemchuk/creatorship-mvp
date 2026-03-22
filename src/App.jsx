@@ -7698,22 +7698,22 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const website = brand.websiteUrl || brand.storeUrl || '';
 
     add('CAi ' + CAI_VERSION + ' — Building your custom brand report', 'header');
-    add('Give CAi ~60 seconds to pull real data from 6 sources and build a custom strategy.', 'system');
-    await wait(500);
+    add('Give CAi ~30 seconds to pull real data from 6 sources and build a custom strategy.', 'system');
+    await wait(250);
 
     // ═══ CONNECT ═══
     add('', 'spacer');
     add('━━━ CONNECTING DATA SOURCES ━━━', 'phase');
-    await wait(250);
+    await wait(120);
     add('  Meta Ads → ' + adAcct, 'check');
-    await wait(300);
+    await wait(150);
     add(brand.adAccount ? '  ✓ Ad account verified · Page ID ' + (brand.pageId || 'pending') : '  ✗ Not connected', brand.adAccount ? 'success' : 'error');
-    await wait(200);
+    await wait(100);
     add('  TikTok Shop → @' + handle, 'check');
-    await wait(300);
+    await wait(150);
     add(tiktokVideos.length > 0 ? '  ✓ ' + tiktokVideos.length + ' videos indexed' + (uploads.length > 0 ? ' + ' + uploads.length + ' uploaded' : '') : '  ✗ No videos found', tiktokVideos.length > 0 ? 'success' : 'warn');
-    if (website) { await wait(200); add('  Website → ' + website, 'check'); await wait(250); add('  ✓ Product pages accessible', 'success'); }
-    await wait(400);
+    if (website) { await wait(100); add('  Website → ' + website, 'check'); await wait(120); add('  ✓ Product pages accessible', 'success'); }
+    await wait(200);
 
     const topVids = [...tiktokVideos].sort((a, b) => (b.views || 0) - (a.views || 0));
     const totalViews = tiktokVideos.reduce((s, v) => s + (v.views || 0), 0);
@@ -7725,29 +7725,29 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     add('', 'spacer');
     add('━━━ 1. MARKET INTELLIGENCE ━━━', 'phase');
     add('  Loading industry benchmarks for DTC health/wellness...', 'system');
-    await wait(400);
+    await wait(200);
     add('  Meta Q2 2025 ($46.6B ad revenue):', 'data');
     add('    Advantage+ Sales: +22% ROAS vs manual campaigns', 'highlight');
     add('    CBO + broad: outperforms interest targeting at scale', 'data');
-    await wait(250);
+    await wait(120);
     add('  Billo Creative Research 2025:', 'data');
     add('    70-80% of ad performance = creative quality', 'highlight');
     add('    4:5 vertical outperforms 1:1 by 15% in Feed', 'data');
-    await wait(250);
+    await wait(120);
     add('  TikTok GMV Max (applied to Meta):', 'data');
     add('    Creative volume = #1 factor for algorithm optimization', 'highlight');
     add('    ROI protection activates at 20+ daily orders', 'data');
-    await wait(250);
+    await wait(120);
     add('  Category benchmarks loaded:', 'data');
     add('    Health/wellness DTC: $8-15 CPA · 2.5-4.0x ROAS', 'highlight');
     add('    Your price ($' + price + ') → target CPA: $' + Math.round(price * 0.3) + '-' + Math.round(price * 0.4), 'highlight');
-    await wait(400);
+    await wait(200);
 
     // ═══ PHASE 2: CONTENT AUDIT ═══
     add('', 'spacer');
     add('━━━ 2. CONTENT AUDIT ━━━', 'phase');
     add('  Indexing all content from @' + handle + '...', 'system');
-    await wait(300);
+    await wait(150);
     for (let i = 0; i < Math.min(topVids.length, 5); i++) {
       const v = topVids[i];
       const views = v.views || 0;
@@ -7755,19 +7755,19 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       const shares = v.shares || 0;
       const sStr = shares >= 1e3 ? Math.round(shares / 1e3) + 'K' : String(shares);
       add('  [' + (i + 1) + '] ' + vStr + ' views · ' + sStr + ' shares · "' + (v.desc || '').slice(0, 35) + '..."', 'data');
-      await wait(180);
+      await wait(90);
     }
     if (topVids.length > 5) { add('  + ' + (topVids.length - 5) + ' more indexed', 'dim'); }
-    await wait(200);
+    await wait(100);
     add('  Total organic reach: ' + (totalViews >= 1e6 ? Math.round(totalViews / 1e6) + 'M' : totalViews.toLocaleString()) + ' views (zero ad spend)', 'highlight');
     add('  Word of mouth: ' + totalShares.toLocaleString() + ' shares — each one is a free recommendation', totalShares > 10000 ? 'highlight' : 'data');
-    await wait(400);
+    await wait(200);
 
     // ═══ PHASE 3: REVENUE FORECAST ═══
     add('', 'spacer');
     add('━━━ 3. REVENUE FORECAST ━━━', 'phase');
     add('  Building projections at multiple spend levels...', 'system');
-    await wait(350);
+    await wait(180);
     const targetCpa = Math.round(price * 0.35);
     const scenarios = [
       { budget: 50, label: 'Test' },
@@ -7779,44 +7779,44 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       const revDay = salesDay * price;
       const roas = (revDay / s.budget).toFixed(1);
       add('  $' + s.budget + '/day (' + s.label + '): ~' + salesDay + ' sales/day · $' + revDay + ' revenue · ' + roas + 'x ROAS', 'data');
-      await wait(200);
+      await wait(100);
     }
     add('  Monthly at $150/day: ~$' + Math.round((150 / targetCpa) * price * 30).toLocaleString() + ' revenue potential', 'highlight');
-    await wait(400);
+    await wait(200);
 
     // ═══ PHASE 4: CAMPAIGN ARCHITECTURE ═══
     add('', 'spacer');
     add('━━━ 4. CAMPAIGN ARCHITECTURE ━━━', 'phase');
     add('  Designing Meta campaign structure...', 'system');
-    await wait(300);
+    await wait(150);
     add('  Structure: 1 Campaign (Advantage+ CBO) → 1 Ad Set (broad) → All videos loaded as ads', 'data');
     add('  Budget: Campaign-level optimization — Meta distributes to winners', 'data');
     add('  Targeting: Advantage+ Audience (US 18-65, all genders)', 'data');
     add('  Objective: ' + (brand.metaPixelId ? 'SALES (pixel detected)' : 'TRAFFIC → SALES (add pixel for conversion tracking)'), 'data');
     add('  Placements: All placements — Feed, Reels, Stories, Explore', 'data');
-    await wait(200);
+    await wait(100);
     add('  Why broad: Meta\'s ML finds buyers faster than manual targeting', 'highlight');
     add('  Why CBO: algorithm distributes budget to best-performing ads automatically', 'highlight');
-    await wait(400);
+    await wait(200);
 
     // ═══ PHASE 5: CREATIVE BRIEF ═══
     add('', 'spacer');
     add('━━━ 5. BUILDING CREATIVE BRIEF ━━━', 'phase');
     add('  Ranking all ' + tiktokVideos.length + ' videos by conversion potential...', 'system');
-    await wait(300);
+    await wait(150);
     add('  Scoring: views × share velocity × first-impression strength', 'data');
-    await wait(200);
+    await wait(100);
     add('  Writing DTC conversion copy for top creatives...', 'data');
-    await wait(200);
+    await wait(100);
     add('  Allocating budget: hero 40% · proven 30% · test 15%', 'data');
-    await wait(200);
+    await wait(100);
     add('  Projecting per-creative CPA and ROAS...', 'data');
-    await wait(300);
+    await wait(150);
 
     add('', 'spacer');
     add('━━━ FINALIZING ANALYSIS ━━━', 'phase');
     add('  Packaging all data for CAi engine...', 'system');
-    await wait(400);
+    await wait(200);
 
     // Start a progress ticker that runs DURING the API call
     const waitMessages = [
@@ -11983,21 +11983,16 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
               const displayName = brand?.storeName ? '@' + brand.storeName : brand?.brandName || 'Dashboard';
               const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
               return (
-                <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', border: '1.5px solid var(--cs-a15)', overflow: 'hidden', flexShrink: 0 }}>
-                  {logoRaw ? (
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#9b6dff,#0668E1)', border: '1px solid var(--cs-a08)', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+                  {logoRaw && (
                     <img
                       src={avatarUrl}
                       alt=""
-                      style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.style.display = 'flex';
-                      }}
+                      style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover', position: 'absolute', inset: 0 }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
-                  ) : null}
-                  <div style={{ display: logoRaw ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
-                    {initial}
-                  </div>
+                  )}
+                  <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#fff' }}>{initial}</div>
                 </div>
               );
             })()}
@@ -12037,7 +12032,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
             <div style={{ fontSize: 12, color: 'var(--cs-t3)' }}>
               {buildInfo?.videoCount ? buildInfo.videoCount + ' videos being processed' : 'Processing your content'}
               {' · '}
-              {buildInfo?.phase === 'deep-dive' ? 'Est. ~60 seconds'
+              {buildInfo?.phase === 'deep-dive' ? 'Est. ~30 seconds'
                 : buildInfo?.phase === 'activating' ? 'Est. ~90 seconds'
                   : buildInfo?.phase === 'uploading' ? 'Est. 2-5 minutes · You\'ll get an email when done'
                     : 'Almost done'}
