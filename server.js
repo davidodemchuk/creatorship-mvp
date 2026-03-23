@@ -2248,6 +2248,41 @@ app.post('/api/auth/resend-verification', async (req, res) => {
   return res.status(200).json({ message: 'sent' });
 });
 
+app.post('/api/brand/resend-verification', authBrand, async (req, res) => {
+  try {
+    const brandId = req.brandAuth?.brandId;
+    const brand = await getBrandById(brandId);
+    if (!brand) return res.status(404).json({ error: 'Brand not found' });
+    if (!brand.email) return res.status(400).json({ error: 'No email on file' });
+    if (brand.emailVerified) return res.json({ success: true, message: 'already_verified' });
+    const targetEmail = String(brand.email).toLowerCase();
+    const emailToken = crypto.randomBytes(32).toString('hex');
+    brand.emailToken = emailToken;
+    brand.emailVerified = false;
+    await saveBrand(brand);
+    const verifyUrl = `https://www.creatorship.app/api/auth/verify-email?token=${emailToken}`;
+    sendEmail(
+      targetEmail,
+      "Welcome to Creatorship — confirm your brand account 🚀",
+      emailBase({
+        title: 'Confirm your brand account',
+        preheader: 'Your creator pipeline awaits.',
+        headerEmoji: '🚀',
+        accentColor: '#0099ff',
+        accentGradient: 'linear-gradient(135deg,#0668E1,#0099ff,#25F4EE)',
+        bodyHtml: `<p style="text-align:center;color:#374151;">Hi <strong>${escapeHtml(brand.brandName || 'Brand')}</strong>, welcome aboard.</p><p style="text-align:center;color:#6b7280;">Confirm your email to access your brand dashboard and start matching with TikTok creators who convert.</p>`,
+        ctaText: 'Confirm Email',
+        ctaUrl: verifyUrl,
+        footerNote: "This link expires in 24 hours. Didn't sign up? Ignore this."
+      })
+    ).catch(err => console.error('[verify] resend brand (jwt) failed:', err.message));
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('[brand] resend-verification:', e.message);
+    return res.json({ error: e.message });
+  }
+});
+
 app.post('/api/brand/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });

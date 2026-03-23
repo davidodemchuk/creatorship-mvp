@@ -10429,7 +10429,20 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                       <div style={{ fontSize: 20, flexShrink: 0, width: 32, textAlign: 'center' }}>{(brand?.emailVerified || profile?.emailVerified) ? '\u2705' : '\u0032\uFE0F\u20E3'}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>Verify Email</div>
-                        {!(brand?.emailVerified || profile?.emailVerified) && <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Check your inbox for the verification link</div>}
+                        {!(brand?.emailVerified || profile?.emailVerified) && (
+                          <>
+                            <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Check your inbox for the verification link</div>
+                            <button onClick={async () => {
+                              const token = localStorage.getItem('creatorship_brand_token');
+                              try {
+                                const res = await fetch('/api/brand/resend-verification', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } });
+                                const data = await res.json();
+                                if (data.success) alert('Verification email sent!');
+                                else alert(data.error || 'Failed to send');
+                              } catch (e) { alert('Failed to send: ' + e.message); }
+                            }} style={{marginTop:6,background:'none',border:'none',color:'#9b6dff',fontSize:12,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:0,textDecoration:'underline'}}>Resend verification email</button>
+                          </>
+                        )}
                       </div>
                       {(brand?.emailVerified || profile?.emailVerified) ? <span style={{ fontSize: 13, color: '#34d399', fontWeight: 600 }}>Verified</span> : <span style={{ fontSize: 13, color: '#f5a623', fontWeight: 600 }}>Pending</span>}
                     </div>
