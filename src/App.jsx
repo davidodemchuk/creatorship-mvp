@@ -5361,14 +5361,15 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
 
   const caiActive = caiData?.isActive;
   const caiCreatives = caiData?.creatives || [];
-  const perf = caiData?.performance || {};
-  const today = perf.today || {};
-  const week = perf.week || {};
+  const perf = caiData?.performance;
+  const today = perf?.today;
+  const week = perf?.week;
 
   // Split campaigns: CAi-managed vs legacy
-  const caiCampaigns = campaigns.filter(c => (c.name || '').includes('[CAi]'));
-  const legacyCampaigns = campaigns.filter(c => !(c.name || '').includes('[CAi]'));
-  const failedCampaigns = campaigns.filter(c => {
+  const safeCampaigns = campaigns || [];
+  const caiCampaigns = safeCampaigns.filter(c => c.name?.includes('[CAi]'));
+  const legacyCampaigns = safeCampaigns.filter(c => !c.name?.includes('[CAi]'));
+  const failedCampaigns = safeCampaigns.filter(c => {
     const s = (c.status || '').toUpperCase();
     return s === 'ERROR' || (c.metaSyncError && s !== 'PAUSED' && s !== 'ACTIVE');
   });
@@ -5407,7 +5408,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
           </div>
           <button onClick={() => setBrandTab('ai-plans')} style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Open CAi Dashboard</button>
         </div>
-        {(today.spend > 0 || week.spend > 0) && (
+        {((today?.spend || 0) > 0 || (week?.spend || 0) > 0) && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {[
               { v: '$' + (today.spend || 0).toFixed(0), l: 'Today Spend', c: 'var(--cs-t1)' },
@@ -5552,7 +5553,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
     {/* Campaign History */}
     <div style={{ marginBottom: 12 }}>
       <button onClick={() => setShowHistory(!showHistory)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0' }}>
-        <span style={{ color: 'var(--cs-t5)' }}>{showHistory ? '▾' : '▸'}</span> Campaign History ({campaigns.length} total)
+        <span style={{ color: 'var(--cs-t5)' }}>{showHistory ? '▾' : '▸'}</span> Campaign History ({safeCampaigns.length} total)
       </button>
     </div>
 
@@ -5560,7 +5561,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
       {/* Filters */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
         {['all', 'active', 'paused', 'failed'].map(f => {
-          const count = f === 'all' ? campaigns.length : f === 'failed' ? failedCampaigns.length : campaigns.filter(c => (c.status || '').toUpperCase() === f.toUpperCase()).length;
+          const count = f === 'all' ? safeCampaigns.length : f === 'failed' ? failedCampaigns.length : safeCampaigns.filter(c => (c.status || '').toUpperCase() === f.toUpperCase()).length;
           return (
             <button key={f} onClick={() => setFilter(f)} style={{ padding: '5px 12px', borderRadius: 6, border: filter === f ? '1px solid rgba(155,109,255,.3)' : '1px solid var(--cs-a06)', background: filter === f ? 'rgba(155,109,255,.08)' : 'transparent', color: filter === f ? '#9b6dff' : 'var(--cs-t4)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               {f.charAt(0).toUpperCase() + f.slice(1)} ({count})
@@ -5570,7 +5571,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
       </div>
 
       {/* Campaign list */}
-      {campaigns.filter(c => {
+      {safeCampaigns.filter(c => {
         if (filter === 'all') return true;
         const s = (c.status || '').toUpperCase();
         const isFailed = s === 'ERROR' || (c.metaSyncError && s !== 'PAUSED' && s !== 'ACTIVE');
@@ -5612,7 +5613,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
         );
       })}
 
-      {campaigns.length === 0 && <div style={{ fontSize: 14, color: 'var(--cs-t5)', textAlign: 'center', padding: 20 }}>No campaigns yet.</div>}
+      {safeCampaigns.length === 0 && <div style={{ fontSize: 14, color: 'var(--cs-t5)', textAlign: 'center', padding: 20 }}>No campaigns yet.</div>}
     </>)}
   </div>;
 }
