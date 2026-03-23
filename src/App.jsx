@@ -3976,9 +3976,10 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
   }, [initialMode]);
 
   const [brandName, setBrandName] = useState('');
-  const setBrandNameAndClearShop = useCallback(v => { setBrandName(v); setShopEnriched(null); setShopEnrichError(''); setShowUrlInput(false); setManualShopUrl(''); setShopOptions([]); }, []);
+  const setBrandNameAndClearShop = useCallback(v => { setBrandName(v); setShopEnriched(null); setShopEnrichError(''); setShowUrlInput(false); setManualShopUrl(''); setShopOptions([]); setShowAlternatives(false); }, []);
   const [shopEnriched, setShopEnriched] = useState(null);
   const [shopOptions, setShopOptions] = useState([]);
+  const [showAlternatives, setShowAlternatives] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [manualShopUrl, setManualShopUrl] = useState('');
   const [enrichLoading, setEnrichLoading] = useState(false);
@@ -4043,6 +4044,7 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
     setEnrichLoading(true);
     setShopEnrichError('');
     setShopOptions([]);
+    setShowAlternatives(false);
     try {
       const r = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(trimmed) + '&multi=true');
       const d = await r.json();
@@ -4054,14 +4056,16 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
         setShopEnriched(d2);
         return;
       }
-      if (d.shops.length > 1) {
-        setShopOptions(d.shops);
-        setShopEnriched(null);
+      if (d.shops.length > 0) {
+        const input = trimmed.toLowerCase();
+        const bestMatch = d.shops.find(s => {
+          const sn = (s.shopName || '').toLowerCase();
+          return sn.includes(input) || input.includes(sn);
+        }) || d.shops[0];
+        setShopOptions(d.shops.filter(s => s !== bestMatch));
         setShowUrlInput(false);
-        return;
-      }
-      if (d.shops.length === 1) {
-        const r2 = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(trimmed) + '&shopId=' + encodeURIComponent(d.shops[0].shopId));
+        const q = '/api/brand/enrich?brandName=' + encodeURIComponent(trimmed) + (bestMatch.shopId != null && String(bestMatch.shopId) !== '' ? '&shopId=' + encodeURIComponent(String(bestMatch.shopId)) : '');
+        const r2 = await fetch(q);
         const d2 = await r2.json();
         if (!r2.ok) throw new Error(d2.error || 'Could not fetch shop');
         setShopEnriched(d2);
@@ -4084,6 +4088,7 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
       setShopEnriched(null);
       setShopEnrichError('');
       setShopOptions([]);
+      setShowAlternatives(false);
       return;
     }
     const t = setTimeout(() => { loadShopFromBrandName(raw); }, 500);
@@ -4169,7 +4174,7 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
 
   const inputS = { width: '100%', padding: '13px 16px', background: 'var(--cs-a04)', border: '1px solid ' + C.border, borderRadius: 10, color: C.text, fontSize: 14, fontFamily: 'inherit', marginBottom: 16 };
 
-  const signupShopBlocked = loading || enrichLoading || (shopOptions.length > 0 && !shopEnriched);
+  const signupShopBlocked = loading || enrichLoading;
 
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 56px)', padding: '40px 16px', background: 'radial-gradient(ellipse at 30% 20%, rgba(6,104,225,0.18) 0%, transparent 60%), linear-gradient(160deg, #080d1e 0%, #030711 100%)' }}>
     <div style={{
@@ -4230,13 +4235,13 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
                 <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 4 }}>Searching TikTok Shop for &quot;{brandName.trim()}&quot;</div>
               </div>
             )}
-            {shopOptions.length > 0 && !shopEnriched && (
+            {showAlternatives && !shopEnriched && shopOptions.length > 0 && (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>Select your shop</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>Is one of these your shop?</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {shopOptions.map((shop, i) => (
                     <button key={i} type="button" onClick={async () => {
-                      setShopOptions([]);
+                      setShowAlternatives(false);
                       setEnrichLoading(true);
                       setShopEnrichError('');
                       try {
@@ -4259,17 +4264,10 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
                         <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>{shop.shopName}</div>
                         <div style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{shop.productCount} product{shop.productCount !== 1 ? 's' : ''}</div>
                       </div>
-                      {(shop.productImages || []).length > 0 && (
-                        <div style={{ display: 'flex', gap: 4 }}>
-                          {(shop.productImages || []).slice(0, 3).map((img, j) => (
-                            <img key={j} src={'/api/proxy-image?url=' + encodeURIComponent(img)} alt="" style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
-                          ))}
-                        </div>
-                      )}
                     </button>
                   ))}
+                  <button type="button" onClick={() => { setShowAlternatives(false); setShowUrlInput(true); }} style={{ marginTop: 4, background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0, textDecoration: 'underline' }}>None of these — paste my shop URL</button>
                 </div>
-                <button type="button" onClick={() => { setShopOptions([]); setShowUrlInput(true); }} style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0, textDecoration: 'underline' }}>None of these — paste my shop URL</button>
               </div>
             )}
             {shopEnriched && (
@@ -4317,7 +4315,14 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
                     </div>
                   )}
                 <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--cs-a06)' }}>
-                  <button type="button" onClick={() => { setShopEnriched(null); setShowUrlInput(true); }} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid var(--cs-a06)', background: 'none', color: 'var(--cs-t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Not my shop</button>
+                  <button type="button" onClick={() => {
+                    setShopEnriched(null);
+                    if (shopOptions.length > 0) {
+                      setShowAlternatives(true);
+                    } else {
+                      setShowUrlInput(true);
+                    }
+                  }} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid var(--cs-a06)', background: 'none', color: 'var(--cs-t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Not my shop</button>
                 </div>
                 </div>
                 </>
