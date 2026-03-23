@@ -6943,10 +6943,6 @@ Include your top 15 videos in topPicks, ranked by ad potential. hero = strongest
           }
         } catch (e) { console.log('[deep-dive] Avatar profile fallback failed:', e.message); }
       }
-      // Try 4: Use the first video's cover as a last resort avatar
-      if (!foundLogo && allVideos.length > 0) {
-        foundLogo = allVideos[0].cover || allVideos[0].coverUrl || null;
-      }
       if (foundLogo) {
         brand.shopLogo = foundLogo;
         console.log('[deep-dive] Set shopLogo from fallback:', String(foundLogo).substring(0, 60));
@@ -11001,14 +10997,6 @@ app.get('/api/brand/enrich', async (req, res) => {
           const pLogo = tryLogo(si.shop_logo) || tryLogo(si.shop_avatar) || tryLogo(si.seller_logo) || si.shop_logo?.url_list?.[0] || si.shop_avatar?.url_list?.[0];
           if (pLogo) { logoUrl = pLogo; break; }
         }
-      }
-      // Final logo fallback: try image field from first product
-      if (!logoUrl && products.length) {
-        for (const p of products) {
-          const img = p.image?.url_list?.[0] || (typeof p.image === 'string' ? p.image : null);
-          if (img) { logoUrl = img; break; }
-        }
-        if (logoUrl) console.log('[enrich] Using product image as logo fallback');
       }
       const sameSeller = sellerInfo.seller_id ? products.filter(p => p.seller_info?.seller_id === sellerInfo.seller_id) : products;
       const topProducts = sameSeller.slice(0, 20);

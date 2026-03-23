@@ -4278,14 +4278,16 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
               </div>
                 <div style={{ marginTop: 10, padding: '14px 14px 10px', borderRadius: 12, background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
-                      <div style={{ position: 'absolute', inset: 0, width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#00C2FF)', opacity: 0.15 }} />
-                      <img
-                        src={shopEnriched.shopLogo && shopEnriched.shopLogo.startsWith('http') ? shopEnriched.shopLogo : ('https://unavatar.io/tiktok/' + ((shopEnriched.shopName || '').toLowerCase().replace(/[\s_\-.]+/g, '') || 'unknown'))}
-                        alt=""
-                        style={{ position: 'absolute', inset: 0, width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', background: 'var(--cs-a06)' }}
-                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://unavatar.io/tiktok/' + ((shopEnriched?.shopName || '').toLowerCase().replace(/[\s_\-.]+/g, '') || 'unknown'); }}
-                      />
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', border: '2px solid rgba(155,109,255,.4)', overflow: 'hidden', flexShrink: 0, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', zIndex: 0, position: 'relative' }}>{(shopEnriched.shopName || 'S').charAt(0).toUpperCase()}</span>
+                      {shopEnriched.shopLogo && typeof shopEnriched.shopLogo === 'string' && shopEnriched.shopLogo.startsWith('http') && (
+                        <img
+                          src={'/api/proxy-image?url=' + encodeURIComponent(shopEnriched.shopLogo)}
+                          alt=""
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, borderRadius: 'inherit', zIndex: 1 }}
+                          onError={(e) => { e.currentTarget.remove(); }}
+                        />
+                      )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>{shopEnriched.shopName || 'TikTok Shop'}</div>
