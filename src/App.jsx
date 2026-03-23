@@ -5545,19 +5545,23 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
       </div>
     )}
 
-    {/* LOCKED VIDEOS — free tier upsell (only after a campaign has built ads; avoids “all locked” before first build) */}
-    {!brand?.billingEnabled && caiCampaign?.id && (caiData?.creatives || []).length > 0 && (() => {
+    {/* LOCKED VIDEOS — free tier upsell when more videos exist than free tier allows */}
+    {!brand?.billingEnabled && (() => {
       const creativeVideoIds = new Set((caiData?.creatives || []).map(c => String(c.videoId)));
       const topPicks = brand?.caiDeepDive?.analysis?.topPicks || [];
       const ttVideos = (tiktokVideos || []).filter(v => v && v.id);
       const allSourceVideos = ttVideos.length > 0 ? ttVideos : topPicks.map(p => ({ id: p.videoId, cover: p.coverUrl, desc: p.title || p.desc, tier: p.tier, views: p.views }));
-      const lockedVideos = allSourceVideos.filter(v => !creativeVideoIds.has(String(v.id || v.videoId)));
+      const FREE_LIMIT = 3;
+      const inCampaignCount = creativeVideoIds.size;
+      const lockedVideos = inCampaignCount > 0
+        ? allSourceVideos.filter(v => !creativeVideoIds.has(String(v.id || v.videoId)))
+        : allSourceVideos.slice(FREE_LIMIT);
       if (lockedVideos.length === 0) return null;
       return (
         <div style={{ marginTop: 20, padding: 24, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>{lockedVideos.length} more video{lockedVideos.length !== 1 ? 's' : ''} ready to launch — unlock with billing</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>{lockedVideos.length} more video{lockedVideos.length !== 1 ? 's' : ''} available</div>
               <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Meta&apos;s algorithm performs best with 10+ creatives. No monthly fee — just 4% of ad spend when running.</div>
             </div>
             <span style={{ fontSize: 11, fontWeight: 700, color: '#9b6dff', padding: '4px 10px', borderRadius: 6, background: 'rgba(155,109,255,.1)', border: '1px solid rgba(155,109,255,.2)', textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>Free Tier</span>
