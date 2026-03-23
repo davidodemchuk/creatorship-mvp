@@ -9282,7 +9282,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
                     <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
                   </button>
-                  <div style={{ marginTop: 12, fontSize: 13, color: 'var(--cs-t3)', cursor: 'pointer' }} onClick={() => setCaiSubTab('dashboard')}>Review on Dashboard</div>
                 </div>
               </div>
 
@@ -9314,20 +9313,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                         {pick.estimatedRoas && <><span style={{ color: 'var(--cs-a08)' }}>·</span><span className="mono" style={{ fontSize: 12, color: '#9b6dff', fontWeight: 600 }}>Est. {pick.estimatedRoas}x ROAS</span></>}
                         {pick.estimatedCpa && <><span style={{ color: 'var(--cs-a08)' }}>·</span><span className="mono" style={{ fontSize: 12, color: '#34d399', fontWeight: 600 }}>${pick.estimatedCpa} CPA</span></>}
                       </div>
-                      {!inCamp && (
-                        <button onClick={async () => {
-                          try {
-                            const allCamps = (caiData?.allCampaigns || []).filter(c => c.status !== 'archived');
-                            if (allCamps.length === 1) {
-                              const r = await fetch('/api/cai/campaign/add-creative', { method: 'POST', headers, body: JSON.stringify({ brandId: brand.id, localId: allCamps[0].localId, videoId: pick.videoId }) });
-                              const d = await r.json();
-                              if (d.success) toast.success('Added to campaign!'); else toast.error(d.error || 'Failed');
-                            } else if (allCamps.length > 1) {
-                              setCaiSubTab('campaigns');
-                            }
-                          } catch (e) { toast.error(e.message); }
-                        }} style={{ padding: '6px 14px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 6, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{pick.tier === 'hero' ? 'Run as Hero Ad →' : pick.tier === 'proven' ? 'Add to Campaign →' : 'Test at $' + (pick.dailyBudget || 20) + '/day →'}</button>
-                      )}
                     </div>
                   </div>
                 );
