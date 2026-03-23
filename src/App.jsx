@@ -7698,7 +7698,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const website = brand.websiteUrl || brand.storeUrl || '';
 
     add('CAi ' + CAI_VERSION + ' — Building your custom brand report', 'header');
-    add('Give CAi ~30 seconds to pull real data from 6 sources and build a custom strategy.', 'system');
+    add('Give CAi ~60 seconds to pull real data from 6 sources and build a custom strategy.', 'system');
     await wait(250);
 
     // ═══ CONNECT ═══
@@ -10861,7 +10861,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8, lineHeight: 1.3 }}>This isn't AI slop.</h2>
-          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}><span style={CAI_BRAND}>Give CAi 30 seconds to build a custom analysis of {brand?.brandName || brand?.storeName || 'your brand'}.</span></h2>
+          <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}><span style={CAI_BRAND}>Give CAi 60 seconds to build a custom analysis of {brand?.brandName || brand?.storeName || 'your brand'}.</span></h2>
           <p style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 520, margin: '0 auto' }}>CAi is downloading your videos, analyzing every piece of content for Meta ad potential, building targeting around your audience, and constructing a full campaign — from scratch, for {brand?.brandName || brand?.storeName || 'your brand'}.</p>
         </div>
         {/* Terminal header */}
@@ -12038,7 +12038,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
             <div style={{ fontSize: 12, color: 'var(--cs-t3)' }}>
               {buildInfo?.videoCount ? buildInfo.videoCount + ' videos being processed' : 'Processing your content'}
               {' · '}
-              {buildInfo?.phase === 'deep-dive' ? 'Est. ~30 seconds'
+              {buildInfo?.phase === 'deep-dive' ? 'Est. ~60 seconds'
                 : buildInfo?.phase === 'activating' ? 'Est. ~30 seconds'
                   : buildInfo?.phase === 'uploading' ? 'Est. 2-5 minutes · You\'ll get an email when done'
                     : 'Almost done'}
