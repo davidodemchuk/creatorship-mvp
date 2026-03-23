@@ -2811,8 +2811,8 @@ app.post('/api/billing/setup-checkout', authBrand, requireRole('admin'), async (
       customer: customerId,
       mode: 'setup',
       payment_method_types: ['card'],
-      success_url: frontendUrl + '/brand?billing=success&session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: frontendUrl + '/brand?billing=cancelled',
+      success_url: frontendUrl + '/brand?billing=success&session_id={CHECKOUT_SESSION_ID}#campaigns',
+      cancel_url: frontendUrl + '/brand?billing=cancelled#campaigns',
       metadata: { creatorship_brand_id: brand.id, purpose: 'billing_setup' }
     });
     res.json({ success: true, checkoutUrl: session.url, sessionId: session.id });

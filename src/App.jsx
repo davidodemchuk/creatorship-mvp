@@ -4508,7 +4508,7 @@ function BrandHomeTab({ brand, profile, creatorsCount, setBrandTab }) {
   );
 }
 
-function BrandOverviewOnboarding({ brand, profile, storeDisplay, creatorsCount, campaignsCount, setBrandTab, setMessagesThread, creators, campaigns, uploads = [], brandTikTokPage, metaPages = [], metaAdAccounts = [], loadingMetaPages = false, metaPagesFetchFailed = false, onSelectMetaPage, tiktokVideos = [], loadingTiktokVideos = false, onLaunchVideo, aiPlan = null, aiPlanLoading = false, aiPlanStatus = null }) {
+function BrandOverviewOnboarding({ brand, profile, storeDisplay, creatorsCount, campaignsCount, setBrandTab, setMessagesThread, creators, campaigns, uploads = [], brandTikTokPage, metaPages = [], metaAdAccounts = [], loadingMetaPages = false, metaPagesFetchFailed = false, onSelectMetaPage, tiktokVideos = [], loadingTiktokVideos = false, onLaunchVideo, aiPlan = null, aiPlanLoading = false, aiPlanStatus = null, handleConnectBilling }) {
   const [period, setPeriod] = useState('30d');
   const [showManualMetaPageForm, setShowManualMetaPageForm] = useState(false);
   const [showManualPageId, setShowManualPageId] = useState(false);
@@ -4643,7 +4643,17 @@ function BrandOverviewOnboarding({ brand, profile, storeDisplay, creatorsCount, 
               </div>
               {!billingStepDone && metaStepDone && (
                 <div style={{ marginTop: 12, marginLeft: 38, padding: '12px 16px', borderRadius: 10, background: 'rgba(15,23,42,.9)', border: '1px solid rgba(148,163,184,.2)' }}>
-                  <button type="button" onClick={async () => { if (!brand?.id) return; try { const res = await fetch('/api/billing/setup-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand.id }) }); const d = await res.json(); if (d.checkoutUrl) window.location.href = d.checkoutUrl; } catch (_) {} }} style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #0668E1, #0553B8)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Set up Billing</button>
+                  <button type="button" onClick={async () => {
+                    if (handleConnectBilling) { handleConnectBilling(); return; }
+                    if (!brand?.id) return;
+                    try {
+                      const token = localStorage.getItem('creatorship_brand_token');
+                      const res = await fetch('/api/billing/setup-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ brandId: brand.id, email: brand?.email }) });
+                      const d = await res.json();
+                      const u = d.checkoutUrl || d.url;
+                      if (u) window.location.href = u;
+                    } catch (_) {}
+                  }} style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #0668E1, #0553B8)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Set up Billing</button>
                 </div>
               )}
             </div>
@@ -4806,7 +4816,12 @@ function BrandOverviewOnboarding({ brand, profile, storeDisplay, creatorsCount, 
                 { l: 'TikTok Shop', v: hasTiktok ? '@' + storeHandle : 'Not connected', ok: hasTiktok },
                 { l: 'Billing', v: profile?.billingEnabled ? '4% active' : 'Free plan', ok: !!profile?.billingEnabled },
               ].map((s, i) => (
-                <button key={i} onClick={() => setBrandTab('settings')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '8px 0', background: 'none', border: 'none', borderBottom: i < 2 ? '1px solid var(--cs-a04)' : 'none', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button key={i} onClick={() => {
+                  if (s.l === 'Billing' && !profile?.billingEnabled) {
+                    if (handleConnectBilling) handleConnectBilling();
+                    else setBrandTab('settings');
+                  } else setBrandTab('settings');
+                }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '8px 0', background: 'none', border: 'none', borderBottom: i < 2 ? '1px solid var(--cs-a04)' : 'none', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit' }}>
                   <span style={{ fontSize: 14, color: 'var(--cs-t3)' }}>{s.l}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span className="mono" style={{ fontSize: 13, color: s.ok ? '#c0c8db' : 'var(--cs-t4)' }}>{s.v}</span>
@@ -4867,7 +4882,7 @@ function InviteModal({ showInvite, setShowInvite, inviteCreator, setInviteCreato
   </div>;
 }
 
-function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }) {
+function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread, handleConnectBilling }) {
   const [scan, setScan] = useState(null);
   const [scanError, setScanError] = useState(null);
   const [scanning, setScanning] = useState(false);
@@ -5262,9 +5277,9 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
         </span>
       </div>
       {(profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) ? (
-        <button onClick={()=>setBrandTab('settings')} style={{padding:'8px 16px',background:'#0668E1',border:'none',borderRadius:8,color:'#fff',fontSize: 14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Add Payment Method →</button>
+        <button onClick={() => (handleConnectBilling ? handleConnectBilling() : setBrandTab('settings'))} style={{padding:'8px 16px',background:'#0668E1',border:'none',borderRadius:8,color:'#fff',fontSize: 14,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>Add Payment Method →</button>
       ) : (
-        <button onClick={()=>setBrandTab('settings')} style={{padding:'8px 16px',background:'transparent',border:'1px solid var(--cs-a06)',borderRadius:8,color:'var(--cs-t3)',fontSize: 13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Upgrade</button>
+        <button onClick={() => (handleConnectBilling ? handleConnectBilling() : setBrandTab('settings'))} style={{padding:'8px 16px',background:'transparent',border:'1px solid var(--cs-a06)',borderRadius:8,color:'var(--cs-t3)',fontSize: 13,fontWeight:600,cursor:'pointer',fontFamily:'inherit'}}>Upgrade</button>
       )}
     </div>}
 
@@ -5407,7 +5422,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
                   <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:4}}>
                     {v?.url ? <a href={v.url} target="_blank" rel="noopener noreferrer" onClick={e=>e.stopPropagation()} style={{...outlineBtn,fontSize: 12,padding:"6px 2px"}}>TikTok ↗</a> : <span style={{...outlineBtn,opacity:.4,cursor:"default",fontSize: 12,padding:"6px 2px"}}>No link</span>}
                     {!profile.billingEnabled && (profile.freeLaunchesUsed || 0) >= (profile.freeLaunchLimit || 3) ? (
-                      <button onClick={e=>{e.stopPropagation();setBrandTab('settings')}} style={{...outlineBtn,background:OB.orange,color:"#0b0f1a",border:"none",fontWeight:700,fontSize: 12,padding:"6px 2px"}}>Upgrade →</button>
+                      <button onClick={e => { e.stopPropagation(); (handleConnectBilling ? handleConnectBilling() : setBrandTab('settings')); }} style={{...outlineBtn,background:OB.orange,color:"#0b0f1a",border:"none",fontWeight:700,fontSize: 12,padding:"6px 2px"}}>Upgrade →</button>
                     ) : (
                       <button onClick={e=>{e.stopPropagation();openLaunch(v)}} style={{...outlineBtn,background:OB.accent,color:"#0b0f1a",border:"none",fontWeight:700,fontSize: 12,padding:"6px 2px"}}>Launch Meta Ad →</button>
                     )}
@@ -5429,7 +5444,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
     )}
 
     {/* Unified Launch Modal — same component used by Content tab, CAi Plans, and Uploads */}
-    {pendingLaunchVideo && <LaunchCampaignModal video={pendingLaunchVideo} brand={brand} profile={profile} onClose={() => setPendingLaunchVideo(null)} setBrandTab={setBrandTab} />}
+    {pendingLaunchVideo && <LaunchCampaignModal video={pendingLaunchVideo} brand={brand} profile={profile} onClose={() => setPendingLaunchVideo(null)} setBrandTab={setBrandTab} handleConnectBilling={handleConnectBilling} />}
 
 
     <InviteModal showInvite={showInvite} setShowInvite={setShowInvite} inviteCreator={inviteCreator} setInviteCreator={setInviteCreator} inviteEmail={inviteEmail} setInviteEmail={setInviteEmail} inviteMessage={inviteMessage} setInviteMessage={setInviteMessage} inviteMsg={inviteMsg} setInviteMsg={setInviteMsg} inviteSending={inviteSending} sendInvite={sendInvite} />
@@ -5439,7 +5454,7 @@ function CreatorDiscoveryView({ brand, profile, setBrandTab, setMessagesThread }
 /*══════════════════════════════════════════════════════
   CAMPAIGNS TAB — CAi-managed campaign history
 ══════════════════════════════════════════════════════*/
-function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiTab, refresh, adAccount, tiktokVideos = [], caiData, brand }) {
+function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiTab, refresh, adAccount, tiktokVideos = [], caiData, brand, handleConnectBilling }) {
   const caiCampaign = caiData?.campaign;
   const toast = useToast();
   const [filter, setFilter] = useState('all');
@@ -5575,7 +5590,8 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
                       const data = await res.json();
                       if (data.error) {
                         if (data.requiresBilling) {
-                          if (confirm(data.error + '\n\nGo to Account settings to connect billing?')) {
+                          if (handleConnectBilling) handleConnectBilling();
+                          else if (confirm(data.error + '\n\nGo to Account settings to connect billing?')) {
                             setCaiTab && setCaiTab(null);
                             setBrandTab && setBrandTab('settings');
                           }
@@ -5689,7 +5705,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
 /*══════════════════════════════════════════════════════
   SETTINGS TAB — Connection flows + brand profile
 ══════════════════════════════════════════════════════*/
-function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile, setProfile, setBrand, brandTikTokPage }) {
+function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, refreshProfile, setProfile, setBrand, brandTikTokPage, handleConnectBilling }) {
   const toast = useToast();
   const userRole = getBrandUserRole();
   const canDoAction = (action) => canDo(userRole, action);
@@ -5776,17 +5792,6 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
   }, [settingsTab, fetchBilling]);
 
   useEffect(() => {
-    if (window.location.search?.includes('billing=success')) {
-      setBillingMsg({ ok: true, text: 'Payment method added!' });
-      setTimeout(() => setBillingMsg(null), 5000);
-      fetchBilling();
-      const url = new URL(window.location.href);
-      url.searchParams.delete('billing');
-      window.history.replaceState({}, '', url.pathname + url.search);
-    }
-  }, [fetchBilling]);
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // meta_connected is handled by the later useEffect that sets setCaiTab('optimize')
     if (params.get('meta_error')) {
@@ -5803,11 +5808,21 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
       setBillingMsg({ ok: false, text: 'Contact your account admin to manage billing.' });
       return;
     }
+    if (handleConnectBilling) {
+      setBillingAction('add');
+      try {
+        await handleConnectBilling();
+      } finally {
+        setBillingAction(null);
+      }
+      return;
+    }
     setBillingAction('add');
     try {
-      const res = await fetch('/api/billing/setup-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand.id }) });
+      const res = await fetch('/api/billing/setup-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand.id, email: brand.email }) });
       const d = await res.json();
-      if (d.checkoutUrl) window.open(d.checkoutUrl, '_blank');
+      const u = d.checkoutUrl || d.url;
+      if (u) window.location.href = u;
       else setBillingMsg({ ok: false, text: d.error || 'Failed to start checkout' });
     } catch (e) { setBillingMsg({ ok: false, text: 'Network error' }); }
     setBillingAction(null);
@@ -6477,6 +6492,13 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
 
       <div style={S.card}>
         <div style={S.sectionTitle}>Payment Method</div>
+        {profile.billingEnabled && (
+          <div style={{ marginBottom: 16, padding: '12px 14px', background: 'rgba(52,211,153,.08)', border: '1px solid rgba(52,211,153,.22)', borderRadius: 10 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#34d399', marginBottom: 6 }}>✓ Billing active</div>
+            <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>4% of managed Meta ad spend — no monthly fee. You&apos;re only charged when your ads are running.</div>
+            <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 8 }}>Manage billing: Stripe customer portal for self-serve updates is coming soon — contact support if you need to change your card today.</div>
+          </div>
+        )}
         {billingMsg && <FeedbackMsg msg={billingMsg} />}
         {(billing?.paymentFailed || profile?.billingPaymentFailed) && <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 10, background: C.error + '0d', border: '1px solid ' + C.error + '25', fontSize: 13, color: '#fca5a5' }}>⚠ Your last payment failed. Please update your payment method.</div>}
         {(() => {
@@ -6499,13 +6521,15 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
           );
           return (
             <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t0)', marginBottom: 10 }}>No payment method on file</div>
+              <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginBottom: 14, lineHeight: 1.5 }}>4% of managed ad spend — no monthly fee. Only charged when your ads are running.</div>
               <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(99,91,255,.04), rgba(99,91,255,.01))', border: '1px solid rgba(99,91,255,.12)', borderRadius: 12, marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                   <svg width="40" height="16" viewBox="0 0 40 16" fill="none"><path d="M15.2 3.6L12.8 12.4h-2.4l2.4-8.8h2.4zm10.4 5.7l1.3-3.5.7 3.5h-2zm2.7 3.1h2.2l-1.9-8.8h-2c-.5 0-.8.3-1 .7l-3.4 8.1h2.4l.5-1.3h2.9l.3 1.3zm-6.6-2.9c0-2.3-3.2-2.5-3.2-3.5 0-.3.3-.6 1-.7.3 0 1.3 0 2.4.6l.4-2a6.5 6.5 0 00-2.3-.4c-2.4 0-4 1.3-4 3 0 1.4 1.2 2.1 2.1 2.5 1 .5 1.3.8 1.3 1.2 0 .6-.8 1-1.5 1-.7 0-1.5-.2-2.3-.6l-.5 2c.5.2 1.5.4 2.5.4 2.5 0 4.2-1.2 4.2-3.1l-.1-.4zM9.3 3.6l-3.7 8.8H3.1L1.3 5.3c-.1-.4-.2-.6-.6-.7C.3 4.4 0 4.2 0 4.2l0-.6h3.8c.5 0 1 .4 1 .9l1 5 2.4-5.9h2.5l-.4 0z" fill="#635BFF"/></svg>
                   <span style={{ fontSize: 12, color: 'var(--cs-t4)' }}>Powered by Stripe</span>
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 14 }}>
-                  Add a payment method to continue after your free launches. You'll only be charged <strong>4% of managed ad spend</strong>, invoiced monthly. Your card is stored securely by Stripe — Creatorship never sees your full card number.
+                  <strong>Connect Billing</strong> opens secure Stripe checkout. After your free launches, you&apos;ll only be charged <strong>4% of managed ad spend</strong>, invoiced monthly. Your card is stored by Stripe — Creatorship never sees your full card number.
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -6519,7 +6543,7 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
                   </div>
                 </div>
                 <button onClick={handleAddPayment} disabled={!canManageBilling || billingAction === 'add'} style={{ ...btnStyle, background: '#635BFF', color: '#fff', padding: '12px 28px', fontWeight: 700, fontSize: 14, borderRadius: 8, border: 'none', cursor: !canManageBilling ? 'not-allowed' : billingAction === 'add' ? 'not-allowed' : 'pointer', opacity: !canManageBilling ? 0.55 : billingAction === 'add' ? 0.7 : 1 }}>
-                  {billingAction === 'add' ? 'Opening Stripe...' : 'Add Payment Method via Stripe'}
+                  {billingAction === 'add' ? 'Opening Stripe...' : 'Connect Billing'}
                 </button>
               </div>
             </div>
@@ -6879,7 +6903,7 @@ function BrandMessagesTab({ brandId, brand, messagesThread, setMessagesThread })
 
 
 
-function LaunchCampaignModal({ video, brand, profile, onClose, setBrandTab, initialCopy, initialBudget }) {
+function LaunchCampaignModal({ video, brand, profile, onClose, setBrandTab, initialCopy, initialBudget, handleConnectBilling }) {
   // === STATE ===
   const [phase, setPhase] = useState('building'); // 'building' | 'ready' | 'launching' | 'done' | 'error'
   const [campaign, setCampaign] = useState(null); // AI-built campaign config
@@ -7074,6 +7098,7 @@ function LaunchCampaignModal({ video, brand, profile, onClose, setBrandTab, init
         add('✗ ' + (d.error || 'Launch failed'), 'error');
         setErrorMsg(d.error || 'Launch failed');
         setPhase('error');
+        if (d.requiresBilling && handleConnectBilling) handleConnectBilling();
       }
     } catch (e) {
       clearInterval(msgTimer);
@@ -7523,7 +7548,7 @@ function BrandContentTab({ brand, profile, setBrandTab, tiktokVideos: parentVide
 const BRAND_TAB_IDS = ['home','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
 let _deepDiveCache = null;
 let _deepDiveCacheBrandId = null;
-function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo, buildInProgress = false, buildInfo = null, setCaiDataParent = null }) {
+function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo, buildInProgress = false, buildInfo = null, setCaiDataParent = null, handleConnectBilling }) {
   const [caiData, setCaiData] = useState(null);
   const [sysInfo, setSysInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -8672,7 +8697,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginBottom: 16, lineHeight: 1.6 }}>
                   To continue running campaigns, connect your billing. You'll only be charged 4% of managed ad spend — nothing until your ads actually run.
                 </div>
-                <button type="button" onClick={() => setBrandTab('settings')} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button type="button" onClick={() => (handleConnectBilling ? handleConnectBilling() : setBrandTab('settings'))} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 8, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Connect Billing
                 </button>
               </div>
@@ -9491,7 +9516,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--cs-t1)' }}>&#x1F512; {(tiktokVideos?.length || 0) - (caiData?.creatives || []).length} videos locked</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Connect billing to add all your videos to Meta campaigns. More creatives = better optimization = lower CPA.</div>
               </div>
-              <button type="button" onClick={() => { setCaiSubTab(null); setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Connect Billing</button>
+              <button type="button" onClick={() => { if (handleConnectBilling) handleConnectBilling(); else { setCaiSubTab(null); setBrandTab('settings'); } }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Connect Billing</button>
             </div>
           )}
 
@@ -10027,7 +10052,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   <div style={{ fontSize: 15, fontWeight: 800, color: '#fbbf24', marginBottom: 2 }}>Running {(caiData?.creatives || []).length} of {Math.max((tiktokVideos || []).length, (brand?.caiDeepDive?.analysis?.topPicks || []).length, 10)} ads</div>
                   <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>Meta&apos;s algorithm optimizes best with 10+ creatives. You have more videos ready — unlock your full library. No monthly fee, just 4% of ad spend when ads are running.</div>
                 </div>
-                <button type="button" onClick={() => { if (setCaiTab) setCaiTab(null); if (setBrandTab) setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: '#fbbf24', color: '#000', border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' }}>Unlock All Videos</button>
+                <button type="button" onClick={() => { if (handleConnectBilling) handleConnectBilling(); else { if (setCaiTab) setCaiTab(null); if (setBrandTab) setBrandTab('settings'); } }} style={{ padding: '10px 20px', borderRadius: 8, background: '#fbbf24', color: '#000', border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' }}>Unlock All Videos</button>
               </div>
             )}
 
@@ -10241,7 +10266,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                         <div style={{ fontSize: 14, fontWeight: 700, color: '#fbbf24' }}>{locked.length} more video{locked.length !== 1 ? 's' : ''} ready to launch</div>
                         <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>Downloaded and analyzed — waiting for billing to go live</div>
                       </div>
-                      <button type="button" onClick={() => { if (setCaiTab) setCaiTab(null); if (setBrandTab) setBrandTab('settings'); }} style={{ padding: '8px 16px', borderRadius: 8, background: 'rgba(251,191,36,.15)', border: '1px solid rgba(251,191,36,.3)', color: '#fbbf24', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Connect Billing</button>
+                      <button type="button" onClick={() => { if (handleConnectBilling) handleConnectBilling(); else { if (setCaiTab) setCaiTab(null); if (setBrandTab) setBrandTab('settings'); } }} style={{ padding: '8px 16px', borderRadius: 8, background: 'rgba(251,191,36,.15)', border: '1px solid rgba(251,191,36,.3)', color: '#fbbf24', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Connect Billing</button>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
                       {locked.slice(0, 10).map((vid, i) => {
@@ -10651,7 +10676,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <div style={{ background: 'linear-gradient(135deg,rgba(155,109,255,.06),rgba(6,104,225,.04))', border: '1px solid rgba(155,109,255,.2)', borderRadius: 14, padding: '18px 22px', marginBottom: 20 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 4 }}>You&apos;re running {(caiData?.creatives || []).length} ads — unlock all {tiktokVideos?.length || '10+'}</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginBottom: 12 }}>Meta&apos;s CBO distributes budget across creatives. More ads = faster learning = better ROAS. No monthly fee — just 4% of ad spend when running.</div>
-                <button type="button" onClick={() => { setCaiSubTab(null); setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Unlock All Ads</button>
+                <button type="button" onClick={() => { if (handleConnectBilling) handleConnectBilling(); else { setCaiSubTab(null); setBrandTab('settings'); } }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Unlock All Ads</button>
               </div>
             )}
           {/* ─── Daily Budget (first so users see it after Meta connect) ─── */}
@@ -11752,6 +11777,25 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   const [buildInProgress, setBuildInProgress] = useState(false);
   const [buildInfo, setBuildInfo] = useState(null); // { phase, videoCount, startedAt }
   const aiPlanCheckedRef = useRef(false);
+  const billingReturnHandledRef = useRef(false);
+  const toast = useToast();
+
+  const handleConnectBilling = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('creatorship_brand_token');
+      const res = await fetch('/api/billing/setup-checkout', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brandId: brand?.id, email: brand?.email })
+      });
+      const data = await res.json();
+      const url = data.checkoutUrl || data.url;
+      if (url) window.location.href = url;
+      else alert(data.error || 'Failed to create checkout session');
+    } catch (e) {
+      alert('Billing setup failed: ' + e.message);
+    }
+  }, [brand?.id, brand?.email]);
 
   const onLaunchVideo = useCallback((video) => {
     setPendingLaunchVideo(video);
@@ -11853,6 +11897,16 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
   }, [brand.email, setBrand]);
 
   useEffect(() => { refreshProfile(); }, [brand.id]);
+
+  useEffect(() => {
+    if (billingReturnHandledRef.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('billing') !== 'success') return;
+    billingReturnHandledRef.current = true;
+    window.history.replaceState({}, '', window.location.pathname + (window.location.hash || '#campaigns'));
+    toast.success('Billing connected! All videos unlocked.');
+    refreshProfile();
+  }, [toast, refreshProfile]);
 
   // Keep CAi tab in sync with URL hash after brand/profile refreshes.
   useEffect(() => {
@@ -12237,18 +12291,18 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
 
         {brandTab==="home"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandHomeTab brand={brand} profile={profile ?? brand} creatorsCount={creatorsCount} setBrandTab={setBrandTab} /></div>}
 
-        {brandTab==="creators"&&<div style={{animation:'fadeIn 0.2s ease'}}>{loadingCreators ? <AILoader messages={['Scanning TikTok Shop creators...', 'Finding creators with your products...', 'Ranking by engagement score...', 'Calculating CAi performance index...', 'Building your creator pipeline...']} height={260} color="#EE1D52" /> : <ErrorBoundary><CreatorDiscoveryView brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} setMessagesThread={setMessagesThread} /></ErrorBoundary>}</div>}
+        {brandTab==="creators"&&<div style={{animation:'fadeIn 0.2s ease'}}>{loadingCreators ? <AILoader messages={['Scanning TikTok Shop creators...', 'Finding creators with your products...', 'Ranking by engagement score...', 'Calculating CAi performance index...', 'Building your creator pipeline...']} height={260} color="#EE1D52" /> : <ErrorBoundary><CreatorDiscoveryView brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} setMessagesThread={setMessagesThread} handleConnectBilling={handleConnectBilling} /></ErrorBoundary>}</div>}
 
         {brandTab==="content"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandContentTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} tiktokVideos={tiktokVideos} loadingTiktokVideos={loadingTiktokVideos} onLaunchVideo={onLaunchVideo} /></div>}
 
-        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} setBuildInProgress={setBuildInProgress} setBuildInfo={setBuildInfo} buildInProgress={buildInProgress} buildInfo={buildInfo} setCaiDataParent={setCaiDataParent} /></div>}
+        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} setBuildInProgress={setBuildInProgress} setBuildInfo={setBuildInfo} buildInProgress={buildInProgress} buildInfo={buildInfo} setCaiDataParent={setCaiDataParent} handleConnectBilling={handleConnectBilling} /></div>}
 
-        {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
+        {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} handleConnectBilling={handleConnectBilling} /></div>}
 
-        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>setBrandTab('ai-plans')} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to CAi</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} />}</div>}
+        {brandTab==="settings"&&<div style={{animation:'fadeIn 0.2s ease'}}><button onClick={()=>setBrandTab('ai-plans')} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',color:'#9b6dff',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:'inherit',padding:'0 0 12px',marginBottom:4}}><span style={{fontSize:16}}>←</span> Back to CAi</button>{loadingProfile ? <AILoader messages={['Loading your settings...', 'Checking integrations...', 'Verifying connections...']} height={200} /> : <SettingsTab brand={brand} profile={profile ?? brand} brandSettings={brandSettings} setBrandSettings={setBrandSettings} logout={logout} refreshProfile={refreshProfile} setProfile={setProfile} setBrand={setBrand} brandTikTokPage={brandTikTokPage} handleConnectBilling={handleConnectBilling} />}</div>}
 
         {/* Launch Campaign Modal — standalone, renders from any tab */}
-        {pendingLaunchVideo && <LaunchCampaignModal video={pendingLaunchVideo} brand={brand} profile={profile ?? brand} onClose={() => setPendingLaunchVideo(null)} setBrandTab={setBrandTab} />}
+        {pendingLaunchVideo && <LaunchCampaignModal video={pendingLaunchVideo} brand={brand} profile={profile ?? brand} onClose={() => setPendingLaunchVideo(null)} setBrandTab={setBrandTab} handleConnectBilling={handleConnectBilling} />}
       </main>
     </div>
   </div>;
