@@ -12001,21 +12001,22 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <div ref={brandNavRef} style={{position:'relative'}}>
           <button type="button" onClick={()=>setBrandNavOpen(o=>!o)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',background:'var(--cs-a06)',border:'1px solid var(--cs-a08)',borderRadius:8,color:'var(--cs-t0)',fontFamily:'inherit',cursor:'pointer'}}>
             {(() => {
-              const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo || brand?.enrichedShop?.products?.[0]?.seller_info?.shop_logo?.url_list?.[0] || brand?.enrichedShop?.products?.[0]?.image?.url_list?.[0];
-              const avatarUrl = logoRaw ? '/api/proxy-image?url=' + encodeURIComponent(logoRaw) : '';
-              const displayName = brand?.storeName ? '@' + brand.storeName : brand?.brandName || 'Dashboard';
-              const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
+              const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo;
+              const avatarUrl = (typeof logoRaw === 'string' && logoRaw.startsWith('http')) ? '/api/proxy-image?url=' + encodeURIComponent(logoRaw) : null;
+              const displayName = brand?.storeName ? brand.storeName : brand?.brandName || 'Dashboard';
+              const initial = displayName.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() || '?';
+              
               return (
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#9b6dff,#0668E1)', border: '1px solid var(--cs-a08)', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
-                  {logoRaw && (
+                <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#7c3aed,#2563eb)',border:'2px solid rgba(155,109,255,.4)',overflow:'hidden',flexShrink:0,position:'relative',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {avatarUrl && (
                     <img
                       src={avatarUrl}
                       alt=""
-                      style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover', position: 'absolute', inset: 0 }}
-                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      style={{width:'100%',height:'100%',objectFit:'cover',position:'absolute',inset:0,borderRadius:'inherit'}}
+                      onError={(e) => { e.currentTarget.remove(); }}
                     />
                   )}
-                  <div style={{ display: 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#fff' }}>{initial}</div>
+                  <span style={{fontSize:14,fontWeight:800,color:'#fff',letterSpacing:'-0.5px',lineHeight:1,zIndex:0}}>{initial}</span>
                 </div>
               );
             })()}

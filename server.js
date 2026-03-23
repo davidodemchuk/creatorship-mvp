@@ -6909,6 +6909,7 @@ Include your top 15 videos in topPicks, ranked by ad potential. hero = strongest
 
     // ---- AVATAR FALLBACK: Extract shopLogo from product/video data if missing ----
     if (!brand.shopLogo) {
+      console.log('[deep-dive] Avatar check:', { shopLogo: brand.shopLogo, enrichedShopLogo: brand.enrichedShop?.shopLogo, hasProducts: !!brand.enrichedShop?.products?.length });
       let foundLogo = null;
       // Try 1: enrichedShop.products seller_info
       if (!foundLogo && brand.enrichedShop?.products?.length) {
@@ -10947,6 +10948,7 @@ app.get('/api/brand/enrich', async (req, res) => {
       let logoUrl = '';
       const tryLogo = (v) => { if (typeof v === 'string' && v) return v; if (v?.url_list?.[0]) return v.url_list[0]; return ''; };
       logoUrl = tryLogo(sellerInfo.sellerLogo) || tryLogo(sellerInfo.shopLogo) || tryLogo(sellerInfo.avatarUrl) || tryLogo(sellerInfo.avatar) || tryLogo(sellerInfo.logo) || tryLogo(sellerInfo.seller_logo) || tryLogo(sellerInfo.shop_avatar) || tryLogo(sellerInfo.shop_logo) || '';
+      console.log('[enrich] Logo search:', { brandName, nameLower, matchFound: !!match, sellerShopName: sellerInfo?.shop_name, logoUrl, tryLogoResults: { sellerLogo: tryLogo(sellerInfo?.sellerLogo), shopLogo: tryLogo(sellerInfo?.shopLogo), shop_logo: tryLogo(sellerInfo?.shop_logo), shop_avatar: tryLogo(sellerInfo?.shop_avatar) } });
       // Fallback: check product-level seller_info.shop_logo / shop_avatar (string or object)
       if (!logoUrl) {
         for (const p of products) {
@@ -11047,13 +11049,16 @@ app.get('/api/brand/enrich', async (req, res) => {
       const enrichSold = finalShopInfo.sold_count ?? finalShopInfo.total_sold ?? totalItemsSold;
       const enrichRating = finalShopInfo.shop_rating ?? finalShopInfo.rating ?? rating;
       const enrichReviews = finalShopInfo.review_count ?? reviewCount;
+      let shopLogoSaved = '';
       if (brandId && finalLogo) {
         const brand = await getBrandById(brandId);
         if (brand) {
           brand.shopLogo = finalLogo || brand.shopLogo;
+          shopLogoSaved = brand.shopLogo || '';
           await saveBrand(brand);
         }
       }
+      console.log('[enrich] Final result:', { brandName, finalLogo, shopLogoSaved, tikTokShopUrl });
       return res.json({
         shopName: finalShopInfo.shop_name || storeName,
         storeName: finalShopInfo.shop_name || storeName || undefined,
