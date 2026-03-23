@@ -8716,14 +8716,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: 'var(--cs-t1)', dim: 'var(--cs-t5)', spacer: 'transparent' };
     return (
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        {/* Part A: Title and context above terminal */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#9b6dff', marginBottom: 8 }}>Building Your CAi Campaign</div>
-          <div style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 500, margin: '0 auto' }}>
-            CAi is downloading your TikTok videos, formatting them for Meta, generating ad copy, and setting up your campaign. This takes about 30 seconds.
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 8 }}>You can leave this page — we'll email you when it's ready.</div>
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--cs-card)', borderRadius: '12px 12px 0 0', borderBottom: '1px solid rgba(155,109,255,.15)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ display: 'flex', gap: 5 }}>
@@ -8751,23 +8743,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           })}
           {activating && <div style={{ color: '#9b6dff', animation: 'pulse 1s infinite', fontSize: 13 }}>▊</div>}
         </div>
-        {/* Fixed overlay — shows immediately, blurs terminal behind */}
-          {activating && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(3,7,17,.5)', backdropFilter: 'blur(4px)' }}>
-              <div style={{ maxWidth: 480, padding: '40px 32px', textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 12, background: 'linear-gradient(135deg, rgba(155,109,255,.2), rgba(52,211,153,.15))', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🚀</div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 8 }}>CAi is Building Your Campaigns</h1>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', lineHeight: 1.6, marginBottom: 6 }}>
-                  Your ads are being created in Meta Ads Manager right now. All campaigns will launch <span style={{ color: '#34d399', fontWeight: 700 }}>PAUSED</span> for your review.
-                </p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginBottom: 24 }}>
-                  We'll email <strong style={{ color: 'rgba(255,255,255,.7)' }}>{brand?.email || ''}</strong> when everything is ready. You can safely close this page.
-                </p>
-
-                <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: '1px solid rgba(155,109,255,.3)', color: '#9b6dff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 20px', borderRadius: 8, marginTop: 8 }}>View Live Build Progress ↑</button>
-              </div>
-            </div>
-          )}
         {!activating && activationResult?.success && (
           <button onClick={() => { setActivationResult(null); setActivationLines([]); }} style={{ width: '100%', marginTop: 12, padding: '14px 0', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Open CAi Dashboard</button>
         )}
@@ -10871,10 +10846,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   // ═══ DEEP DIVE RUNNING — TERMINAL ═══
   if (((deepDiveLoading && !deepDive) || ((activating || buildInProgress) && buildInfo?.phase === 'activating')) && (terminalLines.length > 0 || deepDiveLoading)) {
     const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: '#a78bfa', dim: 'rgba(255,255,255,.08)', spacer: 'transparent' };
+    const isActivationBuild = (activating || (buildInProgress && buildInfo?.phase === 'activating'));
     return (
       <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', minHeight: 500 }}>
-        {/* Welcome overlay — shows on top of terminal until user clicks through */}
-        {showWelcomeOverlay && (
+        {/* Welcome overlay — deep dive only; activation build uses unobstructed terminal */}
+        {showWelcomeOverlay && deepDiveLoading && !deepDive && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(3,7,17,.55)', backdropFilter: 'blur(6px)' }}>
             <div style={{ maxWidth: 480, padding: '40px 32px', textAlign: 'center' }}>
               <div style={{ width: 64, height: 64, borderRadius: 12, background: 'linear-gradient(135deg, rgba(155,109,255,.2), rgba(6,104,225,.15))', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>✨</div>
@@ -10899,6 +10875,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           </div>
         )}
+        {!isActivationBuild && (
+        <>
         {/* The sell — make them stay */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
@@ -10906,6 +10884,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}><span style={CAI_BRAND}>Give CAi 60 seconds to build a custom analysis of {brand?.brandName || brand?.storeName || 'your brand'}.</span></h2>
           <p style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 520, margin: '0 auto' }}>CAi is downloading your videos, analyzing every piece of content for Meta ad potential, building targeting around your audience, and constructing a full campaign — from scratch, for {brand?.brandName || brand?.storeName || 'your brand'}.</p>
         </div>
+        </>
+        )}
         <div style={{ borderRadius: 16, border: '1px solid rgba(155,109,255,.2)', boxShadow: '0 0 30px rgba(155,109,255,.08), 0 4px 20px rgba(0,0,0,.4)', overflow: 'hidden', background: 'var(--cs-bg3)' }}>
           {/* Terminal header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(155,109,255,.06)', borderBottom: '1px solid rgba(155,109,255,.1)' }}>
@@ -10915,7 +10895,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffb400' }} />
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399' }} />
               </div>
-              <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}><span style={CAI_BRAND}>CAi</span> <span style={{ color: 'var(--cs-t4)' }}>Deep Dive · {CAI_VERSION}</span></span>
+              <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}><span style={CAI_BRAND}>CAi</span> <span style={{ color: 'var(--cs-t4)' }}>{isActivationBuild ? 'Activation' : 'Deep Dive'} · {CAI_VERSION}</span></span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {(deepDiveLoading || activating || (buildInProgress && buildInfo?.phase === 'activating')) && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />}
