@@ -10876,15 +10876,13 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           </div>
         )}
         {!isActivationBuild && (
-        <>
-        {/* The sell — make them stay */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          {/* The sell — make them stay */}
           <CaiBadge size="small" style={{ marginBottom: 12, display: 'inline-flex' }} />
           <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 8, lineHeight: 1.3 }}>This isn't AI slop.</h2>
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}><span style={CAI_BRAND}>Give CAi 60 seconds to build a custom analysis of {brand?.brandName || brand?.storeName || 'your brand'}.</span></h2>
           <p style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 520, margin: '0 auto' }}>CAi is downloading your videos, analyzing every piece of content for Meta ad potential, building targeting around your audience, and constructing a full campaign — from scratch, for {brand?.brandName || brand?.storeName || 'your brand'}.</p>
         </div>
-        </>
         )}
         <div style={{ borderRadius: 16, border: '1px solid rgba(155,109,255,.2)', boxShadow: '0 0 30px rgba(155,109,255,.08), 0 4px 20px rgba(0,0,0,.4)', overflow: 'hidden', background: 'var(--cs-bg3)' }}>
           {/* Terminal header */}
