@@ -3976,11 +3976,12 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
   }, [initialMode]);
 
   const [brandName, setBrandName] = useState('');
-  const setBrandNameAndClearShop = useCallback(v => { setBrandName(v); setShopEnriched(null); setShopEnrichError(''); setShowUrlInput(false); setManualShopUrl(''); }, []);
+  const setBrandNameAndClearShop = useCallback(v => { setBrandName(v); setShopEnriched(null); setShopEnrichError(''); setShowUrlInput(false); setManualShopUrl(''); setShopOptions([]); }, []);
   const [shopEnriched, setShopEnriched] = useState(null);
+  const [shopOptions, setShopOptions] = useState([]);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [manualShopUrl, setManualShopUrl] = useState('');
-  const [shopEnriching, setShopEnriching] = useState(false);
+  const [enrichLoading, setEnrichLoading] = useState(false);
   const [shopEnrichError, setShopEnrichError] = useState('');
   const [shopAvatarAttempt, setShopAvatarAttempt] = useState(0);
   useEffect(() => { setShopAvatarAttempt(0); }, [shopEnriched?.shopName, shopEnriched?.shopLogo]);
@@ -4036,48 +4037,58 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
     setShowPassword(false);
   }, [onModeChange]);
 
-  const handleShopEnrich = useCallback(async () => {
-    const raw = (brandName || '').trim();
-    if (!raw) return;
-    setShopEnriching(true);
+  const loadShopFromBrandName = useCallback(async (raw) => {
+    const trimmed = (raw || '').trim();
+    if (!trimmed) return;
+    setEnrichLoading(true);
     setShopEnrichError('');
+    setShopOptions([]);
     try {
-      const r = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(raw));
+      const r = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(trimmed) + '&multi=true');
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Could not fetch shop');
-      setShopEnriched(d);
+      if (!Array.isArray(d.shops)) {
+        const r2 = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(trimmed));
+        const d2 = await r2.json();
+        if (!r2.ok) throw new Error(d2.error || 'Could not fetch shop');
+        setShopEnriched(d2);
+        return;
+      }
+      if (d.shops.length > 1) {
+        setShopOptions(d.shops);
+        setShopEnriched(null);
+        setShowUrlInput(false);
+        return;
+      }
+      if (d.shops.length === 1) {
+        const r2 = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(trimmed) + '&shopId=' + encodeURIComponent(d.shops[0].shopId));
+        const d2 = await r2.json();
+        if (!r2.ok) throw new Error(d2.error || 'Could not fetch shop');
+        setShopEnriched(d2);
+        return;
+      }
+      setShopEnriched(null);
+      setShopEnrichError('No TikTok Shop matched that search. Paste your shop URL below.');
+      setShowUrlInput(true);
     } catch (e) {
       setShopEnriched(null);
       setShopEnrichError(e.message || 'Could not fetch shop');
+    } finally {
+      setEnrichLoading(false);
     }
-    setShopEnriching(false);
-  }, [brandName]);
+  }, []);
 
   useEffect(() => {
     const raw = (brandName || '').trim();
     if (raw.length < 3) {
       setShopEnriched(null);
       setShopEnrichError('');
+      setShopOptions([]);
       return;
     }
-    const t = setTimeout(() => {
-      (async () => {
-        setShopEnriching(true);
-        setShopEnrichError('');
-        try {
-          const r = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(raw));
-          const d = await r.json();
-          if (!r.ok) throw new Error(d.error || 'Could not fetch shop');
-          setShopEnriched(d);
-        } catch (e) {
-          setShopEnriched(null);
-          setShopEnrichError(e.message || 'Could not fetch shop');
-        }
-        setShopEnriching(false);
-      })();
-    }, 500);
+    const t = setTimeout(() => { loadShopFromBrandName(raw); }, 500);
     return () => clearTimeout(t);
-  }, [brandName]);
+  }, [brandName, loadShopFromBrandName]);
 
   const submit = async (e) => {
     e && e.preventDefault();
@@ -4158,6 +4169,8 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
 
   const inputS = { width: '100%', padding: '13px 16px', background: 'var(--cs-a04)', border: '1px solid ' + C.border, borderRadius: 10, color: C.text, fontSize: 14, fontFamily: 'inherit', marginBottom: 16 };
 
+  const signupShopBlocked = loading || enrichLoading || (shopOptions.length > 0 && !shopEnriched);
+
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 56px)', padding: '40px 16px', background: 'radial-gradient(ellipse at 30% 20%, rgba(6,104,225,0.18) 0%, transparent 60%), linear-gradient(160deg, #080d1e 0%, #030711 100%)' }}>
     <div style={{
       width: 400, background: 'var(--cs-card)',
@@ -4210,6 +4223,55 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
         <form autoComplete="on" onSubmit={e => { e.preventDefault(); submit(e); }} style={{ margin: 0 }}>
           {authInput('brandName', 'text', 'Brand name', brandName, setBrandNameAndClearShop, 'organization')}
           <div style={{ marginBottom: 16 }}>
+            {enrichLoading && (
+              <div style={{ padding: 20, textAlign: 'center' }}>
+                <div style={{ fontSize: 24, marginBottom: 8, animation: 'spin 1s linear infinite' }}>⟳</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--cs-t1)' }}>Looking for your TikTok Shop...</div>
+                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 4 }}>Searching TikTok Shop for &quot;{brandName.trim()}&quot;</div>
+              </div>
+            )}
+            {shopOptions.length > 0 && !shopEnriched && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>Select your shop</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {shopOptions.map((shop, i) => (
+                    <button key={i} type="button" onClick={async () => {
+                      setShopOptions([]);
+                      setEnrichLoading(true);
+                      setShopEnrichError('');
+                      try {
+                        const res = await fetch('/api/brand/enrich?brandName=' + encodeURIComponent(brandName.trim()) + '&shopId=' + encodeURIComponent(shop.shopId));
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Could not fetch shop');
+                        setShopEnriched(data);
+                      } catch (e) {
+                        setShopEnrichError(e.message || 'Could not fetch shop');
+                      } finally {
+                        setEnrichLoading(false);
+                      }
+                    }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 12, border: '1px solid var(--cs-a06)', background: 'var(--cs-a02)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
+                      {shop.logo ? (
+                        <img src={'/api/proxy-image?url=' + encodeURIComponent(shop.logo)} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
+                      ) : (
+                        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#7c3aed,#2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16 }}>{(shop.shopName || '?').charAt(0).toUpperCase()}</div>
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>{shop.shopName}</div>
+                        <div style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{shop.productCount} product{shop.productCount !== 1 ? 's' : ''}</div>
+                      </div>
+                      {(shop.productImages || []).length > 0 && (
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {(shop.productImages || []).slice(0, 3).map((img, j) => (
+                            <img key={j} src={'/api/proxy-image?url=' + encodeURIComponent(img)} alt="" style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => { setShopOptions([]); setShowUrlInput(true); }} style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0, textDecoration: 'underline' }}>None of these — paste my shop URL</button>
+              </div>
+            )}
             {shopEnriched && (
                 <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'linear-gradient(90deg, rgba(155,109,255,.08), rgba(6,104,225,.06))', border: '1px solid rgba(155,109,255,.15)', borderRadius: 8, marginBottom: 8 }}>
@@ -4298,11 +4360,11 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
             fontSize: 13, color: '#fca5a5', lineHeight: 1.4,
           }}>{error}</div>}
           <div style={{ fontSize: 11, color: 'var(--cs-t5)', lineHeight: 1.5, marginBottom: 12, textAlign: 'center' }}>By signing up, you agree to Creatorship's <a href="/terms" target="_blank" style={{ color: '#4da6ff' }}>Terms of Service</a> and <a href="/privacy" target="_blank" style={{ color: '#4da6ff' }}>Privacy Policy</a>.</div>
-          <button type="submit" disabled={loading} style={{
-            width: '100%', padding: '14px', background: loading ? C.dim : 'linear-gradient(135deg, #0668E1, #00C2FF)',
+          <button type="submit" disabled={signupShopBlocked} style={{
+            width: '100%', padding: '14px', background: signupShopBlocked ? C.dim : 'linear-gradient(135deg, #0668E1, #00C2FF)',
             color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700,
-            cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-            transition: 'opacity .2s', opacity: loading ? 0.7 : 1,
+            cursor: signupShopBlocked ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+            transition: 'opacity .2s', opacity: signupShopBlocked ? 0.7 : 1,
           }}>{loading ? 'Creating account...' : 'Brand Sign Up'}</button>
         </form>
       )}

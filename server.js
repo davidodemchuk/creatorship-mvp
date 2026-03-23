@@ -10939,7 +10939,52 @@ app.get('/api/brand/enrich', async (req, res) => {
       if (!apiResp.ok || data?.success === false) {
         return res.status(502).json({ error: data?.message || 'Could not search shop' });
       }
-      const products = Array.isArray(data?.products) ? data.products : [];
+      let products = Array.isArray(data?.products) ? data.products : [];
+
+      // If multi=true, return all unique sellers for the brand to pick
+      if (req.query.multi === 'true') {
+        const seen = new Set();
+        const shops = [];
+        for (const p of products) {
+          const si = p.seller_info || {};
+          const shopName = si.shop_name || si.seller_name || 'Unknown Shop';
+          const shopId = si.shop_id ?? si.seller_id ?? shopName;
+          const key = String(shopId);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          const tryL = (v) => { if (typeof v === 'string' && v) return v; if (v?.url_list?.[0]) return v.url_list[0]; return null; };
+          const logo = tryL(si.shop_logo) || tryL(si.shop_avatar) || tryL(si.seller_logo) || tryL(si.shopLogo) || tryL(si.avatarUrl) || null;
+          const sellerProducts = products.filter(pp => {
+            const psi = pp.seller_info || {};
+            return String(psi.shop_id ?? psi.seller_id ?? psi.shop_name ?? '') === key;
+          }).slice(0, 4);
+          const productImages = sellerProducts.map(pp => pp.image?.url_list?.[0] || (typeof pp.image === 'string' ? pp.image : null)).filter(Boolean);
+          const productPrices = sellerProducts.map(pp => pp.product_price_info?.sale_price_format || pp.product_price_info?.single_product_price_format || pp.price || pp.sale_price || null).filter(Boolean);
+          shops.push({
+            shopName,
+            shopId,
+            logo,
+            productImages,
+            productPrices,
+            productCount: sellerProducts.length,
+            shopUrl: si.shop_url || si.shop_link || null
+          });
+        }
+        return res.json({ shops, query: brandName });
+      }
+
+      // If shopId specified, filter to only that seller's products
+      if (req.query.shopId) {
+        const targetId = String(req.query.shopId);
+        const filtered = products.filter(p => {
+          const si = p.seller_info || {};
+          return String(si.shop_id ?? si.seller_id ?? si.shop_name ?? '') === targetId;
+        });
+        if (filtered.length > 0) {
+          products = filtered;
+        }
+      }
+
       const first = products[0];
       const seller = first?.seller_info || {};
       const nameLower = brandName.toLowerCase();
