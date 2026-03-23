@@ -7493,12 +7493,12 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     return 2.0; // Default
   });
   useEffect(() => {
-    if (caiData?.monthlyBudget && caiData.monthlyBudget > 0) {
-      const mb = Math.max(caiData.monthlyBudget, 600); // $20/day minimum ($600/mo)
+    if (caiData?.monthlyBudget && caiData?.monthlyBudget > 0) {
+      const mb = Math.max(caiData?.monthlyBudget, 600); // $20/day minimum ($600/mo)
       setMonthlyBudget(prev => prev === 3000 ? mb : prev);
     }
-    if (caiData?.roasTarget && caiData.roasTarget > 0) {
-      setRoasTarget(prev => prev === 2.0 ? caiData.roasTarget : prev);
+    if (caiData?.roasTarget && caiData?.roasTarget > 0) {
+      setRoasTarget(prev => prev === 2.0 ? caiData?.roasTarget : prev);
     }
   }, [caiData?.monthlyBudget, caiData?.roasTarget]);
   const [showChangelog, setShowChangelog] = useState(false);
@@ -8155,6 +8155,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const alwaysOnCampaignId = caiData?.campaign?.id;
   const hasCampaignData = !!(caiData?.campaign?.id && caiData?.creativesCount > 0);
   const dailyBudget = Math.round(monthlyBudget / 30);
+  // Safe defaults — prevent crashes when campaign deleted from Meta
+  const safeCaiData = caiData || {};
+  const safeCampaign = safeCaiData.campaign || null;
+  const safeCreatives = safeCaiData.creatives || [];
+  const safePerformance = safeCaiData.performance || {};
   const a = deepDive?.analysis;
   const sa = a || {};
   // Include optimize tab so #optimize + incomplete setup still mounts workspace (setup gate), not fall-through to return null
@@ -8946,7 +8951,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           </div>
 
-          {((!caiData?.creatives || caiData.creatives.length === 0) || caiData?.creatives?.every(c => c.status === 'deleted' || c.status === 'archived')) && (
+          {(((caiData?.creatives || []).length === 0) || (caiData?.creatives || []).every(c => c.status === 'deleted' || c.status === 'archived')) && (
             <div className="gl" style={{ padding: 28, borderRadius: 16, textAlign: 'center', marginBottom: 24, background: 'linear-gradient(135deg, rgba(155,109,255,0.08), rgba(6,104,225,0.08))', border: '1px solid rgba(155,109,255,0.2)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>&#128640;</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Ready to launch</h3>
@@ -10176,8 +10181,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               {/* Footer */}
               <div style={{ padding: '8px 18px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {expandedCamp && <button onClick={() => setExpandedCamp(false)} style={{ background: 'none', border: 'none', color: '#9b6dff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Collapse ↑</button>}
-                <span className="mono" style={{ fontSize: 11, color: 'var(--cs-t5)' }}>Campaign: {caiData.campaign.id}</span>
-                <a href={'https://www.facebook.com/adsmanager/manage/campaigns?act=' + (brand.adAccount || '').replace('act_', '') + '&selected_campaign_ids=' + caiData.campaign.id} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#0668E1', textDecoration: 'none' }}>Meta Ads Manager ↗</a>
+                <span className="mono" style={{ fontSize: 11, color: 'var(--cs-t5)' }}>Campaign: {caiData?.campaign?.id}</span>
+                <a href={'https://www.facebook.com/adsmanager/manage/campaigns?act=' + (brand.adAccount || '').replace('act_', '') + '&selected_campaign_ids=' + caiData?.campaign?.id} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#0668E1', textDecoration: 'none' }}>Meta Ads Manager ↗</a>
               </div>
             </div>
           )}
@@ -10801,17 +10806,19 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <button onClick={handleDeactivate} style={{ flex: 1, padding: '10px 0', background: 'rgba(239,68,68,.04)', border: '1px solid rgba(239,68,68,.12)', borderRadius: 10, color: '#ef4444', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Deactivate CAi</button>
             </div>
             <button onClick={async () => {
-              const doReset = await showConfirm({ title: 'Full Reset', message: 'This will delete all CAi data, campaigns, analysis, and creatives. You will start over from scratch. This cannot be undone.', confirmText: 'Reset Everything', destructive: true }); if (!doReset) return;
+              if (!confirm('DELETE YOUR ACCOUNT? This will permanently remove all data. This cannot be undone.')) return;
+              const token = localStorage.getItem('creatorship_brand_token');
               try {
-                await fetch('/api/cai/reset', { method: 'POST', headers, body: JSON.stringify({ brandId: brand.id }) });
-                resetDeepDive();
-                setCaiData(null);
-                window.location.reload();
-              } catch (err) { toast.error('Reset failed: ' + err.message); }
-            }} style={{ width: '100%', padding: '10px 0', background: 'none', border: '1px dashed rgba(239,68,68,.2)', borderRadius: 10, color: 'var(--cs-t5)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Full Reset — Delete All CAi Data & Start Over
+                const res = await fetch('/api/brand/delete-account', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' } });
+                const data = await res.json();
+                if (data.error) { alert('Delete failed: ' + data.error); return; }
+                localStorage.removeItem('creatorship_brand_token');
+                window.location.href = '/';
+              } catch (e) { alert('Delete failed: ' + e.message); }
+            }} style={{width:'100%',padding:'14px 0',borderRadius:10,border:'2px solid #ef4444',background:'rgba(239,68,68,.1)',color:'#ef4444',fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'inherit'}}>
+              Delete account
             </button>
-            <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 6 }}>Re-run Analysis rebuilds your brand report. Deactivate pauses campaigns on Meta. Full Reset deletes everything.</div>
+            <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 6 }}>Re-run Analysis rebuilds your brand report. Deactivate pauses campaigns on Meta. Delete account permanently removes your brand and related data.</div>
           </div>
             </div>
         </>)}
@@ -10913,7 +10920,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         <div style={{ background: 'rgba(239,68,68,.06)', border: '2px solid rgba(239,68,68,.2)', borderRadius: 14, padding: '32px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 16 }}>⚠️</div>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: '#ef4444', marginBottom: 8 }}>Campaign Build Failed</h2>
-          <p style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, marginBottom: 16 }}>{caiData.processingError}</p>
+          <p style={{ fontSize: 14, color: 'var(--cs-t3)', lineHeight: 1.6, marginBottom: 16 }}>{caiData?.processingError}</p>
           <div style={{ fontSize: 13, color: 'var(--cs-t4)', marginBottom: 20, lineHeight: 1.5 }}>
             Common causes: Meta ad account has no payment method, Meta token expired, or TikTok video URLs expired. Check your Meta Business Suite payment settings and try again.
           </div>

@@ -732,8 +732,22 @@ async function syncCampaignWithMeta(brand) {
   if (campaignId) {
     try {
       const campData = await apiFetch('https://graph.facebook.com/v22.0/' + campaignId + '?fields=id,name,status,effective_status&access_token=' + token);
-      if (campData && campData.error) throw new Error(campData.error.message || campData.error.code || 'Meta API error');
-      if (campData.effective_status === 'DELETED' || campData.effective_status === 'ARCHIVED') {
+      if (!campData || campData.error) {
+        const errMsg = campData?.error?.message || campData?.error?.code || 'Meta API error';
+        const isGone = /does not exist|unknown|not found|deleted|invalid|unsupported/i.test(errMsg);
+        if (isGone) {
+          log.push(`Campaign ${campaignId} no longer exists on Meta (${errMsg}) — clearing local data`);
+          cai.campaign = null;
+          cai.creatives = [];
+          cai.processingStatus = 'cleared';
+          cai.isActive = false;
+          cai.campaignDeletedAt = new Date().toISOString();
+          changed = true;
+        } else {
+          throw new Error(errMsg);
+        }
+      }
+      if (campData?.effective_status === 'DELETED' || campData?.effective_status === 'ARCHIVED') {
         log.push('Campaign ' + campaignId + ' is ' + campData.effective_status + ' on Meta — clearing local data');
         cai.campaign = {};
         cai.creatives = [];
@@ -744,8 +758,8 @@ async function syncCampaignWithMeta(brand) {
         changed = true;
       } else {
         const metaStatus = campData.effective_status?.toLowerCase() || 'unknown';
-        if (cai.campaign.status !== metaStatus) {
-          log.push('Campaign status: local=' + (cai.campaign.status || '?') + ' meta=' + metaStatus);
+        if (cai.campaign && cai.campaign.status !== metaStatus) {
+          log.push('Campaign status: local=' + (cai.campaign?.status || '?') + ' meta=' + metaStatus);
           cai.campaign.metaStatus = metaStatus;
         }
       }
@@ -11723,6 +11737,35 @@ app.post('/api/brand/authorize-outreach', authBrand, requireRole('admin'), async
   await saveBrand(brand);
   await auditLog(brandId, 'outreach_authorized', { authorizedAt: brand.outreachAuthorizedAt });
   res.json({ success: true, authorizedAt: brand.outreachAuthorizedAt });
+});
+
+// Delete brand account — removes from Supabase completely
+app.post('/api/brand/delete-account', authBrand, async (req, res) => {
+  try {
+    const brand = await getBrandById(req.brandId);
+    if (!brand) return res.status(404).json({ error: 'Brand not found' });
+
+    const supabase = getSupabase();
+
+    // Delete from brands table
+    const { error } = await supabase.from('brands').delete().eq('id', req.brandId);
+    if (error) {
+      console.error('[brand] Delete failed:', error.message);
+      return res.json({ error: error.message });
+    }
+
+    // Also delete any team members
+    try { await supabase.from('team_members').delete().eq('brand_id', req.brandId); } catch (_) {}
+
+    // Also delete any billing records
+    try { await supabase.from('billing').delete().eq('brand_id', req.brandId); } catch (_) {}
+
+    console.log('[brand] Account deleted:', req.brandId, brand.brandName);
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[brand] Delete error:', e.message);
+    res.json({ error: e.message });
+  }
 });
 
 app.get('/api/brand/licenses', authBrand, async (req, res) => {
