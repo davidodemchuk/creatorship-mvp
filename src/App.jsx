@@ -7657,6 +7657,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       fetch('/api/cai/system-info').then(r => r.json()).catch(() => null),
     ]).then(([status, sys]) => {
       setCaiData(status);
+      // Detect in-progress build and restore build state
+      if (status?.processingStatus === 'processing' || status?.processingStatus === 'building') {
+        if (setBuildInProgress) setBuildInProgress(true);
+        if (setBuildInfo) setBuildInfo({ phase: 'activating', startedAt: Date.now() });
+      }
       if (setCaiStatusActive) setCaiStatusActive(!!status?.isActive);
       setSysInfo(sys);
       if (status?.deepDive?.analysis) {
@@ -8720,40 +8725,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   We'll email <strong style={{ color: 'rgba(255,255,255,.7)' }}>{brand?.email || ''}</strong> when everything is ready. You can safely close this page.
                 </p>
 
-                <div style={{ textAlign: 'left', padding: '20px', background: 'rgba(155,109,255,.06)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, marginBottom: 20 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 12 }}>While you wait — complete your profile</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.emailVerified ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.emailVerified ? '#34d399' : 'rgba(255,255,255,.7)' }}>Verify your email</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.websiteUrl ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.websiteUrl ? '#34d399' : 'rgba(255,255,255,.7)' }}>Add your website URL</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.instagramHandle ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.instagramHandle ? '#34d399' : 'rgba(255,255,255,.7)' }}>Connect your Instagram</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{(brand?.stripeCustomerId || brand?.billingConnected) ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: (brand?.stripeCustomerId || brand?.billingConnected) ? '#34d399' : 'rgba(255,255,255,.7)' }}>Set up billing (Stripe)</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 14 }}>{brand?.tikTokStorePageUrl ? '✅' : '⬜'}</span>
-                      <span style={{ fontSize: 13, color: brand?.tikTokStorePageUrl ? '#34d399' : 'rgba(255,255,255,.7)' }}>TikTok Shop connected</span>
-                    </div>
-                  </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.4)', marginTop: 4 }}>
+                  Keep this screen open to follow live build progress.
                 </div>
-
-                <button
-                  type='button'
-                  onClick={() => setCaiTab(null)}
-                  style={{ width: '100%', maxWidth: 320, padding: '14px 32px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
-                >
-                  Complete Your Profile →
-                </button>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.3)', marginTop: 10 }}>Opens Account settings — your campaigns keep building</div>
               </div>
             </div>
           )}
@@ -11961,7 +11935,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <span style={LOGO_CR}>Creatorship</span>
       </div>
       {/* Main Nav */}
-      <nav className="cai-header-nav" style={{display:'flex',alignItems:'center',gap:2,flex:1,justifyContent:'center', ...(buildInProgress && buildInfo?.phase === 'deep-dive' ? {opacity:0,pointerEvents:'none'} : {})}}>
+      <nav className="cai-header-nav" style={{display:'flex',alignItems:'center',gap:2,flex:1,justifyContent:'center', ...(buildInProgress && (buildInfo?.phase === 'deep-dive' || buildInfo?.phase === 'activating') ? {opacity:0,pointerEvents:'none'} : {})}}>
         {[
           { id: 'dashboard', label: 'Dashboard' },
           { id: 'campaigns', label: 'Campaigns' },
