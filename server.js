@@ -11069,6 +11069,46 @@ app.get('/api/brand/enrich', async (req, res) => {
                 shopInfoKeys: Object.keys(pData.shopInfo).filter(k => k.includes('logo') || k.includes('avatar') || k.includes('image')).join(','),
                 finalLogo: finalLogo ? finalLogo.substring(0, 60) : 'NULL'
               });
+              // Deep extract: shop_logo is an object but not url_list format
+              if (!finalLogo && pData.shopInfo.shop_logo && typeof pData.shopInfo.shop_logo === 'object') {
+                const sl = pData.shopInfo.shop_logo;
+                console.log('[enrich] shop_logo object keys:', JSON.stringify(Object.keys(sl)));
+                console.log('[enrich] shop_logo raw:', JSON.stringify(sl).substring(0, 500));
+                // Try every possible URL pattern
+                finalLogo =
+                  sl.uri ||
+                  sl.url ||
+                  sl.src ||
+                  sl.thumb_url ||
+                  sl.img_url ||
+                  sl.image_url ||
+                  sl.download_url ||
+                  sl.original_url ||
+                  sl.medium_url ||
+                  sl.small_url ||
+                  sl.url_list?.[0] ||
+                  sl.thumb_url_list?.[0] ||
+                  sl.download_url_list?.[0] ||
+                  (Array.isArray(sl.urls) ? sl.urls[0] : null) ||
+                  null;
+                // Last resort: recurse one level — find first string value that looks like a URL
+                if (!finalLogo) {
+                  for (const key of Object.keys(sl)) {
+                    const val = sl[key];
+                    if (typeof val === 'string' && val.startsWith('http')) {
+                      finalLogo = val;
+                      console.log('[enrich] Found logo URL in shop_logo.' + key + ':', val.substring(0, 80));
+                      break;
+                    }
+                    if (Array.isArray(val) && val.length && typeof val[0] === 'string' && val[0].startsWith('http')) {
+                      finalLogo = val[0];
+                      console.log('[enrich] Found logo URL in shop_logo.' + key + '[0]:', val[0].substring(0, 80));
+                      break;
+                    }
+                  }
+                }
+                if (finalLogo) console.log('[enrich] Extracted logo from shop_logo object:', finalLogo.substring(0, 80));
+              }
               finalTotalProducts = pData.shopInfo.on_sell_product_count || pData.shopInfo.display_on_sell_product_count || finalTotalProducts;
             }
             const pageProducts = Array.isArray(pData.products) ? pData.products : [];
