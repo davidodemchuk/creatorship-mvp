@@ -8091,7 +8091,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               addLine(newCount > 0 ? '✓ CAi is active. Click below to view your dashboard.' : '⚠ No ads created. Go to Settings to deactivate and try again.', newCount > 0 ? 'success' : 'error');
               setCaiData(status);
               if (setCaiStatusActive) setCaiStatusActive(!!status?.isActive);
-              if (status.processingStatus === 'complete' && setBuildInfo) setBuildInfo({ phase: 'complete', startedAt: Date.now() });
+              if (status.processingStatus === 'complete' && setBuildInfo) {
+                setBuildInfo({ phase: 'complete', startedAt: Date.now() });
+                setCaiSubTab('campaigns');
+              }
               else if (status.processingStatus === 'error' && setBuildInfo) setBuildInfo(null);
               break;
             }
@@ -9348,7 +9351,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
             {/* Link to CAi MAX */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16, marginTop: -8 }}>
-              <span onClick={() => setCaiTab('optimize')} style={{ fontSize: 12, fontWeight: 600, color: '#9b6dff', cursor: 'pointer' }}>Manage in CAi MAX (Optimize) →</span>
+              <span onClick={() => setCaiTab('optimize')} style={{ fontSize: 12, fontWeight: 600, color: '#9b6dff', cursor: 'pointer' }}>Manage in CAi MAX →</span>
             </div>
 
             {/* ─── THE FUTURE: Creator Content + Commission-Only Pricing ─── */}
@@ -9391,7 +9394,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   ...(creatives.filter(c => c.status === 'active').length < 10 ? [{ priority: 'HIGH', text: 'Add more videos to your campaign — Meta\'s algorithm gets dramatically better with volume. Top DTC brands test 20-100+ creatives per month.', action: () => setCaiSubTab('content'), btn: 'Add Content' }] : []),
                   { priority: 'MEDIUM', text: 'Explore creator content — find affiliate videos for your top products and request usage rights', action: () => { setCaiSubTab('content'); setTimeout(() => setContentSection('creator'), 100); }, btn: 'Creator Content' },
                   ...(!isActive && creatives.length > 0 ? [{ priority: 'HIGH', text: 'Resume your paused campaign to start collecting performance data', action: () => setCaiSubTab('campaigns'), btn: 'Resume' }] : []),
-                  { priority: 'LOW', text: 'Review budget and ROAS targets in Optimize — adjust based on your margins and growth goals', action: () => setCaiSubTab('optimize'), btn: 'Optimize' },
+                  { priority: 'LOW', text: 'Review budget and ROAS targets in CAi MAX — adjust based on your margins and growth goals', action: () => setCaiSubTab('optimize'), btn: 'CAi MAX' },
                 ].map((item, i) => {
                   const pColors = { HIGH: '#ef4444', MEDIUM: '#ffb400', LOW: '#34d399' };
                   return (
@@ -10669,7 +10672,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </>
           )}
 
-          <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>Optimize</h3>
+          <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>CAi MAX</h3>
           <p style={{ fontSize: 14, color: 'var(--cs-t4)', margin: '0 0 24px' }}>Budget, ROAS target, and automation settings. Changes sync to Meta instantly.</p>
 
           {/* ─── How CAi Manages Your Ads ─── */}
@@ -11982,7 +11985,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           { id: 'campaigns', label: 'Campaigns' },
           { id: 'content', label: 'Content' },
           { id: 'analysis', label: 'Analysis' },
-          { id: 'optimize', label: 'Optimize' },
+          { id: 'optimize', label: 'CAi MAX' },
           { id: null, label: 'Account', isAccount: true },
         ].map(t => {
           const isActive = t.isAccount ? brandTab === 'settings' : activeCaiTab === t.id;
