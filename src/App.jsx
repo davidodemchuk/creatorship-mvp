@@ -10544,7 +10544,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             ) : null}
 
-            <div style={(!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { display: 'none' } : {}}>
+            <div style={(!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none', maxHeight: 300, overflow: 'hidden', position: 'relative' } : {}}>
           {caiData?.campaign?.id && activeCreativeCount > 0 && (
             <>
             {!brand?.billingEnabled && caiData?.campaign?.id && (caiData?.creatives || []).length <= 3 && (
