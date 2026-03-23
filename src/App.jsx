@@ -10544,7 +10544,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             ) : null}
 
-            <div style={(!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { filter: 'blur(6px)', opacity: 0.4, pointerEvents: 'none', userSelect: 'none' } : {}}>
+            <div style={(!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { display: 'none' } : {}}>
           {caiData?.campaign?.id && activeCreativeCount > 0 && (
             <>
           {/* ─── Daily Budget (first so users see it after Meta connect) ─── */}
