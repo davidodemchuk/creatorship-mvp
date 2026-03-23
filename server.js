@@ -645,8 +645,9 @@ async function getCleanVideoUrl(video, scrapeKey) {
     return { url: nwmCached, source: 'cached_nwm' };
   }
 
-  // Priority 2: play_addr from cached data (streaming URL, no baked watermark)
+  // Priority 2: play_addr / explicit download URL from cached data (streaming URL, no baked watermark)
   const playUrl = video.playUrl || video.play ||
+    video.downloadUrl || video.download_url ||
     video.video?.play_addr?.url_list?.[0] ||
     video.play_addr?.url_list?.[0];
   if (playUrl && !playUrl.includes('download_addr') && !isUrlExpired(playUrl)) {
@@ -657,9 +658,10 @@ async function getCleanVideoUrl(video, scrapeKey) {
   // Priority 3: Re-fetch from ScrapeCreators to get fresh URLs
   if (scrapeKey && video.id) {
     try {
-      const freshResp = await fetch(`https://api.scrapecreators.com/v2/tiktok/video?video_id=${video.id}`, {
-        headers: { 'x-api-key': scrapeKey },
-      });
+      const freshResp = await fetch(
+        `https://api.scrapecreators.com/v2/tiktok/video?video_id=${encodeURIComponent(video.id)}`,
+        { headers: { 'x-api-key': scrapeKey } }
+      );
       if (freshResp.ok) {
         const freshData = await freshResp.json();
         const detail = freshData.aweme_detail || freshData;
@@ -7445,7 +7447,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
       
       let freshVideosMap = {};
       const handle = brand.tikTokStorePageUrl?.match(/@([^/?]+)/)?.[1] || brand.tikTokStorePageUrl?.match(/\/shop\/store\/([^/]+)/)?.[1] || (brand.storeName || brand.brandName || '').toLowerCase().replace(/\s+/g, '');
-      const scrapeKey = process.env.SCRAPE_KEY;
+      const scrapeKey = process.env.SCRAPE_KEY || process.env.SCRAPECREATORS_API_KEY;
       dbg('handle: ' + handle + ', scrapeKey: ' + (scrapeKey ? 'yes' : 'NO'));
       
       if (scrapeKey && handle) {
@@ -7507,6 +7509,57 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
         }
       }
 
+      // ---- RE-FETCH FRESH VIDEO URLs ----
+      // TikTok CDN URLs expire after a few hours. Deep dive may have cached stale URLs.
+      // Re-fetch from ScrapeCreators v2 to get current download URLs before the download loop.
+      const sk = process.env.SCRAPE_KEY || process.env.SCRAPECREATORS_API_KEY;
+      if (sk) {
+        console.log('[cai activate] Re-fetching fresh video URLs for', topPicks.length, 'videos');
+        for (const pick of topPicks) {
+          try {
+            const videoId = pick.videoId || pick.id;
+            if (!videoId) continue;
+            const match = allVideos.find(v => String(v.id) === String(videoId));
+            if (!match) continue;
+            const freshResp = await fetch(
+              'https://api.scrapecreators.com/v2/tiktok/video?url=' +
+                encodeURIComponent('https://www.tiktok.com/@user/video/' + videoId),
+              { headers: { 'x-api-key': sk } }
+            );
+            if (freshResp.ok) {
+              const freshData = await freshResp.json();
+              const root = freshData.video || freshData.aweme_detail || freshData;
+              const vidObj = root.video || root;
+              const fromPlay =
+                vidObj?.play_addr?.url_list?.[0] ||
+                root?.video?.play_addr?.url_list?.[0] ||
+                freshData.video?.play_addr?.url_list?.[0];
+              const fromDl =
+                vidObj?.download_addr?.url_list?.[0] ||
+                root?.video?.download_addr?.url_list?.[0] ||
+                freshData.video?.download_addr?.url_list?.[0];
+              const fromFlat =
+                (typeof root.play_addr === 'string' && root.play_addr) ||
+                root.playAddr ||
+                root.download_url ||
+                freshData.download_url;
+              const best = fromPlay || fromDl || fromFlat;
+              if (best) {
+                match.downloadUrl = best;
+                match.playUrl = best;
+                match.play = best;
+                const cov = root.cover || root.cover_url || vidObj?.cover || freshData.cover || freshData.video?.cover;
+                if (cov) match.cover = cov;
+                dbg('Fresh URL for ' + videoId + ': ' + String(best).substring(0, 60));
+              }
+            }
+          } catch (e) {
+            console.log('[cai activate] Fresh URL fetch failed for', pick.videoId, ':', e.message);
+          }
+          await new Promise(r => setTimeout(r, 200));
+        }
+      }
+
       let done = 0;
       let errors = 0;
 
@@ -7533,8 +7586,14 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
           }
 
           // ═══ WATERMARK-SAFE: Prefer play_addr / nwm; download_addr may be watermarked ═══
-          const cleanResult = await getCleanVideoUrl(video, process.env.SCRAPE_KEY);
-          let videoUrl = cleanResult.url || freshVideosMap[String(video.id)];
+          const cleanResult = await getCleanVideoUrl(video, scrapeKey);
+          let videoUrl =
+            cleanResult.url ||
+            freshVideosMap[String(video.id)] ||
+            video.downloadUrl ||
+            video.play_addr ||
+            video.playAddr ||
+            video.download_url;
           if (!videoUrl) {
             console.log('[cai-activate] SKIPPED video ' + video.id + ' — no watermark-free URL (' + cleanResult.source + ')');
             if (brand.cai?.activityLog) brand.cai.activityLog.push({ type: 'video_skipped', videoId: video.id, reason: 'watermark', ts: new Date().toISOString() });
