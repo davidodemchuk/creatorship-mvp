@@ -8214,7 +8214,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
   // ═══ AUTO MODE — Daily Budget + ROAS Guide + Activate ═══
   const setupComplete = brand?.hasMetaToken && (brand?.emailVerified || profile?.emailVerified) && brand?.outreachAuthorized;
-  if ((mode === 'auto' || (caiSubTab === 'optimize' && !caiData?.campaign?.id)) && setupComplete && !activating && !buildInProgress) {
+  if ((mode === 'auto' || caiSubTab === 'optimize') && !caiData?.campaign?.id && setupComplete && !activating && !buildInProgress) {
     // Update URL to #optimize when viewing the budget page
     if (typeof window !== 'undefined' && window.location.hash !== '#optimize') {
       try { window.history.replaceState(null, '', '#optimize'); } catch (_) {}
