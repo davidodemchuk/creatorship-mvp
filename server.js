@@ -10967,7 +10967,7 @@ app.get('/api/brand/enrich', async (req, res) => {
           if (seen.has(key)) continue;
           seen.add(key);
           const tryL = (v) => { if (typeof v === 'string' && v) return v; if (v?.url_list?.[0]) return v.url_list[0]; return null; };
-          const logo = tryL(si.shop_logo) || tryL(si.shop_avatar) || tryL(si.seller_logo) || tryL(si.shopLogo) || tryL(si.avatarUrl) || null;
+          const logo = tryL(si.shop_logo) || tryL(si.shop_avatar) || tryL(si.seller_logo) || tryL(si.logo) || tryL(si.logo_uri) || tryL(si.avatar) || tryL(si.seller_avatar) || null;
           const sellerProducts = products.filter(pp => {
             const psi = pp.seller_info || {};
             return String(psi.shop_id ?? psi.seller_id ?? psi.shop_name ?? '') === key;
@@ -11060,7 +11060,15 @@ app.get('/api/brand/enrich', async (req, res) => {
             if (pageCount === 0 && pData.shopInfo) {
               finalShopInfo = pData.shopInfo;
               const tryL = (v) => { if (typeof v === 'string' && v) return v; if (v?.url_list?.[0]) return v.url_list[0]; return ''; };
-              finalLogo = tryL(pData.shopInfo.shop_logo) || finalLogo;
+              finalLogo = tryL(pData.shopInfo.shop_logo) || tryL(pData.shopInfo.logo) || tryL(pData.shopInfo.logo_uri) || tryL(pData.shopInfo.seller_logo) || tryL(pData.shopInfo.shop_avatar) || tryL(pData.shopInfo.avatar) || tryL(pData.shopInfo.seller_avatar) || tryL(pData.shopInfo.cover) || finalLogo;
+              console.log('[enrich] shopInfo logo check:', {
+                shop_logo: typeof pData.shopInfo.shop_logo,
+                logo: typeof pData.shopInfo.logo,
+                logo_uri: typeof pData.shopInfo.logo_uri,
+                seller_logo: typeof pData.shopInfo.seller_logo,
+                shopInfoKeys: Object.keys(pData.shopInfo).filter(k => k.includes('logo') || k.includes('avatar') || k.includes('image')).join(','),
+                finalLogo: finalLogo ? finalLogo.substring(0, 60) : 'NULL'
+              });
               finalTotalProducts = pData.shopInfo.on_sell_product_count || pData.shopInfo.display_on_sell_product_count || finalTotalProducts;
             }
             const pageProducts = Array.isArray(pData.products) ? pData.products : [];
@@ -11095,6 +11103,23 @@ app.get('/api/brand/enrich', async (req, res) => {
             }
           }
         } catch (e) { console.error('[brand/enrich] Profile avatar fallback failed:', e.message); }
+      }
+      // Last resort: try to extract logo from the shop page meta tags
+      if (!finalLogo && tikTokShopUrl) {
+        try {
+          const pageResp = await fetch(tikTokShopUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            redirect: 'follow'
+          });
+          if (pageResp.ok) {
+            const html = await pageResp.text();
+            const ogMatch = html.match(/property="og:image"\s+content="([^"]+)"/);
+            if (ogMatch?.[1] && ogMatch[1].startsWith('http')) {
+              finalLogo = ogMatch[1];
+              console.log('[enrich] Got logo from og:image:', finalLogo.substring(0, 60));
+            }
+          }
+        } catch (e) { console.log('[enrich] OG image fallback failed:', e.message); }
       }
       const enrichFollowers = finalShopInfo.followers_count ?? finalShopInfo.follower_count ?? followerCount;
       const enrichSold = finalShopInfo.sold_count ?? finalShopInfo.total_sold ?? totalItemsSold;
