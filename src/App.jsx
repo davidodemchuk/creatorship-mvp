@@ -3976,8 +3976,10 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
   }, [initialMode]);
 
   const [brandName, setBrandName] = useState('');
-  const setBrandNameAndClearShop = useCallback(v => { setBrandName(v); setShopEnriched(null); setShopEnrichError(''); }, []);
+  const setBrandNameAndClearShop = useCallback(v => { setBrandName(v); setShopEnriched(null); setShopEnrichError(''); setShowUrlInput(false); setManualShopUrl(''); }, []);
   const [shopEnriched, setShopEnriched] = useState(null);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [manualShopUrl, setManualShopUrl] = useState('');
   const [shopEnriching, setShopEnriching] = useState(false);
   const [shopEnrichError, setShopEnrichError] = useState('');
   const [shopAvatarAttempt, setShopAvatarAttempt] = useState(0);
@@ -4252,8 +4254,38 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
                       </div>
                     </div>
                   )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--cs-a06)' }}>
+                  <button type="button" onClick={() => { setShopEnriched(null); setShowUrlInput(true); }} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1px solid var(--cs-a06)', background: 'none', color: 'var(--cs-t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Not my shop</button>
+                </div>
                 </div>
                 </>
+              )}
+              {showUrlInput && !shopEnriched && (
+                <div style={{ marginTop: 12 }}>
+                  <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t2)', display: 'block', marginBottom: 6 }}>Paste your TikTok Shop URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://www.tiktok.com/shop/store/your-brand/..."
+                    value={manualShopUrl}
+                    onChange={e => setManualShopUrl(e.target.value)}
+                    style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1px solid var(--cs-a08)', background: 'var(--cs-a02)', color: 'var(--cs-t1)', fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }}
+                  />
+                  {manualShopUrl && (
+                    <button type="button" onClick={async () => {
+                      try {
+                        const res = await fetch('/api/brand/enrich?url=' + encodeURIComponent(manualShopUrl));
+                        const data = await res.json();
+                        if (data.shopName || data.products?.length) {
+                          setShopEnriched(data);
+                          setShowUrlInput(false);
+                        } else {
+                          alert('Could not find a shop at that URL. Check the link and try again.');
+                        }
+                      } catch (e) { alert('Error: ' + e.message); }
+                    }} style={{ marginTop: 8, width: '100%', padding: '10px 0', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Search this URL</button>
+                  )}
+                  <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 6 }}>Find your shop at tiktok.com/shop/store/your-brand-name</div>
+                </div>
               )}
             {shopEnrichError && <div style={{ color: '#ff5252', fontSize: 14, marginTop: 8 }}>{shopEnrichError}</div>}
           </div>
