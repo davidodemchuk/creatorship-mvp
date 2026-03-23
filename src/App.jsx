@@ -4122,6 +4122,7 @@ function BrandAuthForm({ onSuccess, initialMode, onModeChange }) {
             email: email.trim(),
             password,
             tikTokShopUrl: shopEnriched?.tikTokShopUrl || shopEnriched?.shopLink || undefined,
+            shopLogo: shopEnriched?.shopLogo || shopEnriched?.logoUrl || shopEnriched?.avatarUrl || null,
             enrichedShop: shopEnriched || undefined,
           }
         : { email: email.trim(), password };

@@ -2059,7 +2059,7 @@ app.post('/api/brand/signup', signupLimiter, async (req, res) => {
     outreachAuthorizedAt: null,
     emailToken,
     createdAt: new Date().toISOString(),
-    shopLogo: body.enrichedShop?.shopLogo || null,
+      shopLogo: body.shopLogo || body.enrichedShop?.shopLogo || body.enrichedShop?.logoUrl || body.enrichedShop?.avatarUrl || null,
     shopName: body.enrichedShop?.shopName || null,
     tikTokShopUrl: body.tikTokShopUrl || body.enrichedShop?.tikTokShopUrl || null,
     followerCount: body.enrichedShop?.followerCount || null,
