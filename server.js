@@ -7617,7 +7617,12 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
           if (freshBrand?.cai && freshBrand.cai.generationId === generationId) {
             freshBrand.cai.creatives.push({
               videoId: video.id, adId: ad.id, creativeId: cr.id, metaVideoId,
-              creator: video.authorHandle || 'creator', hookScore: pick.hookScore || 70,
+              creator: video.authorHandle || video.author || brand.storeName || brand.brandName || 'creator',
+              desc: video.desc || video.title || pick.title || pick.hookReason || '',
+              views: video.views || video.playCount || 0,
+              likes: video.likes || 0,
+              coverUrl: video.cover || video.coverUrl || pick.coverUrl || '',
+              hookScore: pick.hookScore || 70,
               hookReason: pick.hookReason || '', tier: pick.tier || 'test',
               dailyBudget: pick.dailyBudget || 30, primaryText: pick.primaryText || '',
               headline: pick.headline || '', status: 'paused',
@@ -7858,6 +7863,8 @@ app.get('/api/cai/status', authBrand, async (req, res) => {
     performance: cai.performance || {},
     creatives: (cai.creatives || []).map(c => ({
       videoId: c.videoId, creator: c.creator, creatorHandle: c.creatorHandle || c.creator, tier: c.tier,
+      desc: c.desc || '', views: c.views != null ? c.views : 0, likes: c.likes != null ? c.likes : 0,
+      coverUrl: c.coverUrl || '',
       hookScore: c.hookScore, hookReason: c.hookReason,
       primaryText: c.primaryText || '', headline: c.headline || '',
       status: c.status, daysActive: c.daysActive,
@@ -7886,6 +7893,8 @@ app.get('/api/cai/status', authBrand, async (req, res) => {
       activeCreatives: (c.creatives || []).filter(cr => cr.status === 'active').length,
       creatives: (c.creatives || []).map(cr => ({
         videoId: cr.videoId, creator: cr.creator, creatorHandle: cr.creatorHandle || cr.creator,
+        desc: cr.desc || '', views: cr.views != null ? cr.views : 0, likes: cr.likes != null ? cr.likes : 0,
+        coverUrl: cr.coverUrl || '',
         tier: cr.tier, hookScore: cr.hookScore, hookReason: cr.hookReason,
         primaryText: cr.primaryText || '', headline: cr.headline || '',
         status: cr.status, daysActive: cr.daysActive,
@@ -8208,8 +8217,12 @@ async function caiAddCreativeToCampaign(brand, campaignLocalId, videoId, primary
     adId: ad.id,
     creativeId: cr.id,
     metaVideoId,
-    creator: video.authorHandle || 'creator',
+    creator: video.authorHandle || video.author || brand.storeName || brand.brandName || 'creator',
     creatorHandle: video.authorHandle || '',
+    desc: video.desc || video.title || '',
+    views: video.views || video.playCount || 0,
+    likes: video.likes || 0,
+    coverUrl: video.cover || video.coverUrl || '',
     tier: 'manual',
     hookScore: null,
     hookReason: null,
@@ -8934,7 +8947,12 @@ async function caiAddCreativeToActiveCampaign(brand, videoId, primaryText, headl
   brand.cai.creatives = brand.cai.creatives || [];
   brand.cai.creatives.push({
     videoId: video.id, adId: ad.id, creativeId: cr.id, metaVideoId,
-    creator: video.authorHandle || 'creator', hookScore: 0, tier: 'test',
+    creator: video.authorHandle || video.author || brand.storeName || brand.brandName || 'creator',
+    desc: video.desc || video.title || '',
+    views: video.views || video.playCount || 0,
+    likes: video.likes || 0,
+    coverUrl: video.cover || video.coverUrl || '',
+    hookScore: 0, tier: 'test',
     status: 'paused', addedAt: new Date().toISOString(), daysActive: 0, lastMetrics: {},
   });
 
