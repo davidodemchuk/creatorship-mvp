@@ -8433,11 +8433,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)' }}>
-                  <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>✅</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: 'rgba(96,165,250,.06)', border: '1px solid rgba(96,165,250,.15)' }}>
+                  <span style={{ fontSize: 14, width: 24, textAlign: 'center' }}>🛡️</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#34d399' }}>All campaigns launch PAUSED for your review</div>
-                    <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>No ads go live until you approve them. No surprise spend.</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa' }}>Your campaign launches paused — nothing goes live without you</div>
+                    <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>CAi builds everything, but you hold the keys. No spend until you click Go Live.</div>
                   </div>
                 </div>
               </div>
@@ -8634,9 +8634,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   </button>
                 </div>
               )}
-              <div style={{ padding: '12px 16px', background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)', borderRadius: 10, marginBottom: 12, textAlign: 'center' }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#34d399' }}>All campaigns and ads launch PAUSED</div>
-                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>You review and approve before anything goes live. No surprise spend.</div>
+              <div style={{ padding: '12px 16px', background: 'rgba(96,165,250,.06)', border: '1px solid rgba(96,165,250,.15)', borderRadius: 10, marginBottom: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#60a5fa' }}>Your campaign launches paused — nothing goes live without you</div>
+                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>CAi builds everything, but you hold the keys. Review your ads, set your budget, and click Go Live only when you're ready. No spend happens until you say so.</div>
               </div>
               <button onClick={handleActivate} disabled={activating} style={{ width: '100%', padding: '16px 0', background: activating ? 'var(--cs-a06)' : 'linear-gradient(135deg, #9b6dff, #0668E1)', color: activating ? 'var(--cs-t5)' : '#fff', border: 'none', borderRadius: 12, fontSize: 16, fontWeight: 800, cursor: activating ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: activating ? 'none' : '0 4px 24px rgba(155,109,255,.2)' }}>
                 Activate CAi — ${db}/day
