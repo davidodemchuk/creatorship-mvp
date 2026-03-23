@@ -10833,7 +10833,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
   // ═══ DEEP DIVE RUNNING — TERMINAL ═══
   if (deepDiveLoading || (terminalLines.length > 0 && !deepDive)) {
-    const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: 'var(--cs-t1)', dim: 'var(--cs-t5)', spacer: 'transparent' };
+    const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: '#a78bfa', dim: 'rgba(255,255,255,.08)', spacer: 'transparent' };
     return (
       <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', minHeight: 500 }}>
         {/* Welcome overlay — shows on top of terminal until user clicks through */}
@@ -10869,50 +10869,60 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}><span style={CAI_BRAND}>Give CAi 60 seconds to build a custom analysis of {brand?.brandName || brand?.storeName || 'your brand'}.</span></h2>
           <p style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6, maxWidth: 520, margin: '0 auto' }}>CAi is downloading your videos, analyzing every piece of content for Meta ad potential, building targeting around your audience, and constructing a full campaign — from scratch, for {brand?.brandName || brand?.storeName || 'your brand'}.</p>
         </div>
-        {/* Terminal header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--cs-card)', borderRadius: '12px 12px 0 0', borderBottom: '1px solid rgba(155,109,255,.15)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ display: 'flex', gap: 5 }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffb400' }} />
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399' }} />
-            </div>
-            <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}><span style={CAI_BRAND}>CAi</span> <span style={{ color: 'var(--cs-t4)' }}>Deep Dive · {CAI_VERSION}</span></span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {deepDiveLoading && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />}
-            <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{deepDiveLoading ? 'RUNNING' : 'COMPLETE'}</span>
-            <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t5)' }}>{terminalLines.filter(l => l.type !== 'spacer').length} ops · {elapsedSec}s</span>
-          </div>
-        </div>
-        {/* Terminal body */}
-        <div className="cai-terminal" style={{ background: 'var(--cs-bg3)', borderRadius: '0 0 12px 12px', padding: '16px 20px', maxHeight: 580, overflowY: 'auto', fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace" }} ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
-          {terminalLines.map((line, i) => {
-            if (line.type === 'spacer') return <div key={i} style={{ height: 10 }} />;
-            const isPhase = line.type === 'phase';
-            const isHeader = line.type === 'header';
-            return (
-              <div key={i} style={{
-                fontSize: isPhase ? 13 : 11,
-                fontWeight: isPhase ? 900 : isHeader ? 700 : 400,
-                color: lineColors[line.type] || 'var(--cs-t3)',
-                lineHeight: isPhase ? 2.2 : 1.7,
-                letterSpacing: isPhase ? '1px' : isHeader ? '.5px' : 0,
-                marginTop: isPhase ? 4 : 0,
-                animation: 'fadeIn 0.15s ease',
-              }}>
-                {!isPhase && !isHeader && <span style={{ color: 'var(--cs-t5)', marginRight: 6, userSelect: 'none' }}>{line.type === 'success' || line.type === 'error' || line.type === 'warn' ? '' : '›'}</span>}
-                {line.text}
+        <div style={{ borderRadius: 16, border: '1px solid rgba(155,109,255,.2)', boxShadow: '0 0 30px rgba(155,109,255,.08), 0 4px 20px rgba(0,0,0,.4)', overflow: 'hidden', background: 'var(--cs-bg3)' }}>
+          {/* Terminal header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'rgba(155,109,255,.06)', borderBottom: '1px solid rgba(155,109,255,.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 5 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444' }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffb400' }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34d399' }} />
               </div>
-            );
-          })}
-          {deepDiveLoading && <div style={{ color: '#9b6dff', animation: 'pulse 1s infinite', fontSize: 13 }}>▊</div>}
-          {!deepDiveLoading && !deepDive && terminalLines.some(l => l.type === 'error') && (
-            <div style={{ marginTop: 12, textAlign: 'center' }}>
-              <div style={{ fontSize: 14, color: 'var(--cs-t3)', marginBottom: 10 }}>The AI took too long. This usually works on the second attempt — the model warms up.</div>
-              <button onClick={() => { setTerminalLines([]); setTimeout(runDeepDive, 100); }} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
+              <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}><span style={CAI_BRAND}>CAi</span> <span style={{ color: 'var(--cs-t4)' }}>Deep Dive · {CAI_VERSION}</span></span>
             </div>
-          )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {deepDiveLoading && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />}
+              <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{deepDiveLoading ? 'RUNNING' : 'COMPLETE'}</span>
+              <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t5)' }}>{terminalLines.filter(l => l.type !== 'spacer').length} ops · {elapsedSec}s</span>
+            </div>
+          </div>
+          {/* Terminal body */}
+          <div className="cai-terminal" style={{ background: 'var(--cs-bg3)', padding: '16px 20px', maxHeight: 580, overflowY: 'auto', fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace" }} ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
+            {terminalLines.map((line, i) => {
+              if (line.type === 'spacer') return <div key={i} style={{ height: 10 }} />;
+              const isPhase = line.type === 'phase';
+              const isHeader = line.type === 'header';
+              return (
+                <div key={i} style={{
+                  fontSize: line.type === 'success' ? 14 : isPhase ? 13 : 11,
+                  fontWeight: line.type === 'success' ? 800 : line.type === 'highlight' ? 600 : isPhase ? 800 : isHeader ? 700 : 400,
+                  color: lineColors[line.type] || 'var(--cs-t3)',
+                  lineHeight: isPhase ? 1.9 : 1.7,
+                  letterSpacing: isPhase ? '0.5px' : isHeader ? '.5px' : 0,
+                  marginTop: isPhase ? 6 : 0,
+                  animation: 'fadeIn 0.15s ease',
+                  ...(isPhase ? {
+                    color: '#c084fc',
+                    fontWeight: 800,
+                    fontSize: 13,
+                    letterSpacing: '0.5px',
+                    padding: '12px 0 4px',
+                    borderTop: i > 0 ? '1px solid rgba(155,109,255,.1)' : 'none',
+                  } : {}),
+                }}>
+                  {!isPhase && !isHeader && <span style={{ color: 'var(--cs-t5)', marginRight: 6, userSelect: 'none' }}>{line.type === 'success' || line.type === 'error' || line.type === 'warn' ? '' : '›'}</span>}
+                  {line.text}
+                </div>
+              );
+            })}
+            {deepDiveLoading && <div style={{ color: '#9b6dff', animation: 'pulse 1s infinite', fontSize: 13 }}>▊</div>}
+            {!deepDiveLoading && !deepDive && terminalLines.some(l => l.type === 'error') && (
+              <div style={{ marginTop: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 14, color: 'var(--cs-t3)', marginBottom: 10 }}>The AI took too long. This usually works on the second attempt — the model warms up.</div>
+                <button onClick={() => { setTerminalLines([]); setTimeout(runDeepDive, 100); }} style={{ padding: '10px 24px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Try Again</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
