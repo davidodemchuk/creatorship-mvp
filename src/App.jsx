@@ -5614,50 +5614,6 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
       </div>
     )}
 
-    {/* LOCKED VIDEOS — free tier upsell when more videos exist than free tier allows */}
-    {!brand?.billingEnabled && (() => {
-      const creativeVideoIds = new Set((caiData?.creatives || []).map(c => String(c.videoId)));
-      const topPicks = brand?.caiDeepDive?.analysis?.topPicks || [];
-      const ttVideos = (tiktokVideos || []).filter(v => v && v.id);
-      const allSourceVideos = ttVideos.length > 0 ? ttVideos : topPicks.map(p => ({ id: p.videoId, cover: p.coverUrl, desc: p.title || p.desc, tier: p.tier, views: p.views }));
-      const FREE_LIMIT = 3;
-      const inCampaignCount = creativeVideoIds.size;
-      const lockedVideos = inCampaignCount > 0
-        ? allSourceVideos.filter(v => !creativeVideoIds.has(String(v.id || v.videoId)))
-        : allSourceVideos.slice(FREE_LIMIT);
-      if (lockedVideos.length === 0) return null;
-      return (
-        <div style={{ marginTop: 20, padding: 24, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>{lockedVideos.length} more video{lockedVideos.length !== 1 ? 's' : ''} available</div>
-              <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Meta&apos;s algorithm performs best with 10+ creatives. No monthly fee — just 4% of ad spend when running.</div>
-            </div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#9b6dff', padding: '4px 10px', borderRadius: 6, background: 'rgba(155,109,255,.1)', border: '1px solid rgba(155,109,255,.2)', textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>Free Tier</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8, marginBottom: 16 }}>
-            {lockedVideos.map((vid, idx) => {
-              const ttVid = (tiktokVideos || []).find(v => String(v.id) === String(vid.id || vid.videoId));
-              const coverUrl = ttVid?.cover || ttVid?.coverHd || vid?.cover || vid?.coverHd || vid?.coverUrl;
-              return (
-                <div key={vid.id || vid.videoId || idx} style={{ position: 'relative', width: '100%', aspectRatio: '9/16', borderRadius: 8, overflow: 'hidden', background: 'var(--cs-a04)' }}>
-                  {coverUrl && <img src={coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(2px) grayscale(60%)', opacity: 0.4 }} />}
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>&#x1F512;</div>
-                  </div>
-                  <div style={{ position: 'absolute', bottom: 4, left: 4, right: 4, textAlign: 'center' }}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', textTransform: 'uppercase', letterSpacing: 0.5 }}>{vid.tier || vid._tier || ttVid?.tier || 'locked'}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <button type="button" onClick={() => { setCaiTab && setCaiTab(null); setBrandTab && setBrandTab('settings'); }} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Connect Billing to Unlock All Videos</button>
-          <div style={{ fontSize: 12, color: 'var(--cs-t5)', textAlign: 'center', marginTop: 8 }}>No monthly fee. 4% of managed Meta ad spend — only when your ads are running.</div>
-        </div>
-      );
-    })()}
-
     {/* Campaign History */}
     <div style={{ marginBottom: 12 }}>
       <button onClick={() => setShowHistory(!showHistory)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: 'var(--cs-t4)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0' }}>
@@ -7619,7 +7575,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   const [showContentLib, setShowContentLib] = useState(false);
   const caiSubTab = activeCaiTab || 'dashboard';
   const setCaiSubTab = setCaiTab || (() => {});
-  const [expandedCamp, setExpandedCamp] = useState(false);
+  const [expandedCamp, setExpandedCamp] = useState(true);
   const [expandedCamps, setExpandedCamps] = useState({});
   const [showNewCampaign, setShowNewCampaign] = useState(false);
   const [newCampType, setNewCampType] = useState('promotion');
@@ -10053,11 +10009,23 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-            <div>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)', margin: '0 0 4px' }}>Active Campaigns</h3>
-              <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>{(caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1} campaign{((caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1) !== 1 ? 's' : ''} · {creatives.length} ads · ${Math.round((caiData?.monthlyBudget || 0) / 30)}/day budget</div>
+            {!brand?.billingEnabled && (caiData?.creatives?.length > 0 || (tiktokVideos || []).length > 3 || (brand?.caiDeepDive?.analysis?.topPicks || []).length > 3) && (
+              <div style={{ padding: '16px 20px', borderRadius: 12, background: 'rgba(251,191,36,.08)', border: '1px solid rgba(251,191,36,.3)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ fontSize: 28, flexShrink: 0 }}>&#x26A0;&#xFE0F;</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#fbbf24', marginBottom: 2 }}>Running {(caiData?.creatives || []).length} of {Math.max((tiktokVideos || []).length, (brand?.caiDeepDive?.analysis?.topPicks || []).length, 10)} ads</div>
+                  <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>Meta&apos;s algorithm optimizes best with 10+ creatives. You have more videos ready — unlock your full library. No monthly fee, just 4% of ad spend when ads are running.</div>
+                </div>
+                <button type="button" onClick={() => { if (setCaiTab) setCaiTab(null); if (setBrandTab) setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: '#fbbf24', color: '#000', border: 'none', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' }}>Unlock All Videos</button>
+              </div>
+            )}
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--cs-t0)', margin: 0 }}>Active Campaigns</h2>
+              <button type="button" onClick={() => setShowNewCampaign(s => !s)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--cs-a08)', background: showNewCampaign ? 'var(--cs-a06)' : 'none', color: '#9b6dff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{showNewCampaign ? 'Cancel' : '+ New Campaign'}</button>
             </div>
+            <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>{(caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1} campaign{((caiData?.allCampaigns || []).filter(c => c.status !== 'archived').length || 1) !== 1 ? 's' : ''} · {creatives.length} ads · ${Math.round((caiData?.monthlyBudget || 0) / 30)}/day budget</div>
           </div>
 
           {(!caiData?.campaign?.id || (creatives || []).length === 0) && (
@@ -10248,6 +10216,44 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
               )}
 
+              {expandedCamp && !brand?.billingEnabled && (() => {
+                const creativeVideoIds = new Set((caiData?.creatives || []).map(c => String(c.videoId)));
+                const topPicks = brand?.caiDeepDive?.analysis?.topPicks || [];
+                const ttVids = (tiktokVideos || []).filter(v => v && v.id);
+                const allVids = ttVids.length > 0 ? ttVids : topPicks.map(p => ({ id: p.videoId, cover: p.coverUrl, desc: p.title || p.desc, tier: p.tier, views: p.views }));
+                const locked = allVids.filter(v => !creativeVideoIds.has(String(v.id || v.videoId)));
+                if (!locked.length) return null;
+                return (
+                  <div style={{ borderTop: '1px dashed rgba(251,191,36,.3)', paddingTop: 16, marginTop: 0, paddingLeft: 18, paddingRight: 18 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#fbbf24' }}>{locked.length} more video{locked.length !== 1 ? 's' : ''} ready to launch</div>
+                        <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>Downloaded and analyzed — waiting for billing to go live</div>
+                      </div>
+                      <button type="button" onClick={() => { if (setCaiTab) setCaiTab(null); if (setBrandTab) setBrandTab('settings'); }} style={{ padding: '8px 16px', borderRadius: 8, background: 'rgba(251,191,36,.15)', border: '1px solid rgba(251,191,36,.3)', color: '#fbbf24', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Connect Billing</button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 8 }}>
+                      {locked.slice(0, 10).map((vid, i) => {
+                        const ttVid = (tiktokVideos || []).find(v => String(v.id) === String(vid.id || vid.videoId));
+                        const cover = ttVid?.cover || ttVid?.coverHd || vid?.cover || vid?.coverUrl;
+                        return (
+                          <div key={vid.id || vid.videoId || i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', aspectRatio: '9/16', background: 'var(--cs-a04)' }}>
+                            {cover && <img src={'/api/proxy-image?url=' + encodeURIComponent(cover)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.4)' }} onError={e => { e.currentTarget.style.display = 'none'; }} />}
+                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ fontSize: 20, opacity: 0.7 }}>&#x1F512;</div>
+                            </div>
+                            <div style={{ position: 'absolute', bottom: 4, left: 4, right: 4 }}>
+                              <span style={{ fontSize: 8, fontWeight: 700, color: '#fbbf24', background: 'rgba(0,0,0,.6)', padding: '2px 4px', borderRadius: 3, textTransform: 'uppercase' }}>{vid.tier || ttVid?.tier || 'ready'}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {locked.length > 10 && <div style={{ fontSize: 11, color: 'var(--cs-t5)', marginTop: 6, textAlign: 'center' }}>+ {locked.length - 10} more</div>}
+                  </div>
+                );
+              })()}
+
               {/* Footer */}
               <div style={{ padding: '8px 18px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {expandedCamp && <button onClick={() => setExpandedCamp(false)} style={{ background: 'none', border: 'none', color: '#9b6dff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Collapse ↑</button>}
@@ -10348,9 +10354,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             );
           })}
 
-          {/* ═══ NEW CAMPAIGN BUTTON + WIZARD ═══ */}
-          <button onClick={() => setCaiSubTab('dashboard')} style={{ width: '100%', padding: '14px 0', background: showNewCampaign ? 'var(--cs-a06)' : 'linear-gradient(135deg, rgba(155,109,255,.06), rgba(6,104,225,.04))', border: '1px dashed ' + (showNewCampaign ? 'var(--cs-a08)' : 'rgba(155,109,255,.3)'), borderRadius: 12, color: showNewCampaign ? 'var(--cs-t3)' : '#9b6dff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 12 }}>{showNewCampaign ? 'Cancel' : '+ New Campaign'}</button>
-
+          {/* ═══ NEW CAMPAIGN WIZARD (toggle: header &quot;+ New Campaign&quot;) ═══ */}
           {showNewCampaign && (
             <div style={{ background: 'var(--cs-card)', border: '1px solid rgba(155,109,255,.15)', borderRadius: 12, padding: '20px', marginBottom: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 16 }}>Create New Campaign</div>
