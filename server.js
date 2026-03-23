@@ -11847,6 +11847,53 @@ app.post('/api/brand/delete-account', authBrand, async (req, res) => {
     const brand = await getBrandById(req.brandId);
     if (!brand) return res.status(404).json({ error: 'Brand not found' });
 
+    // DELETE all Meta campaigns and ads before deleting account
+    // Brand should not keep Creatorship-created content after leaving
+    if (brand.metaToken && brand.cai?.campaign?.id) {
+      try {
+        const mt = brand.metaToken;
+        const campId = brand.cai.campaign.id;
+
+        // Delete all ads first (must delete children before parent)
+        for (const cr of (brand.cai.creatives || [])) {
+          if (cr.adId) {
+            try { await metaPost(cr.adId, { status: 'DELETED', access_token: mt }); } catch (_) {}
+          }
+          // Delete ad creatives too
+          if (cr.creativeId) {
+            try { await metaPost(cr.creativeId, { status: 'DELETED', access_token: mt }); } catch (_) {}
+          }
+        }
+        console.log('[brand] Delete: deleted all ads and creatives');
+
+        // Delete the adset
+        if (brand.cai.campaign.adsetId) {
+          try { await metaPost(brand.cai.campaign.adsetId, { status: 'DELETED', access_token: mt }); } catch (_) {}
+        }
+
+        // Delete the campaign
+        await metaPost(campId, { status: 'DELETED', access_token: mt });
+        console.log('[brand] Delete: deleted campaign', campId);
+      } catch (metaErr) {
+        console.log('[brand] Delete: Meta cleanup failed (continuing with delete):', metaErr.message);
+        // Don't block account deletion if Meta cleanup fails
+      }
+    }
+
+    // Also delete any additional campaigns from allCampaigns
+    if (brand.metaToken && brand.cai?.allCampaigns?.length) {
+      for (const camp of brand.cai.allCampaigns) {
+        try {
+          // Delete ads in this campaign
+          for (const cr of (camp.creatives || [])) {
+            if (cr.adId) { try { await metaPost(cr.adId, { status: 'DELETED', access_token: brand.metaToken }); } catch (_) {} }
+          }
+          // Delete campaign
+          if (camp.metaCampaignId) { await metaPost(camp.metaCampaignId, { status: 'DELETED', access_token: brand.metaToken }); }
+        } catch (_) {}
+      }
+    }
+
     const supabase = getSupabase();
 
     // Delete from brands table
