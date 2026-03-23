@@ -5523,8 +5523,8 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
         <div style={{ marginTop: 20, padding: 24, background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 16, marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cs-t1)' }}>{lockedVideos.length} more video{lockedVideos.length !== 1 ? 's' : ''} ready to launch</div>
-              <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Meta&apos;s algorithm performs best with 10+ creatives. Unlock your full content library.</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>{lockedVideos.length} more video{lockedVideos.length !== 1 ? 's' : ''} ready to launch — unlock with billing</div>
+              <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Meta&apos;s algorithm performs best with 10+ creatives. No monthly fee — just 4% of ad spend when running.</div>
             </div>
             <span style={{ fontSize: 11, fontWeight: 700, color: '#9b6dff', padding: '4px 10px', borderRadius: 6, background: 'rgba(155,109,255,.1)', border: '1px solid rgba(155,109,255,.2)', textTransform: 'uppercase', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>Free Tier</span>
           </div>
@@ -5544,7 +5544,7 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
               );
             })}
           </div>
-          <button type="button" onClick={() => { setCaiTab && setCaiTab(null); setBrandTab && setBrandTab('settings'); }} style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: '1px solid #9b6dff', background: 'rgba(155,109,255,.08)', color: '#9b6dff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Connect Billing to Unlock All Videos</button>
+          <button type="button" onClick={() => { setCaiTab && setCaiTab(null); setBrandTab && setBrandTab('settings'); }} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Connect Billing to Unlock All Videos</button>
           <div style={{ fontSize: 12, color: 'var(--cs-t5)', textAlign: 'center', marginTop: 8 }}>No monthly fee. 4% of managed Meta ad spend — only when your ads are running.</div>
         </div>
       );
@@ -8825,6 +8825,16 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           )}
 
+          {!brand?.billingEnabled && (caiData?.creatives || []).length > 0 && (caiData?.creatives || []).length <= 3 && (
+            <div style={{ background: 'linear-gradient(135deg,rgba(155,109,255,.06),rgba(6,104,225,.04))', border: '1px solid rgba(155,109,255,.2)', borderRadius: 14, padding: '18px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--cs-t1)' }}>Running {(caiData?.creatives || []).length} of {tiktokVideos?.length || '10+'} ads</div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Meta&apos;s algorithm optimizes best with 10+ creatives. Unlock your full library — no monthly fee, just 4% of ad spend.</div>
+              </div>
+              <button type="button" onClick={() => { setCaiSubTab(null); setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>Unlock All Ads</button>
+            </div>
+          )}
+
           {/* ─── ROW 1: Metric Cards ─── */}
           <div className="cai-metrics-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
             {[
@@ -9423,6 +9433,16 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             ))}
           </div>
 
+          {!brand?.billingEnabled && (caiData?.creatives || []).length > 0 && (caiData?.creatives || []).length <= 3 && (
+            <div style={{ background: 'linear-gradient(135deg,rgba(155,109,255,.06),rgba(6,104,225,.04))', border: '1px solid rgba(155,109,255,.2)', borderRadius: 14, padding: '18px 22px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--cs-t1)' }}>&#x1F512; {(tiktokVideos?.length || 0) - (caiData?.creatives || []).length} videos locked</div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Connect billing to add all your videos to Meta campaigns. More creatives = better optimization = lower CPA.</div>
+              </div>
+              <button type="button" onClick={() => { setCaiSubTab(null); setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Connect Billing</button>
+            </div>
+          )}
+
           {/* ─── YOUR CONTENT ─── */}
           {contentSection === 'your' && (<>
             <div style={{ marginBottom: 20 }}>
@@ -9616,24 +9636,30 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     {inCamp ? (
                       <a href={'https://www.facebook.com/adsmanager/manage/ads?act=' + (brand.adAccount || '').replace('act_', '') + '&selected_ad_ids=' + (creatives.find(cr => String(cr.videoId) === String(v.id))?.adId || '')} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#34d399', padding: '8px 16px', textDecoration: 'none', background: 'rgba(52,211,153,.06)', border: '1px solid rgba(52,211,153,.15)', borderRadius: 8, display: 'inline-block' }}>In Campaign ✓ → Meta</a>
                     ) : caiData?.campaign?.id ? (
-                      <button disabled={addingToCai} onClick={async () => {
-                        const allCamps = (caiData?.allCampaigns || []).filter(c => c.status !== 'archived');
-                        let targetLocalId = allCamps[0]?.localId;
-                        if (allCamps.length > 1) {
-                          const choice = await showConfirm({ title: 'Choose Campaign', message: allCamps.map((c, i) => (i+1) + '. ' + c.name + ' (' + c.type + ')').join('\n') + '\n\nAdd to the first campaign?', confirmText: 'Add to ' + (allCamps[0]?.name?.split('—')?.[1]?.trim()?.substring(0, 20) || 'Campaign'), cancelText: 'Cancel' });
-                          if (!choice) return;
-                          targetLocalId = allCamps[0].localId;
-                        }
-                        if (!targetLocalId) { toast.error('No campaign found'); return; }
-                        setAddingToCai(true);
-                        try {
-                          const r = await fetch('/api/cai/campaign/add-creative', { method: 'POST', headers, body: JSON.stringify({ localId: targetLocalId, videoId: v.id }) });
-                          const d = await r.json();
-                          if (d.success) { toast.success('Video added — processing'); setTimeout(() => window.location.reload(), 1000); }
-                          else toast.error(d.error || 'Failed to add video');
-                        } catch (e) { toast.error(e.message); }
-                        setAddingToCai(false);
-                      }} style={{ padding: '10px 18px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: addingToCai ? 0.5 : 1 }}>{addingToCai ? 'Adding...' : '+ Add to CAi'}</button>
+                      !brand?.billingEnabled && (caiData?.creatives || []).length >= 3 ? (
+                        <button type="button" disabled style={{ padding: '8px 16px', borderRadius: 8, background: 'var(--cs-a06)', color: 'var(--cs-t5)', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'not-allowed', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span>&#x1F512;</span> Unlock with Billing
+                        </button>
+                      ) : (
+                        <button disabled={addingToCai} onClick={async () => {
+                          const allCamps = (caiData?.allCampaigns || []).filter(c => c.status !== 'archived');
+                          let targetLocalId = allCamps[0]?.localId;
+                          if (allCamps.length > 1) {
+                            const choice = await showConfirm({ title: 'Choose Campaign', message: allCamps.map((c, i) => (i+1) + '. ' + c.name + ' (' + c.type + ')').join('\n') + '\n\nAdd to the first campaign?', confirmText: 'Add to ' + (allCamps[0]?.name?.split('—')?.[1]?.trim()?.substring(0, 20) || 'Campaign'), cancelText: 'Cancel' });
+                            if (!choice) return;
+                            targetLocalId = allCamps[0].localId;
+                          }
+                          if (!targetLocalId) { toast.error('No campaign found'); return; }
+                          setAddingToCai(true);
+                          try {
+                            const r = await fetch('/api/cai/campaign/add-creative', { method: 'POST', headers, body: JSON.stringify({ localId: targetLocalId, videoId: v.id }) });
+                            const d = await r.json();
+                            if (d.success) { toast.success('Video added — processing'); setTimeout(() => window.location.reload(), 1000); }
+                            else toast.error(d.error || 'Failed to add video');
+                          } catch (e) { toast.error(e.message); }
+                          setAddingToCai(false);
+                        }} style={{ padding: '10px 18px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', opacity: addingToCai ? 0.5 : 1 }}>{addingToCai ? 'Adding...' : '+ Add to CAi'}</button>
+                      )
                     ) : (
                       <button onClick={() => setPendingLaunchVideo(v)} style={{ padding: '10px 22px', background: isPick ? 'linear-gradient(135deg, #9b6dff, #0668E1)' : 'var(--cs-a06)', border: isPick ? 'none' : '1px solid var(--cs-a08)', borderRadius: 10, color: isPick ? '#fff' : 'var(--cs-t1)', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Create Ad →</button>
                     )}
@@ -10521,6 +10547,13 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             <div style={(!brand?.hasMetaToken || !(brand?.emailVerified || profile?.emailVerified) || !brand?.outreachAuthorized) ? { display: 'none' } : {}}>
           {caiData?.campaign?.id && activeCreativeCount > 0 && (
             <>
+            {!brand?.billingEnabled && caiData?.campaign?.id && (caiData?.creatives || []).length <= 3 && (
+              <div style={{ background: 'linear-gradient(135deg,rgba(155,109,255,.06),rgba(6,104,225,.04))', border: '1px solid rgba(155,109,255,.2)', borderRadius: 14, padding: '18px 22px', marginBottom: 20 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 4 }}>You&apos;re running {(caiData?.creatives || []).length} ads — unlock all {tiktokVideos?.length || '10+'}</div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginBottom: 12 }}>Meta&apos;s CBO distributes budget across creatives. More ads = faster learning = better ROAS. No monthly fee — just 4% of ad spend when running.</div>
+                <button type="button" onClick={() => { setCaiSubTab(null); setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Unlock All Ads</button>
+              </div>
+            )}
           {/* ─── Daily Budget (first so users see it after Meta connect) ─── */}
           <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '20px 24px', marginBottom: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -11728,7 +11761,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
     if (!token) return;
     fetch('/api/cai/status?brandId=' + brand.id, { headers: { Authorization: 'Bearer ' + token } })
       .then(r => r.json()).then(d => setCaiDataParent(d)).catch(() => {});
-  }, [brand?.id]);
+  }, [brand?.id, brand?.cai?.processingStatus]);
 
   useEffect(() => {
     if (brand?.cai?.processingStatus === 'processing') {
@@ -12040,8 +12073,12 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(52,211,153,.12), rgba(6,104,225,.08))', border: '1px solid rgba(52,211,153,.3)', backdropFilter: 'blur(12px)' }}>
           <div style={{ fontSize: 24 }}>&#x2705;</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#34d399' }}>Campaign built successfully</div>
-            <div style={{ fontSize: 13, color: 'var(--cs-t3)' }}>Your ads are paused on Meta — review and activate when ready.</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#34d399' }}>Campaign built — {(caiData?.creatives || []).length} ads ready</div>
+            <div style={{ fontSize: 13, color: 'var(--cs-t3)' }}>
+              {!brand?.billingEnabled && (caiData?.totalAvailableAds || tiktokVideos?.length || 0) > (caiData?.creatives || []).length
+                ? `${(caiData?.totalAvailableAds || tiktokVideos?.length || 0) - (caiData?.creatives || []).length} more videos available — connect billing to unlock all.`
+                : 'Your ads are paused on Meta — review and activate when ready.'}
+            </div>
           </div>
           <button type="button" onClick={() => { setBuildInfo(null); setCaiTab('campaigns'); }} style={{ padding: '8px 20px', borderRadius: 8, background: 'linear-gradient(135deg, #9b6dff, #0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>View Campaigns</button>
           <button type="button" onClick={() => setBuildInfo(null)} style={{ background: 'none', border: 'none', color: 'var(--cs-t5)', fontSize: 16, cursor: 'pointer', padding: '4px 8px' }} aria-label="Dismiss">&#x2715;</button>

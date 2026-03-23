@@ -7524,6 +7524,14 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
           const currentAdCount = (brandForLimit?.cai?.creatives || []).filter(c => c.adId).length;
           if (!brandForLimit.billingEnabled && currentAdCount >= FREE_AD_LIMIT) {
             dbg(`Free tier limit reached (${FREE_AD_LIMIT} ads). Skipping remaining videos.`);
+            const remainingCount = topPicks.length - FREE_AD_LIMIT;
+            if (remainingCount > 0) {
+              if (!brand.cai) brand.cai = {};
+              brand.cai.freeAdLimitHit = true;
+              brand.cai.remainingLockedAds = remainingCount;
+              brand.cai.totalAvailableAds = topPicks.length;
+              await saveBrand(brand);
+            }
             break;
           }
 
@@ -7865,6 +7873,9 @@ app.get('/api/cai/status', authBrand, async (req, res) => {
     deepDive: brand.caiDeepDive || null,
     activityLog: (cai.activityLog || []).slice(-20),
     debugLog: (cai.debugLog || []).slice(-30),
+    freeAdLimitHit: !!cai.freeAdLimitHit,
+    remainingLockedAds: cai.remainingLockedAds ?? null,
+    totalAvailableAds: cai.totalAvailableAds ?? null,
     allCampaigns: getCaiCampaigns(brand).map(c => ({
       localId: c.localId,
       metaCampaignId: c.metaCampaignId,
