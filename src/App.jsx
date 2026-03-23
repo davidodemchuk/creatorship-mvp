@@ -7461,7 +7461,7 @@ function BrandContentTab({ brand, profile, setBrandTab, tiktokVideos: parentVide
 const BRAND_TAB_IDS = ['home','creators','content','ai-plans','campaigns','settings','dashboard','analysis','optimize','account'];
 let _deepDiveCache = null;
 let _deepDiveCacheBrandId = null;
-function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo, buildInProgress = false }) {
+function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tiktokVideos = [], uploads = [], campaigns = [], activeCaiTab, setCaiTab, setCaiStatusActive, metaPages: metaPagesProp, setBrand, setProfile, caiStatusActive = false, refreshProfile, setBuildInProgress, setBuildInfo, buildInProgress = false, buildInfo = null }) {
   const [caiData, setCaiData] = useState(null);
   const [sysInfo, setSysInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -10837,7 +10837,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   }
 
   // ═══ DEEP DIVE RUNNING — TERMINAL ═══
-  if (deepDiveLoading || (terminalLines.length > 0 && !deepDive)) {
+  if (((deepDiveLoading && !deepDive) || ((activating || buildInProgress) && buildInfo?.phase === 'activating')) && (terminalLines.length > 0 || deepDiveLoading)) {
     const lineColors = { phase: '#9b6dff', header: '#9b6dff', system: 'var(--cs-t4)', check: '#4da6ff', success: '#34d399', error: '#ef4444', warn: '#ffb400', data: 'var(--cs-t3)', highlight: '#a78bfa', dim: 'rgba(255,255,255,.08)', spacer: 'transparent' };
     return (
       <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', minHeight: 500 }}>
@@ -10886,8 +10886,8 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}><span style={CAI_BRAND}>CAi</span> <span style={{ color: 'var(--cs-t4)' }}>Deep Dive · {CAI_VERSION}</span></span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {deepDiveLoading && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />}
-              <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{deepDiveLoading ? 'RUNNING' : 'COMPLETE'}</span>
+              {(deepDiveLoading || activating || (buildInProgress && buildInfo?.phase === 'activating')) && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />}
+              <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t4)' }}>{(deepDiveLoading || activating || (buildInProgress && buildInfo?.phase === 'activating')) ? 'RUNNING' : 'COMPLETE'}</span>
               <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t5)' }}>{terminalLines.filter(l => l.type !== 'spacer').length} ops · {elapsedSec}s</span>
             </div>
           </div>
@@ -10920,7 +10920,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
               );
             })}
-            {deepDiveLoading && <div style={{ color: '#9b6dff', animation: 'pulse 1s infinite', fontSize: 13 }}>▊</div>}
+            {(deepDiveLoading || activating || (buildInProgress && buildInfo?.phase === 'activating')) && <div style={{ color: '#9b6dff', animation: 'pulse 1s infinite', fontSize: 13 }}>▊</div>}
             {!deepDiveLoading && !deepDive && terminalLines.some(l => l.type === 'error') && (
               <div style={{ marginTop: 12, textAlign: 'center' }}>
                 <div style={{ fontSize: 14, color: 'var(--cs-t3)', marginBottom: 10 }}>The AI took too long. This usually works on the second attempt — the model warms up.</div>
@@ -12143,7 +12143,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
 
         {brandTab==="content"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandContentTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} tiktokVideos={tiktokVideos} loadingTiktokVideos={loadingTiktokVideos} onLaunchVideo={onLaunchVideo} /></div>}
 
-        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} setBuildInProgress={setBuildInProgress} setBuildInfo={setBuildInfo} buildInProgress={buildInProgress} /></div>}
+        {brandTab==="ai-plans"&&<div style={{animation:'fadeIn 0.2s ease'}}><BrandAiPlansTab brand={brand} profile={profile ?? brand} setBrandTab={setBrandTab} aiPlanStatus={aiPlanStatus} tiktokVideos={tiktokVideos} uploads={uploads} campaigns={campaigns} activeCaiTab={activeCaiTab} setCaiTab={setCaiTab} setCaiStatusActive={setCaiStatusActive} caiStatusActive={caiStatusActive} refreshProfile={refreshProfile} metaPages={metaPages} setBrand={setBrand} setProfile={setProfile} setBuildInProgress={setBuildInProgress} setBuildInfo={setBuildInfo} buildInProgress={buildInProgress} buildInfo={buildInfo} /></div>}
 
         {brandTab==="campaigns"&&<div style={{animation:'fadeIn 0.2s ease'}}><CampaignsTab brandId={brand?.id} campaigns={campaigns} loading={loadingCampaigns} error={campError} setBrandTab={setBrandTab} setCaiTab={setCaiTab} refresh={refreshCampaigns} adAccount={(profile ?? brand)?.adAccount || brand?.adAccount} tiktokVideos={tiktokVideos} caiData={caiData} brand={brand} /></div>}
 
