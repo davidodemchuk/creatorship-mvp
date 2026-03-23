@@ -521,6 +521,9 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
 }
 @media(max-width:640px){.creator-steps{grid-template-columns:1fr 1fr!important}}
 
+.cai-insights-split{display:grid;grid-template-columns:1.5fr 1fr;gap:20px}
+.cai-tier-breakdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
 /* ═══ BRAND PORTAL MOBILE ═══ */
 @media(max-width:768px){
   .cai-header-nav{overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:2px!important;padding:0 8px!important;flex-wrap:nowrap!important}
@@ -556,6 +559,8 @@ input[type=range]::-moz-range-thumb:active{transform:scale(1.25);cursor:grabbing
   .cai-score-row{grid-template-columns:1fr 1fr!important;gap:8px!important}
   .cai-score-row>div{padding:12px 10px!important}
   .cai-score-row .mono{font-size:22px!important}
+  .cai-insights-split{grid-template-columns:1fr!important;gap:16px!important}
+  .cai-tier-breakdown-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
   .cai-intel-grid{grid-template-columns:1fr!important;gap:10px!important}
   .cai-strategy-projections{grid-template-columns:1fr 1fr!important;gap:8px!important}
   .cai-revenue-months{grid-template-columns:1fr!important;gap:10px!important}
@@ -7556,7 +7561,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     if (_deepDiveCacheBrandId === brand?.id && _deepDiveCache) return _deepDiveCache;
     return brand?.caiDeepDive || null;
   });
-  const [expandedMetric, setExpandedMetric] = useState(null);
+  const [expandedInsight, setExpandedInsight] = useState(0);
   const [deepDiveLoading, setDeepDiveLoading] = useState(false);
   const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(true);
   const [deepDivePhase, setDeepDivePhase] = useState(''); // 'scanning'|'analyzing'|'writing'
@@ -9259,23 +9264,179 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           )}
           {a ? (<>
-
-            {/* ─── EXECUTIVE SUMMARY ─── */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <div>
-                  <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>Deep Dive Report</h3>
-                  <p style={{ fontSize: 13, color: 'var(--cs-t4)', margin: 0 }}>AI-powered analysis of your content library and ad potential</p>
+            {(() => {
+              const _picks = sa.topPicks || [];
+              const _cs = Math.min(100, Math.max(0, Number(sa.contentScore) || 0));
+              const _ringCol = _cs > 70 ? '#34d399' : _cs >= 40 ? '#fbbf24' : '#ef4444';
+              const _ringDeg = (_cs / 100) * 360;
+              const _roasNum = parseFloat(String(sa.estimatedRoas ?? '').replace(/x$/i, ''));
+              const _roasCol = !Number.isFinite(_roasNum) ? '#9b6dff' : _roasNum >= 2.5 ? '#34d399' : _roasNum >= 1.2 ? '#fbbf24' : '#f87171';
+              const _roasShow = sa.estimatedRoas != null && sa.estimatedRoas !== '' ? (String(sa.estimatedRoas).toLowerCase().endsWith('x') ? String(sa.estimatedRoas) : String(sa.estimatedRoas) + 'x') : '—';
+              const _cpaNum = Number(sa.estimatedCpa);
+              const _cpaShow = sa.estimatedCpa != null && sa.estimatedCpa !== '' && Number.isFinite(_cpaNum)
+                ? '$' + _cpaNum.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                : (sa.estimatedCpa != null && sa.estimatedCpa !== '' ? '$' + String(sa.estimatedCpa).replace(/^\$/, '') : '—');
+              const _cpaCol = (Number(sa.estimatedCpa) || 0) <= (sa.estimatedCpaRange?.low || 25) ? '#34d399' : '#ffb400';
+              const _tierSt = { hero: { bg: 'rgba(232,89,60,.12)', border: 'rgba(232,89,60,.25)', text: '#E8593C', label: 'HERO' }, proven: { bg: 'rgba(52,211,153,.12)', border: 'rgba(52,211,153,.25)', text: '#34d399', label: 'PROVEN' }, test: { bg: 'rgba(155,109,255,.12)', border: 'rgba(155,109,255,.25)', text: '#9b6dff', label: 'TEST' } };
+              const _byTier = { hero: [], proven: [], test: [] };
+              _picks.forEach((p) => { const t = String(p.tier || 'test').toLowerCase(); if (_byTier[t]) _byTier[t].push(p); else _byTier.test.push(p); });
+              const _insightItems = [
+                { label: 'Brand overview', reasoning: sa.brandSummary, color: '#9b6dff' },
+                { label: 'Content score', reasoning: sa.contentScoreReasoning, color: _ringCol },
+                { label: sa.businessModel === 'subscription' ? '1st purchase ROAS' : 'Est. ROAS', reasoning: sa.estimatedRoasReasoning, color: '#9b6dff' },
+                { label: 'Est. CPA', reasoning: sa.estimatedCpaReasoning, color: '#34d399' },
+                { label: 'TikTok reach', reasoning: sa.tiktokReachReasoning, color: '#4da6ff' },
+              ].filter((it) => it.reasoning && String(it.reasoning).trim());
+              const _fmtV = (n) => (n || 0) >= 1e6 ? ((n) / 1e6).toFixed(1) + 'M' : (n || 0) >= 1e3 ? Math.round((n || 0) / 1e3) + 'K' : String(n || 0);
+              const _trunc = (s) => { const t = (s || '').trim(); return t.length > 50 ? t.slice(0, 50) + '…' : t; };
+              const _miniCard = (pick) => {
+                const vid = tiktokVideos.find((v) => String(v.id) === String(pick.videoId));
+                if (!vid) return null;
+                const tc = _tierSt[pick.tier] || _tierSt.test;
+                const title = _trunc(pick.hookDescription || pick.adCopy?.headline || vid.desc || 'Video');
+                return (
+                  <div key={pick.videoId} style={{ background: 'var(--cs-a04)', border: '1px solid var(--cs-a06)', borderRadius: 10, padding: 10, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+                    <div style={{ width: '100%', aspectRatio: '3/4', maxHeight: 140, borderRadius: 8, overflow: 'hidden', background: '#111', position: 'relative' }}>
+                      {vid.cover && <img src={vid.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                      <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 3, background: tc.bg, border: '1px solid ' + tc.border, color: tc.text }}>{tc.label}</span>
+                    </div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--cs-t1)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{title}</div>
+                    <div className="mono" style={{ fontSize: 11, color: 'var(--cs-t4)' }}>{_fmtV(vid.views)} views</div>
+                    {pick.estimatedRoas != null && pick.estimatedRoas !== '' && <div className="mono" style={{ fontSize: 11, color: '#9b6dff', fontWeight: 700 }}>Est. {pick.estimatedRoas}x ROAS</div>}
+                  </div>
+                );
+              };
+              return (
+            <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>Deep Dive Report</h3>
+                    <p style={{ fontSize: 13, color: 'var(--cs-t4)', margin: 0 }}>What&apos;s working, what isn&apos;t, and what to do next</p>
+                  </div>
                 </div>
-                <button onClick={() => { rerunDeepDive(); }} style={{ padding: '8px 16px', background: 'var(--cs-a04)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t3)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Re-run Analysis</button>
+                <div className="cai-score-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '14px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 72, height: 72, borderRadius: '50%', background: `conic-gradient(${_ringCol} 0deg ${_ringDeg}deg, var(--cs-a08) ${_ringDeg}deg 360deg)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                      <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'var(--cs-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--cs-a06)' }}>
+                        <span className="mono" style={{ fontSize: 20, fontWeight: 800, color: _ringCol }}>{sa.contentScore != null ? _cs : '—'}<span style={{ fontSize: 11, color: 'var(--cs-t4)', fontWeight: 600 }}>/100</span></span>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', fontWeight: 600 }}>Content Score</div>
+                  </div>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
+                    <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: _roasCol }}>{_roasShow}</div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>{sa.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS'}</div>
+                  </div>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
+                    <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: _cpaShow === '—' ? 'var(--cs-t3)' : _cpaCol }}>{_cpaShow}</div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>Est. CPA</div>
+                  </div>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
+                    <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: 'var(--cs-t1)' }}>{_picks.length}</div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>Videos Analyzed</div>
+                  </div>
+                </div>
               </div>
-              <div className="cai-score-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-                {sa.contentScore != null && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: sa.contentScore>=80?'#34d399':sa.contentScore>=60?'#ffb400':'#ef4444' }}>{sa.contentScore}<span style={{ fontSize: 14, color: 'var(--cs-t4)' }}>/100</span></div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Content Score</div></div>}
-                {sa.estimatedRoas && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: '#9b6dff' }}>{sa.estimatedRoas}x</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Projected ROAS</div></div>}
-                {sa.estimatedCpa && <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: '#34d399' }}>${sa.estimatedCpa}</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Projected CPA</div></div>}
-                <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}><div className="mono" style={{ fontSize: 28, fontWeight: 800, color: 'var(--cs-t1)' }}>{viewsStr}</div><div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 2 }}>Total Views</div></div>
+
+              <div className="cai-insights-split" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 20, marginBottom: 24 }}>
+                <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '18px 20px', minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 14 }}>CAi Insights</div>
+                  {_insightItems.length === 0 ? (
+                    <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.5 }}>Detailed reasoning will appear here after the next deep dive.</div>
+                  ) : _insightItems.map((it, i) => {
+                    const open = expandedInsight === i;
+                    return (
+                      <div key={it.label + i} style={{ border: '1px solid var(--cs-a06)', borderRadius: 10, marginBottom: 8, overflow: 'hidden', background: 'var(--cs-a03)' }}>
+                        <button type="button" onClick={() => setExpandedInsight(open ? -1 : i)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '12px 14px', background: open ? 'rgba(155,109,255,.06)' : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: it.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>{it.label}</span>
+                          </span>
+                          <span style={{ fontSize: 12, color: 'var(--cs-t5)', flexShrink: 0 }}>{open ? '−' : '+'}</span>
+                        </button>
+                        {open && <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.65, padding: '0 14px 14px' }}>{it.reasoning}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '18px 16px', minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 14 }}>Top Performers</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {_picks.slice(0, 3).map((pick) => {
+                      const vid = tiktokVideos.find((v) => String(v.id) === String(pick.videoId));
+                      if (!vid) return null;
+                      const tc = _tierSt[pick.tier] || _tierSt.test;
+                      const raw = (pick.hookDescription || pick.adCopy?.headline || vid.desc || '').trim();
+                      const title = raw.length > 50 ? raw.slice(0, 50) + '…' : raw;
+                      return (
+                        <div key={pick.videoId} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                          <div style={{ width: 60, height: 80, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#111', position: 'relative' }}>
+                            {vid.cover && <img src={vid.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                            <span style={{ position: 'absolute', top: 3, left: 3, fontSize: 8, fontWeight: 800, padding: '2px 5px', borderRadius: 3, background: tc.bg, border: '1px solid ' + tc.border, color: tc.text }}>{tc.label}</span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)', lineHeight: 1.35, marginBottom: 4 }}>{title || 'Video'}</div>
+                            <div className="mono" style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 2 }}>{_fmtV(vid.views)} views · {_fmtV(vid.likes)} likes</div>
+                            {pick.estimatedRoas != null && pick.estimatedRoas !== '' && <div className="mono" style={{ fontSize: 11, color: '#9b6dff', fontWeight: 700 }}>Est. {pick.estimatedRoas}x ROAS</div>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {_picks.length === 0 && <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>No ranked videos yet.</div>}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 14 }}>Content Breakdown</div>
+                {(['hero', 'proven', 'test']).map((tierKey) => {
+                  const list = _byTier[tierKey];
+                  const lab = tierKey === 'hero' ? 'Hero' : tierKey === 'proven' ? 'Proven' : 'Test';
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={tierKey} style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--cs-t2)', marginBottom: 10, letterSpacing: '.04em', textTransform: 'uppercase' }}>{lab} tier · {list.length}</div>
+                      <div className="cai-tier-breakdown-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                        {list.map((pick) => _miniCard(pick))}
+                      </div>
+                    </div>
+                  );
+                })}
+                {_picks.length === 0 && <div style={{ fontSize: 13, color: 'var(--cs-t4)', padding: '20px 0' }}>No videos in this analysis yet.</div>}
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                  <button type="button" onClick={() => { rerunDeepDive(); }} style={{ background: 'none', border: '1px solid rgba(155,109,255,.15)', borderRadius: 6, color: 'var(--cs-t4)', fontSize: 12, padding: '4px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Re-run Analysis</button>
+                </div>
+              </div>
+
+              <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '24px', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(52,211,153,.1)', border: '1px solid rgba(52,211,153,.2)', color: '#34d399', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>2</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>Your Ad-Ready Videos</span>
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>These are your brand&apos;s TikTok videos — you own them. CAi will reformat and launch these as Meta ads.</div>
+                <div style={{ padding: '28px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '1px solid rgba(155,109,255,.35)', borderRadius: 16, marginBottom: 0, marginTop: 12, boxShadow: '0 0 30px rgba(155,109,255,.08)' }}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#c4a0ff', marginBottom: 8 }}>You have {_picks.length} proven videos ready for Meta ads</div>
+                  <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>
+                    Advantage+ Sales with broad targeting and CBO will outperform manual — let the algorithm distribute budget to best-performing creative across all videos simultaneously.
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 14, border: '1px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 340 }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
+                      <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
+                    </button>
+                  </div>
+                </div>
+                {sa.ownedContentAnalysis && (
+                  <div style={{ marginTop: 16, padding: '14px 16px', background: 'var(--cs-a04)', borderRadius: 10, borderTop: '1px solid var(--cs-a06)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Content Library Summary</div>
+                    <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{typeof sa.ownedContentAnalysis === 'string' ? sa.ownedContentAnalysis : sa.ownedContentAnalysis.summary || sa.ownedContentAnalysis.overview || JSON.stringify(sa.ownedContentAnalysis).slice(0, 300)}</div>
+                  </div>
+                )}
               </div>
             </div>
+              );
+            })()}
 
             {/* ─── SECTION 1: BRAND & MARKET INTELLIGENCE ─── */}
             {(sa.verdict || sa.brandIntelligence) && (<>
@@ -9292,7 +9453,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               )}
 
               {/* 3 TITLED SUB-SECTIONS — same row height, visually distinct */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div className="cai-intel-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
                 {/* PRODUCT */}
                 {sa.brandIntelligence?.productInsight && (
                   <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '18px 16px', borderTop: '3px solid #9b6dff' }}>
@@ -9325,67 +9486,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </div>
               )}
             </>)}
-
-            {/* ─── SECTION 2: YOUR AD-READY VIDEOS ─── */}
-            <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '24px', marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(52,211,153,.1)', border: '1px solid rgba(52,211,153,.2)', color: '#34d399', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>2</span>
-                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>Your Ad-Ready Videos</span>
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.5, marginBottom: 12 }}>These are your brand's TikTok videos — you own them. CAi will reformat and launch these as Meta ads.</div>
-              <div style={{ padding: '28px', background: 'linear-gradient(135deg, rgba(155,109,255,.18), rgba(6,104,225,.12))', border: '1px solid rgba(155,109,255,.35)', borderRadius: 16, marginBottom: 20, marginTop: 12, boxShadow: '0 0 30px rgba(155,109,255,.08)' }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: '#c4a0ff', marginBottom: 8 }}>You have {(sa.topPicks || []).length} proven videos ready for Meta ads</div>
-                <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 20 }}>
-                  Advantage+ Sales with broad targeting and CBO will outperform manual — let the algorithm distribute budget to best-performing creative across all videos simultaneously.
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <button type="button" onClick={() => { setMode('auto'); setCaiTab('optimize'); }} style={{ position: 'relative', padding: '16px 48px', borderRadius: 14, border: '1px solid #9b6dff', background: 'linear-gradient(135deg, rgba(155,109,255,.15), rgba(6,104,225,.1))', cursor: 'pointer', fontFamily: 'inherit', width: '100%', maxWidth: 340 }}>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: '#9b6dff' }}>Let CAi Run</div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>Set budget + ROAS. CAi does everything.</div>
-                  </button>
-                </div>
-              </div>
-
-              {(sa.topPicks || []).map((pick, idx) => {
-                const vid = tiktokVideos.find(v => String(v.id) === String(pick.videoId));
-                if (!vid) return null;
-                const tierColors = { hero: { bg: 'rgba(232,89,60,.06)', border: 'rgba(232,89,60,.2)', text: '#E8593C', label: 'HERO' }, proven: { bg: 'rgba(52,211,153,.06)', border: 'rgba(52,211,153,.2)', text: '#34d399', label: 'PROVEN' }, test: { bg: 'rgba(155,109,255,.06)', border: 'rgba(155,109,255,.2)', text: '#9b6dff', label: 'TEST' } };
-                const tc = tierColors[pick.tier] || tierColors.test;
-                const inCamp = creatives.some(c => String(c.videoId) === String(pick.videoId));
-                return (
-                  <div key={pick.videoId} className="cai-analysis-pick" style={{ display: 'flex', gap: 16, padding: '16px 0', borderTop: idx > 0 ? '1px solid var(--cs-a06)' : 'none' }}>
-                    <div style={{ width: 80, height: 100, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#111', position: 'relative' }}>
-                      {vid.cover && <img src={vid.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                      <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 3, background: tc.bg, border: '1px solid ' + tc.border, color: tc.text }}>{tc.label}</span>
-                      {inCamp && <span style={{ position: 'absolute', bottom: 4, right: 4, fontSize: 9, fontWeight: 700, padding: '2px 5px', borderRadius: 3, background: 'rgba(52,211,153,.9)', color: '#fff' }}>IN CAi</span>}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>#{idx + 1}</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{pick.hookDescription || pick.adCopy?.headline || 'Video ' + (idx + 1)}</span>
-                      </div>
-                      {pick.whyShort && <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 8 }}>{pick.whyShort}</div>}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                        <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t3)' }}>{(vid.views||0) >= 1e6 ? ((vid.views)/1e6).toFixed(1)+'M' : Math.round((vid.views||0)/1e3)+'K'} views</span>
-                        <span style={{ color: 'var(--cs-a08)' }}>·</span>
-                        <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t3)' }}>{(vid.shares||0) >= 1e3 ? Math.round((vid.shares||0)/1e3)+'K' : vid.shares||0} shares</span>
-                        <span style={{ color: 'var(--cs-a08)' }}>·</span>
-                        <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t3)' }}>{(vid.likes||0) >= 1e6 ? ((vid.likes)/1e6).toFixed(1)+'M' : (vid.likes||0) >= 1e3 ? Math.round((vid.likes||0)/1e3)+'K' : vid.likes||0} likes</span>
-                        {pick.estimatedRoas && <><span style={{ color: 'var(--cs-a08)' }}>·</span><span className="mono" style={{ fontSize: 12, color: '#9b6dff', fontWeight: 600 }}>Est. {pick.estimatedRoas}x ROAS</span></>}
-                        {pick.estimatedCpa && <><span style={{ color: 'var(--cs-a08)' }}>·</span><span className="mono" style={{ fontSize: 12, color: '#34d399', fontWeight: 600 }}>${pick.estimatedCpa} CPA</span></>}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {sa.ownedContentAnalysis && (
-                <div style={{ marginTop: 16, padding: '14px 16px', background: 'var(--cs-a04)', borderRadius: 10, borderTop: '1px solid var(--cs-a06)' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '.5px', marginBottom: 6 }}>Content Library Summary</div>
-                  <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6 }}>{typeof sa.ownedContentAnalysis === 'string' ? sa.ownedContentAnalysis : sa.ownedContentAnalysis.summary || sa.ownedContentAnalysis.overview || JSON.stringify(sa.ownedContentAnalysis).slice(0, 300)}</div>
-                </div>
-              )}
-            </div>
 
             {/* ─── SECTION 3: AD STRATEGY BLUEPRINT ─── */}
             {sa.adStrategy && (
@@ -11235,50 +11335,157 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
     if (typeof window !== 'undefined' && window.location.hash !== '#analysis') {
       try { window.history.replaceState(null, '', '#analysis'); } catch (_) {}
     }
-    const isAutoRec = (sa.recommendedMode || 'auto').includes('auto');
-    const totalViews = tiktokVideos.reduce((s, v) => s + (v.views || 0), 0);
-    const viewsStr = totalViews >= 1e6 ? (totalViews / 1e6).toFixed(0) + 'M' : totalViews.toLocaleString();
     const bi = sa.brandIntelligence || {};
     const as = sa.adStrategy || {};
     const ng = sa.creatorAcquisition || sa.networkGrowth || {};
 
     return (
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        {/* Score cards — v3.4 clickable + CAi reasoning */}
-        <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: expandedMetric ? 0 : 24 }}>
-              {[
-              { k: 'contentScore', v: (sa.contentScore || '') + '', l: 'Content Score', c: (sa.contentScore || 0) >= 70 ? '#34d399' : (sa.contentScore || 0) >= 40 ? '#ffb400' : '#f87171', sub: '/100', reasoning: sa.contentScoreReasoning },
-              { k: 'roas', v: (sa.estimatedRoas || '') + 'x', l: sa.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', c: '#9b6dff', sub: sa.estimatedRoasRange ? (sa.estimatedRoasRange.low + '-' + sa.estimatedRoasRange.high + 'x') : '', reasoning: sa.estimatedRoasReasoning },
-              { k: 'cpa', v: '$' + (sa.estimatedCpa || ''), l: 'Est. CPA', c: (sa.estimatedCpa || 0) <= (sa.estimatedCpaRange?.low || 25) ? '#34d399' : '#ffb400', sub: sa.estimatedCpaRange ? ('$' + sa.estimatedCpaRange.low + '-$' + sa.estimatedCpaRange.high) : '', reasoning: sa.estimatedCpaReasoning },
-              { k: 'reach', v: viewsStr, l: 'TikTok Reach', c: '#4da6ff', sub: '', reasoning: sa.tiktokReachReasoning },
-            ].map(s =>
-              <div key={s.l} onClick={() => setExpandedMetric(expandedMetric === s.k ? null : s.k)} style={{ background: 'var(--cs-card)', border: '1px solid ' + (expandedMetric === s.k ? s.c + '44' : 'var(--cs-a06)'), borderRadius: 12, padding: '16px 12px', textAlign: 'center', cursor: s.reasoning ? 'pointer' : 'default', transition: 'border-color .2s', position: 'relative' }}>
-                <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: s.c }}>{s.v} <span style={{ fontSize: 13, color: 'var(--cs-t4)', fontWeight: 500 }}>{s.sub}</span></div>
-                <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 4 }}>{s.l}</div>
-                {s.reasoning && <div style={{ position: 'absolute', bottom: 4, right: 8, fontSize: 10, color: 'var(--cs-t5)' }}>tap for details</div>}
-              </div>
-            )}
-          </div>
-          {expandedMetric && (() => {
-            const metricData = {
-              contentScore: { label: 'Content Score', reasoning: sa.contentScoreReasoning, color: (sa.contentScore || 0) >= 70 ? '#34d399' : (sa.contentScore || 0) >= 40 ? '#ffb400' : '#f87171' },
-              roas: { label: sa.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS', reasoning: sa.estimatedRoasReasoning, color: '#9b6dff' },
-              cpa: { label: 'Est. CPA', reasoning: sa.estimatedCpaReasoning, color: '#ffb400' },
-              reach: { label: 'TikTok Reach', reasoning: sa.tiktokReachReasoning, color: '#4da6ff' },
-            }[expandedMetric];
-            if (!metricData?.reasoning) return null;
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {(() => {
+          const _picks = sa.topPicks || [];
+          const _cs = Math.min(100, Math.max(0, Number(sa.contentScore) || 0));
+          const _ringCol = _cs > 70 ? '#34d399' : _cs >= 40 ? '#fbbf24' : '#ef4444';
+          const _ringDeg = (_cs / 100) * 360;
+          const _roasNum = parseFloat(String(sa.estimatedRoas ?? '').replace(/x$/i, ''));
+          const _roasCol = !Number.isFinite(_roasNum) ? '#9b6dff' : _roasNum >= 2.5 ? '#34d399' : _roasNum >= 1.2 ? '#fbbf24' : '#f87171';
+          const _roasShow = sa.estimatedRoas != null && sa.estimatedRoas !== '' ? (String(sa.estimatedRoas).toLowerCase().endsWith('x') ? String(sa.estimatedRoas) : String(sa.estimatedRoas) + 'x') : '—';
+          const _cpaNum = Number(sa.estimatedCpa);
+          const _cpaShow = sa.estimatedCpa != null && sa.estimatedCpa !== '' && Number.isFinite(_cpaNum)
+            ? '$' + _cpaNum.toLocaleString(undefined, { maximumFractionDigits: 2 })
+            : (sa.estimatedCpa != null && sa.estimatedCpa !== '' ? '$' + String(sa.estimatedCpa).replace(/^\$/, '') : '—');
+          const _cpaCol = (Number(sa.estimatedCpa) || 0) <= (sa.estimatedCpaRange?.low || 25) ? '#34d399' : '#ffb400';
+          const _tierSt = { hero: { bg: 'rgba(232,89,60,.12)', border: 'rgba(232,89,60,.25)', text: '#E8593C', label: 'HERO' }, proven: { bg: 'rgba(52,211,153,.12)', border: 'rgba(52,211,153,.25)', text: '#34d399', label: 'PROVEN' }, test: { bg: 'rgba(155,109,255,.12)', border: 'rgba(155,109,255,.25)', text: '#9b6dff', label: 'TEST' } };
+          const _byTier = { hero: [], proven: [], test: [] };
+          _picks.forEach((p) => { const t = String(p.tier || 'test').toLowerCase(); if (_byTier[t]) _byTier[t].push(p); else _byTier.test.push(p); });
+          const _insightItems = [
+            { label: 'Brand overview', reasoning: sa.brandSummary, color: '#9b6dff' },
+            { label: 'Content score', reasoning: sa.contentScoreReasoning, color: _ringCol },
+            { label: sa.businessModel === 'subscription' ? '1st purchase ROAS' : 'Est. ROAS', reasoning: sa.estimatedRoasReasoning, color: '#9b6dff' },
+            { label: 'Est. CPA', reasoning: sa.estimatedCpaReasoning, color: '#34d399' },
+            { label: 'TikTok reach', reasoning: sa.tiktokReachReasoning, color: '#4da6ff' },
+          ].filter((it) => it.reasoning && String(it.reasoning).trim());
+          const _fmtV = (n) => (n || 0) >= 1e6 ? ((n) / 1e6).toFixed(1) + 'M' : (n || 0) >= 1e3 ? Math.round((n || 0) / 1e3) + 'K' : String(n || 0);
+          const _trunc = (s) => { const t = (s || '').trim(); return t.length > 50 ? t.slice(0, 50) + '…' : t; };
+          const _miniCard = (pick) => {
+            const vid = tiktokVideos.find((v) => String(v.id) === String(pick.videoId));
+            if (!vid) return null;
+            const tc = _tierSt[pick.tier] || _tierSt.test;
+            const title = _trunc(pick.hookDescription || pick.adCopy?.headline || vid.desc || 'Video');
             return (
-              <div style={{ background: 'var(--cs-card)', border: '1px solid ' + metricData.color + '33', borderRadius: '0 0 12px 12px', padding: '14px 18px', marginBottom: 24, marginTop: -1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: metricData.color }}></div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: metricData.color, textTransform: 'uppercase', letterSpacing: '.5px' }}>CAi Reasoning — {metricData.label}</span>
+              <div key={pick.videoId} style={{ background: 'var(--cs-a04)', border: '1px solid var(--cs-a06)', borderRadius: 10, padding: 10, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+                <div style={{ width: '100%', aspectRatio: '3/4', maxHeight: 140, borderRadius: 8, overflow: 'hidden', background: '#111', position: 'relative' }}>
+                  {vid.cover && <img src={vid.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 3, background: tc.bg, border: '1px solid ' + tc.border, color: tc.text }}>{tc.label}</span>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.6 }}>{metricData.reasoning}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--cs-t1)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{title}</div>
+                <div className="mono" style={{ fontSize: 11, color: 'var(--cs-t4)' }}>{_fmtV(vid.views)} views</div>
+                {pick.estimatedRoas != null && pick.estimatedRoas !== '' && <div className="mono" style={{ fontSize: 11, color: '#9b6dff', fontWeight: 700 }}>Est. {pick.estimatedRoas}x ROAS</div>}
               </div>
             );
-          })()}
-        </div>
+          };
+          return (
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>Deep Dive Report</h3>
+                    <p style={{ fontSize: 13, color: 'var(--cs-t4)', margin: 0 }}>What&apos;s working, what isn&apos;t, and what to do next</p>
+                  </div>
+                </div>
+                <div className="cai-score-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '14px 10px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 72, height: 72, borderRadius: '50%', background: `conic-gradient(${_ringCol} 0deg ${_ringDeg}deg, var(--cs-a08) ${_ringDeg}deg 360deg)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                      <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'var(--cs-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--cs-a06)' }}>
+                        <span className="mono" style={{ fontSize: 20, fontWeight: 800, color: _ringCol }}>{sa.contentScore != null ? _cs : '—'}<span style={{ fontSize: 11, color: 'var(--cs-t4)', fontWeight: 600 }}>/100</span></span>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', fontWeight: 600 }}>Content Score</div>
+                  </div>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
+                    <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: _roasCol }}>{_roasShow}</div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>{sa.businessModel === 'subscription' ? '1st Purchase ROAS' : 'Est. ROAS'}</div>
+                  </div>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
+                    <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: _cpaShow === '—' ? 'var(--cs-t3)' : _cpaCol }}>{_cpaShow}</div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>Est. CPA</div>
+                  </div>
+                  <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '16px 12px', textAlign: 'center' }}>
+                    <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: 'var(--cs-t1)' }}>{_picks.length}</div>
+                    <div style={{ fontSize: 11, color: 'var(--cs-t4)', marginTop: 4 }}>Videos Analyzed</div>
+                  </div>
+                </div>
+              </div>
+              <div className="cai-insights-split" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 20, marginBottom: 24 }}>
+                <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '18px 20px', minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 14 }}>CAi Insights</div>
+                  {_insightItems.length === 0 ? (
+                    <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.5 }}>Detailed reasoning will appear here after the next deep dive.</div>
+                  ) : _insightItems.map((it, i) => {
+                    const open = expandedInsight === i;
+                    return (
+                      <div key={it.label + i} style={{ border: '1px solid var(--cs-a06)', borderRadius: 10, marginBottom: 8, overflow: 'hidden', background: 'var(--cs-a03)' }}>
+                        <button type="button" onClick={() => setExpandedInsight(open ? -1 : i)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '12px 14px', background: open ? 'rgba(155,109,255,.06)' : 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: it.color, flexShrink: 0 }} />
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t1)' }}>{it.label}</span>
+                          </span>
+                          <span style={{ fontSize: 12, color: 'var(--cs-t5)', flexShrink: 0 }}>{open ? '−' : '+'}</span>
+                        </button>
+                        {open && <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.65, padding: '0 14px 14px' }}>{it.reasoning}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '18px 16px', minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 14 }}>Top Performers</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {_picks.slice(0, 3).map((pick) => {
+                      const vid = tiktokVideos.find((v) => String(v.id) === String(pick.videoId));
+                      if (!vid) return null;
+                      const tc = _tierSt[pick.tier] || _tierSt.test;
+                      const raw = (pick.hookDescription || pick.adCopy?.headline || vid.desc || '').trim();
+                      const title = raw.length > 50 ? raw.slice(0, 50) + '…' : raw;
+                      return (
+                        <div key={pick.videoId} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                          <div style={{ width: 60, height: 80, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#111', position: 'relative' }}>
+                            {vid.cover && <img src={vid.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                            <span style={{ position: 'absolute', top: 3, left: 3, fontSize: 8, fontWeight: 800, padding: '2px 5px', borderRadius: 3, background: tc.bg, border: '1px solid ' + tc.border, color: tc.text }}>{tc.label}</span>
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--cs-t1)', lineHeight: 1.35, marginBottom: 4 }}>{title || 'Video'}</div>
+                            <div className="mono" style={{ fontSize: 11, color: 'var(--cs-t4)', marginBottom: 2 }}>{_fmtV(vid.views)} views · {_fmtV(vid.likes)} likes</div>
+                            {pick.estimatedRoas != null && pick.estimatedRoas !== '' && <div className="mono" style={{ fontSize: 11, color: '#9b6dff', fontWeight: 700 }}>Est. {pick.estimatedRoas}x ROAS</div>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {_picks.length === 0 && <div style={{ fontSize: 13, color: 'var(--cs-t4)' }}>No ranked videos yet.</div>}
+                  </div>
+                </div>
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)', marginBottom: 14 }}>Content Breakdown</div>
+                {(['hero', 'proven', 'test']).map((tierKey) => {
+                  const list = _byTier[tierKey];
+                  const lab = tierKey === 'hero' ? 'Hero' : tierKey === 'proven' ? 'Proven' : 'Test';
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={tierKey} style={{ marginBottom: 20 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--cs-t2)', marginBottom: 10, letterSpacing: '.04em', textTransform: 'uppercase' }}>{lab} tier · {list.length}</div>
+                      <div className="cai-tier-breakdown-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                        {list.map((pick) => _miniCard(pick))}
+                      </div>
+                    </div>
+                  );
+                })}
+                {_picks.length === 0 && <div style={{ fontSize: 13, color: 'var(--cs-t4)', padding: '20px 0' }}>No videos in this analysis yet.</div>}
+                <div style={{ textAlign: 'center', marginTop: 16 }}>
+                  <button type="button" onClick={() => { rerunDeepDive(); }} style={{ background: 'none', border: '1px solid rgba(155,109,255,.15)', borderRadius: 6, color: 'var(--cs-t4)', fontSize: 12, padding: '4px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Re-run Analysis</button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
             {sa.ltvRoas && sa.businessModel === 'subscription' && (
               <div style={{ padding: '10px 14px', background: 'rgba(155,109,255,.06)', border: '1px solid rgba(155,109,255,.12)', borderRadius: 8, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 14 }}>📊</span>
@@ -11391,36 +11598,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 </button>
               </div>
             </div>
-            {(sa.topPicks || []).map((pick, idx) => {
-              const vid = tiktokVideos.find(v => String(v.id) === String(pick.videoId));
-              if (!vid) return null;
-              const tierColors = { hero: { bg: 'rgba(232,89,60,.06)', border: 'rgba(232,89,60,.2)', text: '#E8593C', label: 'HERO' }, proven: { bg: 'rgba(52,211,153,.06)', border: 'rgba(52,211,153,.2)', text: '#34d399', label: 'PROVEN' }, test: { bg: 'rgba(155,109,255,.06)', border: 'rgba(155,109,255,.2)', text: '#9b6dff', label: 'TEST' } };
-              const tc = tierColors[pick.tier] || tierColors.test;
-              return (
-                <div key={pick.videoId} style={{ display: 'flex', gap: 16, padding: '16px 0', borderTop: idx > 0 ? '1px solid var(--cs-a06)' : 'none' }}>
-                  <div style={{ width: 80, height: 100, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#111', position: 'relative' }}>
-                    {vid.cover && <img src={vid.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                    <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, fontWeight: 800, padding: '2px 6px', borderRadius: 3, background: tc.bg, border: '1px solid ' + tc.border, color: tc.text }}>{tc.label}</span>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)' }}>#{idx + 1}</span>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{pick.hookDescription || pick.adCopy?.headline || 'Creator Video ' + (idx + 1)}</span>
-                    </div>
-                    {pick.whyShort && <div style={{ fontSize: 13, color: 'var(--cs-t2)', lineHeight: 1.6, marginBottom: 8 }}>{pick.whyShort}</div>}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
-                      <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t3)' }}>{(vid.views||0) >= 1e6 ? ((vid.views)/1e6).toFixed(1)+'M' : Math.round((vid.views||0)/1e3)+'K'} views</span>
-                      <span style={{ color: 'var(--cs-a08)' }}>·</span>
-                      <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t3)' }}>{(vid.shares||0) >= 1e3 ? Math.round((vid.shares||0)/1e3)+'K' : vid.shares||0} shares</span>
-                      <span style={{ color: 'var(--cs-a08)' }}>·</span>
-                      <span className="mono" style={{ fontSize: 12, color: 'var(--cs-t3)' }}>{(vid.likes||0) >= 1e6 ? ((vid.likes)/1e6).toFixed(1)+'M' : (vid.likes||0) >= 1e3 ? Math.round((vid.likes||0)/1e3)+'K' : vid.likes||0} likes</span>
-                      {pick.estimatedRoas && <><span style={{ color: 'var(--cs-a08)' }}>·</span><span className="mono" style={{ fontSize: 12, color: '#9b6dff', fontWeight: 600 }}>Est. {pick.estimatedRoas}x ROAS</span></>}
-                    </div>
-                    {vid.authorHandle && <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>@{vid.authorHandle} · Creator content</div>}
-                  </div>
-                </div>
-              );
-            })}
             </>
             )}
             {(sa.ownedContentAnalysis || []).length > 0 && (
@@ -11438,28 +11615,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   </div>
                 </div>
             </div>
-            {(sa.ownedContentAnalysis || []).map((oc, i) => {
-              const vid = tiktokVideos.find(v => String(v.id) === String(oc.videoId));
-              return (
-                <div key={i} style={{ display: 'flex', gap: 12, padding: '12px 0', borderTop: i > 0 ? '1px solid var(--cs-a04)' : 'none' }}>
-                  {vid?.cover && <img src={vid.cover} style={{ width: 56, height: 72, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} alt="" />}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 7px', borderRadius: 3, background: oc.adPotential==='high'?'rgba(52,211,153,.1)':oc.adPotential==='medium'?'rgba(255,180,0,.1)':'var(--cs-a06)', color: oc.adPotential==='high'?'#34d399':oc.adPotential==='medium'?'#ffb400':'var(--cs-t4)', textTransform: 'uppercase', letterSpacing: '.3px' }}>{oc.adPotential}</span>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--cs-t1)' }}>{oc.headline}</span>
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.4 }}>{oc.whyItWorks}</div>
-                    {vid && <div style={{ fontSize: 12, color: 'var(--cs-t4)', marginTop: 2 }}>@{vid.authorHandle} · {((vid.views||0)/1e6).toFixed(1)}M views</div>}
-                    <div style={{ fontSize: 12, color: '#9b6dff', fontWeight: 600, marginTop: 3 }}>{oc.recommendation}</div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                      {['Download', 'Reformat for Meta', 'Generate ad copy', 'Launch paused'].map(step => (
-                        <span key={step} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 3, background: 'rgba(155,109,255,.08)', color: '#9b6dff', fontWeight: 600 }}>{step}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
             </>
             )}
           </div>
@@ -11560,9 +11715,6 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
           </div>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: 8 }}>
-          <button type="button" onClick={() => { rerunDeepDive(); }} style={{ background: 'none', border: '1px solid rgba(155,109,255,.15)', borderRadius: 6, color: 'var(--cs-t4)', fontSize: 12, padding: '4px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>Re-run Analysis</button>
-        </div>
       </div>
     );
   }
