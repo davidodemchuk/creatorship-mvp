@@ -5411,9 +5411,9 @@ function CampaignsTab({ brandId, campaigns, loading, error, setBrandTab, setCaiT
         {((today?.spend || 0) > 0 || (week?.spend || 0) > 0) && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {[
-              { v: '$' + (today.spend || 0).toFixed(0), l: 'Today Spend', c: 'var(--cs-t1)' },
-              { v: '$' + (today.revenue || 0).toFixed(0), l: 'Today Revenue', c: '#34d399' },
-              { v: (week.roas || 0).toFixed(1) + 'x', l: 'Week ROAS', c: '#9b6dff' },
+              { v: '$' + (today?.spend || 0).toFixed(0), l: 'Today Spend', c: 'var(--cs-t1)' },
+              { v: '$' + (today?.revenue || 0).toFixed(0), l: 'Today Revenue', c: '#34d399' },
+              { v: (week?.roas || 0).toFixed(1) + 'x', l: 'Week ROAS', c: '#9b6dff' },
               { v: String(caiCreatives.filter(c => c.status === 'active').length), l: 'Active Ads', c: '#4da6ff' },
             ].map(s => (
               <div key={s.l} style={{ background: 'rgba(0,0,0,.2)', borderRadius: 8, padding: '10px 8px', textAlign: 'center' }}>
