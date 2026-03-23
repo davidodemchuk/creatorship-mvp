@@ -8093,6 +8093,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               if (setCaiStatusActive) setCaiStatusActive(!!status?.isActive);
               if (status.processingStatus === 'complete' && setBuildInfo) {
                 setBuildInfo({ phase: 'complete', startedAt: Date.now() });
+                if (setBuildInProgress) setBuildInProgress(false);
                 setCaiSubTab('campaigns');
               }
               else if (status.processingStatus === 'error' && setBuildInfo) setBuildInfo(null);
