@@ -8725,9 +8725,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   We'll email <strong style={{ color: 'rgba(255,255,255,.7)' }}>{brand?.email || ''}</strong> when everything is ready. You can safely close this page.
                 </p>
 
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,.4)', marginTop: 4 }}>
-                  Keep this screen open to follow live build progress.
-                </div>
+                <button onClick={() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ background: 'none', border: '1px solid rgba(155,109,255,.3)', color: '#9b6dff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 20px', borderRadius: 8, marginTop: 8 }}>View Live Build Progress ↑</button>
               </div>
             </div>
           )}
