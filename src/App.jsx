@@ -8930,7 +8930,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--cs-t1)' }}>Running {(caiData?.creatives || []).length} of {tiktokVideos?.length || '10+'} ads</div>
                 <div style={{ fontSize: 13, color: 'var(--cs-t3)', marginTop: 2 }}>Meta&apos;s algorithm optimizes best with 10+ creatives. Unlock your full library — no monthly fee, just 4% of ad spend.</div>
               </div>
-              <button type="button" onClick={() => { setCaiSubTab(null); setBrandTab('settings'); }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>Unlock All Ads</button>
+              <button type="button" onClick={() => { if (handleConnectBilling) handleConnectBilling(); else { setCaiSubTab(null); setBrandTab('settings'); } }} style={{ padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg,#9b6dff,#0668E1)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>Unlock All Ads</button>
             </div>
           )}
 
