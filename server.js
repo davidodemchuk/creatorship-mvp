@@ -7730,7 +7730,7 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
       console.log('[cai-activate-bg] DONE: ' + (done - errors) + ' ads created, ' + errors + ' errors');
       const creativesCount = (finalBrand.cai && finalBrand.cai.creatives) ? finalBrand.cai.creatives.length : (done - errors);
       if (creativesCount > 0) {
-        sendBuildCompleteNotification(brandId, (finalBrand.brandName || finalBrand.storeName || 'CAi') + ' — CAi Campaign', creativesCount).catch(e => console.error('[cai-activate-bg] notify email failed:', e.message));
+        sendBuildCompleteNotification(brandId, finalBrand.brandName, finalBrand.storeName, (finalBrand.brandName || finalBrand.storeName || 'CAi') + ' — CAi Campaign', creativesCount).catch(e => console.error('[cai-activate-bg] notify email failed:', e.message));
       }
     })().catch(err => {
       console.error('[cai-activate-bg] Fatal error:', err.message);
@@ -7752,23 +7752,84 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
 });
 
 // ═══ CAi build-complete email notification (used by background task + optional POST) ═══
-async function sendBuildCompleteNotification(brandId, campaignName, creativesCount) {
-  const brand = await getBrandById(brandId);
-  if (!brand || !brand.email) return false;
-  const name = brand.brandName || brand.storeName || 'your brand';
-  const subject = 'Your CAi campaign is live — ' + (campaignName || name);
-  const html = `
-    <div style="font-family: -apple-system, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 20px;">
-      <h2 style="color: #9b6dff;">Your campaign is ready!</h2>
-      <p>CAi finished building your Meta ad campaign for <strong>${name}</strong>.</p>
-      <p><strong>${creativesCount || 0}</strong> ad creatives are now live and running on Meta.</p>
-      <p style="margin-top: 24px;">
-        <a href="https://www.creatorship.app/brand#dashboard" style="background: linear-gradient(135deg, #9b6dff, #0668E1); color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 700;">View Your Campaign</a>
-      </p>
-      <p style="color: #888; font-size: 13px; margin-top: 32px;">— CAi by Creatorship</p>
-    </div>
-  `;
-  return sendEmail(brand.email, subject, html);
+async function sendBuildCompleteNotification(brandId, brandName, storeName, campaignName, creativesCount) {
+  try {
+    const brand = await getBrandById(brandId);
+    if (!brand?.email) return false;
+
+    const displayName = storeName || brandName || 'your brand';
+    const subject = 'Your CAi campaign is ready — ' + (creativesCount || 0) + ' ads built';
+
+    const html = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;background:#0f0f17;color:#e0e0e0;border-radius:16px;overflow:hidden;">
+        <div style="padding:32px 28px 20px;text-align:center;background:linear-gradient(135deg,rgba(155,109,255,.15),rgba(6,104,225,.1));">
+          <div style="font-size:28px;margin-bottom:8px;">🚀</div>
+          <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff;">Campaign Ready</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:rgba(255,255,255,.6);">for ${escapeHtml(displayName)}</p>
+        </div>
+        <div style="padding:24px 28px;">
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">CAi just finished building your campaign. Here's what was created:</p>
+          <div style="background:rgba(155,109,255,.08);border:1px solid rgba(155,109,255,.2);border-radius:10px;padding:16px;margin-bottom:20px;">
+            <div style="font-size:32px;font-weight:800;color:#9b6dff;">${Number(creativesCount) || 0} ads</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.5);margin-top:4px;">created and uploaded to Meta</div>
+          </div>
+          <p style="margin:0 0 4px;font-size:14px;color:rgba(255,255,255,.7);">Campaign: <strong>${escapeHtml(campaignName || 'Always-On Campaign')}</strong></p>
+          <p style="margin:0 0 20px;font-size:14px;color:rgba(255,255,255,.7);">Status: <span style="color:#60a5fa;font-weight:700;">PAUSED</span> — waiting for your review</p>
+          <a href="https://www.creatorship.app/brand#campaigns" style="display:block;text-align:center;padding:14px 0;background:linear-gradient(135deg,#9b6dff,#0668E1);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;">Review Your Campaign →</a>
+          <p style="margin:16px 0 0;font-size:12px;color:rgba(255,255,255,.35);text-align:center;">Nothing goes live until you click Go Live.</p>
+        </div>
+        <div style="padding:16px 28px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.25);">Creatorship — TikTok Creators × Meta Ads</span>
+        </div>
+      </div>
+    `;
+
+    const ok = await sendEmail(brand.email, subject, html);
+    return ok;
+  } catch (e) {
+    console.error('[email] Build notification failed:', e.message);
+    return false;
+  }
+}
+
+async function sendGoLiveNotification(brandId) {
+  try {
+    const brand = await getBrandById(brandId);
+    if (!brand?.email) return false;
+
+    const displayName = brand.storeName || brand.brandName || 'your brand';
+    const subject = 'Your ads are LIVE on Meta — ' + displayName;
+
+    const html = `
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;background:#0f0f17;color:#e0e0e0;border-radius:16px;overflow:hidden;">
+        <div style="padding:32px 28px 20px;text-align:center;background:linear-gradient(135deg,rgba(52,211,153,.15),rgba(6,104,225,.1));">
+          <div style="font-size:28px;margin-bottom:8px;">🟢</div>
+          <h1 style="margin:0;font-size:22px;font-weight:800;color:#34d399;">Ads are LIVE</h1>
+          <p style="margin:6px 0 0;font-size:14px;color:rgba(255,255,255,.6);">${escapeHtml(displayName)}</p>
+        </div>
+        <div style="padding:24px 28px;">
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Your campaign is now running on Meta. CAi is monitoring performance and will optimize automatically.</p>
+          <div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:16px;margin-bottom:20px;">
+            <div style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.8;">
+              ✓ Ads are being delivered to your audience<br>
+              ✓ CAi polls metrics on a regular schedule<br>
+              ✓ Underperformers can be auto-paused when spend and ROAS thresholds are met<br>
+              ✓ Weekly digest email (Monday mornings UTC)
+            </div>
+          </div>
+          <a href="https://www.creatorship.app/brand#campaigns" style="display:block;text-align:center;padding:14px 0;background:linear-gradient(135deg,#34d399,#0668E1);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;">View Live Campaign →</a>
+        </div>
+        <div style="padding:16px 28px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
+          <span style="font-size:11px;color:rgba(255,255,255,.25);">Creatorship — TikTok Creators × Meta Ads</span>
+        </div>
+      </div>
+    `;
+
+    return await sendEmail(brand.email, subject, html);
+  } catch (e) {
+    console.error('[email] Go Live notification failed:', e.message);
+    return false;
+  }
 }
 
 app.post('/api/cai/notify-build-complete', authBrand, requireRole('editor'), async (req, res) => {
@@ -7777,7 +7838,7 @@ app.post('/api/cai/notify-build-complete', authBrand, requireRole('editor'), asy
     const { campaignName, creativesCount } = req.body || {};
     const brand = await getBrandById(brandId);
     if (!brand || !brand.email) return res.json({ ok: false });
-    const ok = await sendBuildCompleteNotification(brandId, campaignName, creativesCount);
+    const ok = await sendBuildCompleteNotification(brandId, brand.brandName, brand.storeName, campaignName || (brand.brandName || brand.storeName || 'CAi') + ' — CAi Campaign', creativesCount);
     if (ok) return res.json({ ok: true });
     return res.json({ ok: false, error: 'Email not configured' });
   } catch (e) {
@@ -8572,6 +8633,7 @@ app.post('/api/cai/go-live', authBrand, requireRole('editor'), async (req, res) 
     await saveBrand(brand);
 
     console.log('[cai] go-live: Campaign ACTIVATED', campId);
+    sendGoLiveNotification(brandId).catch(e => console.error('[email] Go Live notification failed:', e.message));
     res.json({ success: true });
   } catch (e) {
     console.error('[cai] go-live error:', e.message);
@@ -11871,48 +11933,128 @@ if (fs.existsSync(path.join(distPath, 'index.html'))) {
 
 // ═══ START ═══
 
-// ═══ WEEKLY DIGEST EMAIL (Monday 6am UTC) ═══
+// ═══ WEEKLY DIGEST EMAIL (Monday 6am UTC via scheduleCron) ═══
+function digestRevenueFromInsights(row) {
+  if (!row?.action_values) return 0;
+  const p = row.action_values.find(x => x.action_type === 'purchase' || x.action_type === 'offsite_conversion.fb_pixel_purchase');
+  return p ? parseFloat(p.value || 0) : 0;
+}
+
 async function sendWeeklyDigest() {
   console.log('[digest] Running weekly digest...');
   try {
     const brands = await loadBrands();
-    const registry = await loadCampaignRegistry();
     let sent = 0;
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const timeRange = encodeURIComponent(JSON.stringify({ since: weekAgo, until: todayStr }));
+
     for (const brand of brands) {
       if (!brand.email || !brand.metaToken || !brand.adAccount) continue;
-      const brandCampaigns = Object.entries(registry).filter(([, m]) => m.brandId === brand.id);
-      if (brandCampaigns.length === 0) continue;
-      // Pull last 7 days of insights
-      const since = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-      const until = new Date().toISOString().slice(0, 10);
-      let totalSpend = 0, totalImpressions = 0, totalClicks = 0;
+      if (!brand.cai?.isActive || !brand.cai?.campaign?.id) continue;
+
+      let token;
+      try { token = getValidMetaToken(brand); }
+      catch (e) { console.log('[digest] Skip brand ' + brand.id + ': ' + e.message); continue; }
+
+      const campaignId = brand.cai.campaign.id;
+      let totalSpend = 0;
+      let totalImpressions = 0;
+      let totalClicks = 0;
+      let accountRoas = 0;
+      let topAd = null;
+      let worstAd = null;
+
       try {
-        const url = `https://graph.facebook.com/v22.0/${brand.adAccount}/insights?fields=spend,impressions,clicks&time_range=${encodeURIComponent(JSON.stringify({ since, until }))}&limit=100&access_token=${brand.metaToken}`;
-        const data = await apiFetch(url);
-        for (const d of (data.data || [])) { totalSpend += parseFloat(d.spend || 0); totalImpressions += parseInt(d.impressions || 0); totalClicks += parseInt(d.clicks || 0); }
-      } catch (_) {}
-      const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0';
-      const cpc = totalClicks > 0 ? (totalSpend / totalClicks).toFixed(2) : '0';
-      await sendEmail(brand.email, 'Weekly Campaign Digest — ' + (brand.brandName || 'Your Brand'), emailBase({
-        title: 'Your Weekly Campaign Digest',
-        preheader: '$' + Math.round(totalSpend) + ' spent this week across ' + brandCampaigns.length + ' campaigns',
-        headerEmoji: '📊',
-        accentColor: '#0668E1',
-        accentGradient: 'linear-gradient(135deg,#0668E1,#00C2FF)',
-        bodyHtml: `<p>Here's your weekly performance summary for <strong>${escapeHtml(brand.brandName || 'your brand')}</strong>:</p>
-        <table style="width:100%;border-collapse:collapse;margin:16px 0">
-          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#6b7280">Ad Spend</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;font-weight:700">$${totalSpend.toFixed(2)}</td></tr>
-          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#6b7280">Impressions</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;font-weight:700">${totalImpressions.toLocaleString()}</td></tr>
-          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#6b7280">Clicks</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;font-weight:700">${totalClicks.toLocaleString()}</td></tr>
-          <tr><td style="padding:8px 0;border-bottom:1px solid #eee;color:#6b7280">CTR</td><td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right;font-weight:700">${ctr}%</td></tr>
-          <tr><td style="padding:8px 0;color:#6b7280">Avg CPC</td><td style="padding:8px 0;text-align:right;font-weight:700">$${cpc}</td></tr>
-        </table>
-        <p style="color:#6b7280">${brandCampaigns.length} campaign${brandCampaigns.length !== 1 ? 's' : ''} running · Week of ${since} to ${until}</p>`,
-        ctaText: 'View Dashboard',
-        ctaUrl: 'https://www.creatorship.app/brand#campaigns',
-      })).catch(() => {});
-      sent++;
-      logActivity('weekly_digest_sent', { brandId: brand.id, email: brand.email, spend: totalSpend });
+        const campUrl = `https://graph.facebook.com/v22.0/${campaignId}/insights?fields=spend,impressions,clicks,actions,action_values&time_range=${timeRange}&access_token=${token}`;
+        const campData = await apiFetch(campUrl).catch(() => null);
+        const row = campData?.data?.[0];
+        if (row && !campData.error) {
+          totalSpend = parseFloat(row.spend || 0);
+          totalImpressions = parseInt(row.impressions || 0, 10);
+          totalClicks = parseInt(row.clicks || 0, 10);
+          const rev = digestRevenueFromInsights(row);
+          accountRoas = totalSpend > 0 ? rev / totalSpend : 0;
+        }
+
+        const adUrl = `https://graph.facebook.com/v22.0/${campaignId}/insights?fields=ad_id,ad_name,spend,impressions,clicks,actions,action_values&level=ad&time_range=${timeRange}&limit=500&access_token=${token}`;
+        const adData = await apiFetch(adUrl).catch(() => null);
+        const ads = (adData?.data || []).filter(a => parseFloat(a.spend || 0) > 0.01);
+        const scored = ads.map(a => {
+          const sp = parseFloat(a.spend || 0);
+          const rev = digestRevenueFromInsights(a);
+          const roas = sp > 0 ? rev / sp : 0;
+          return { adId: a.ad_id, name: a.ad_name || 'Ad', spend: sp, impressions: parseInt(a.impressions || 0, 10), roas };
+        });
+        if (scored.length > 0) {
+          scored.sort((x, y) => y.roas - x.roas);
+          topAd = scored[0];
+          worstAd = scored.reduce((a, b) => (a.roas <= b.roas ? a : b));
+        }
+      } catch (err) {
+        console.log('[digest] Insights error for brand ' + brand.id + ':', err.message);
+        continue;
+      }
+
+      const displayName = brand.storeName || brand.brandName || 'your brand';
+      const ctr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
+      const topBlock = topAd
+        ? `<div style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:10px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:11px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:.06em;">Top performer</div>
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-top:4px;">${escapeHtml((topAd.name || '').slice(0, 80))}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:6px;">ROAS <strong style="color:#34d399;">${topAd.roas.toFixed(2)}x</strong> · Spend $${topAd.spend.toFixed(2)}</div>
+          </div>`
+        : '';
+      const worstBlock = worstAd && topAd && worstAd.adId !== topAd.adId
+        ? `<div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:14px;margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:.06em;">Review / consider pausing</div>
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-top:4px;">${escapeHtml((worstAd.name || '').slice(0, 80))}</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.55);margin-top:6px;">ROAS <strong style="color:#f87171;">${worstAd.roas.toFixed(2)}x</strong> · Spend $${worstAd.spend.toFixed(2)}</div>
+          </div>`
+        : '';
+
+      const html = `
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;background:#0f0f17;color:#e0e0e0;border-radius:16px;overflow:hidden;">
+          <div style="padding:28px 24px 18px;text-align:center;background:linear-gradient(135deg,rgba(6,104,225,.18),rgba(155,109,255,.12));">
+            <div style="font-size:26px;margin-bottom:6px;">📊</div>
+            <h1 style="margin:0;font-size:21px;font-weight:800;color:#fff;">Weekly Performance Digest</h1>
+            <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,.55);">${escapeHtml(displayName)} · Last 7 days</p>
+          </div>
+          <div style="padding:22px 24px 8px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;">
+                <div style="font-size:11px;color:rgba(255,255,255,.45);">Spend</div>
+                <div style="font-size:20px;font-weight:800;color:#fff;">$${totalSpend.toFixed(2)}</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;">
+                <div style="font-size:11px;color:rgba(255,255,255,.45);">ROAS (account)</div>
+                <div style="font-size:20px;font-weight:800;color:#9b6dff;">${accountRoas.toFixed(2)}x</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;">
+                <div style="font-size:11px;color:rgba(255,255,255,.45);">Impressions</div>
+                <div style="font-size:18px;font-weight:700;color:#fff;">${totalImpressions.toLocaleString()}</div>
+              </div>
+              <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;">
+                <div style="font-size:11px;color:rgba(255,255,255,.45);">Clicks · CTR</div>
+                <div style="font-size:18px;font-weight:700;color:#fff;">${totalClicks.toLocaleString()} <span style="font-size:13px;color:rgba(255,255,255,.45);">(${ctr}%)</span></div>
+              </div>
+            </div>
+            ${topBlock}
+            ${worstBlock}
+            <a href="https://www.creatorship.app/brand#campaigns" style="display:block;text-align:center;padding:14px 0;background:linear-gradient(135deg,#0668E1,#9b6dff);color:#fff;text-decoration:none;border-radius:10px;font-weight:700;font-size:15px;">View full dashboard →</a>
+            <p style="margin:14px 0 0;font-size:11px;color:rgba(255,255,255,.3);text-align:center;">${weekAgo} → ${todayStr} · Meta Insights</p>
+          </div>
+          <div style="padding:14px 24px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
+            <span style="font-size:11px;color:rgba(255,255,255,.25);">Creatorship — TikTok Creators × Meta Ads</span>
+          </div>
+        </div>
+      `;
+
+      const ok = await sendEmail(brand.email, 'Weekly Campaign Digest — ' + (brand.brandName || 'Your Brand'), html);
+      if (ok) {
+        sent++;
+        logActivity('weekly_digest_sent', { brandId: brand.id, email: brand.email, spend: totalSpend });
+      }
     }
     console.log('[digest] Sent', sent, 'weekly digests');
   } catch (e) { console.error('[digest] Error:', e.message); }
