@@ -1085,11 +1085,10 @@ function SiteNav({ nav }) {
     return () => document.removeEventListener('mousedown', handler);
   }, [dropOpen]);
 
-  const avatarUrl = brand?.shopLogo
-    ? '/api/proxy-image?url=' + encodeURIComponent(brand.shopLogo)
-    : brand?.enrichedShop?.shopLogo
-      ? '/api/proxy-image?url=' + encodeURIComponent(brand.enrichedShop.shopLogo)
-      : null;
+  const avatarSrc = brand?.shopLogo || brand?.enrichedShop?.shopLogo || brand?.enrichedShop?.avatarUrl || null;
+  const avatarUrl = (typeof avatarSrc === 'string' && avatarSrc.startsWith('http'))
+    ? '/api/proxy-image?url=' + encodeURIComponent(avatarSrc)
+    : null;
   const initial = (displayName || '?').replace(/^@/, '')[0]?.toUpperCase() || '?';
 
   return <>
@@ -1107,7 +1106,7 @@ function SiteNav({ nav }) {
           <div ref={dropRef} style={{ position: 'relative' }}>
             <button type="button" onClick={() => setDropOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--cs-a06)', border: '1px solid var(--cs-a08)', borderRadius: 8, color: 'var(--cs-t0)', fontFamily: 'inherit', cursor: 'pointer' }}>
               <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#0668E1,#0099ff)', border: '1.5px solid var(--cs-a15)', overflow: 'hidden', flexShrink: 0 }}>
-                {(brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? (
+                {avatarUrl ? (
                   <img
                     src={avatarUrl || ''}
                     alt=""
@@ -1118,7 +1117,7 @@ function SiteNav({ nav }) {
                     }}
                   />
                 ) : null}
-                <div style={{ display: (brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
+                <div style={{ display: avatarUrl ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
                   {initial}
                 </div>
               </div>
@@ -6378,9 +6377,12 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
     {/* Header with avatar */}
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
       <div style={{ width: 52, height: 52, borderRadius: 14, background: BRAND_GRAD, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 800, color: 'rgba(255,255,255,.9)', flexShrink: 0, overflow: 'hidden' }}>
-        {(brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? (
+        {(() => {
+          const avatarSrc = brand?.shopLogo || brand?.enrichedShop?.shopLogo || brand?.enrichedShop?.avatarUrl || null;
+          const avatarUrl = (typeof avatarSrc === 'string' && avatarSrc.startsWith('http')) ? '/api/proxy-image?url=' + encodeURIComponent(avatarSrc) : null;
+          return avatarUrl ? (
           <img
-            src={'/api/proxy-image?url=' + encodeURIComponent(brand?.shopLogo || brand?.enrichedShop?.shopLogo)}
+            src={avatarUrl}
             alt=""
             style={{ width: '100%', height: '100%', borderRadius: 'inherit', objectFit: 'cover' }}
             onError={(e) => {
@@ -6388,8 +6390,9 @@ function SettingsTab({ brand, profile, brandSettings, setBrandSettings, logout, 
               if (e.currentTarget.nextElementSibling) e.currentTarget.nextElementSibling.style.display = 'flex';
             }}
           />
-        ) : null}
-        <div style={{ display: (brand?.shopLogo || brand?.enrichedShop?.shopLogo) ? 'none' : 'flex', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'rgba(255,255,255,.9)' }}>
+        ) : null;
+        })()}
+        <div style={{ display: (() => { const s = brand?.shopLogo || brand?.enrichedShop?.shopLogo || brand?.enrichedShop?.avatarUrl || null; return (typeof s === 'string' && s.startsWith('http')) ? 'none' : 'flex'; })(), width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'rgba(255,255,255,.9)' }}>
           {(profile.brandName || brand.brandName || brand.email || '?')[0].toUpperCase()}
         </div>
       </div>
@@ -12661,7 +12664,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
         <div ref={brandNavRef} style={{position:'relative'}}>
           <button type="button" onClick={()=>setBrandNavOpen(o=>!o)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',background:'var(--cs-a06)',border:'1px solid var(--cs-a08)',borderRadius:8,color:'var(--cs-t0)',fontFamily:'inherit',cursor:'pointer'}}>
             {(() => {
-              const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo;
+              const logoRaw = brand?.shopLogo || brand?.enrichedShop?.shopLogo || brand?.enrichedShop?.avatarUrl || null;
               const avatarUrl = (typeof logoRaw === 'string' && logoRaw.startsWith('http')) ? '/api/proxy-image?url=' + encodeURIComponent(logoRaw) : null;
               const displayName = brand?.storeName ? brand.storeName : brand?.brandName || 'Dashboard';
               const initial = displayName.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() || '?';

@@ -11265,11 +11265,18 @@ app.get('/api/brand/enrich', async (req, res) => {
           if (seen.has(key)) continue;
           seen.add(key);
           const tryL = (v) => { if (typeof v === 'string' && v) return v; if (v?.url_list?.[0]) return v.url_list[0]; return null; };
-          const logo = tryL(si.shop_logo) || tryL(si.shop_avatar) || tryL(si.seller_logo) || tryL(si.logo) || tryL(si.logo_uri) || tryL(si.avatar) || tryL(si.seller_avatar) || null;
+          let logo = tryL(si.shop_logo) || tryL(si.shop_avatar) || tryL(si.seller_logo) || tryL(si.logo) || tryL(si.logo_uri) || tryL(si.avatar) || tryL(si.seller_avatar) || null;
           const sellerProducts = products.filter(pp => {
             const psi = pp.seller_info || {};
             return String(psi.shop_id ?? psi.seller_id ?? psi.shop_name ?? '') === key;
           }).slice(0, 4);
+          // Product image fallback for shops without logos
+          if (!logo && Array.isArray(sellerProducts)) {
+            for (const p of sellerProducts) {
+              const img = p.image?.url_list?.[0] || p.image?.thumb_url_list?.[0] || (typeof p.image === 'string' ? p.image : null);
+              if (img && typeof img === 'string' && img.startsWith('http')) { logo = img; break; }
+            }
+          }
           const productImages = sellerProducts.map(pp => pp.image?.url_list?.[0] || (typeof pp.image === 'string' ? pp.image : null)).filter(Boolean);
           const productPrices = sellerProducts.map(pp => pp.product_price_info?.sale_price_format || pp.product_price_info?.single_product_price_format || pp.price || pp.sale_price || null).filter(Boolean);
           shops.push({
@@ -11458,6 +11465,19 @@ app.get('/api/brand/enrich', async (req, res) => {
             }
           }
         } catch (e) { console.log('[enrich] OG image fallback failed:', e.message); }
+      }
+      // LAST RESORT: Use hero product image as shop avatar
+      // Many shops don't have logos. Using the hero product image in a circle crop
+      // looks intentional and is better than showing a generic initial letter.
+      if (!finalLogo && finalProducts.length > 0) {
+        for (const p of finalProducts) {
+          const img = p.image?.url_list?.[0] || p.image?.thumb_url_list?.[0] || (typeof p.image === 'string' ? p.image : null) || p.cover?.url_list?.[0] || p.thumb_url;
+          if (img && typeof img === 'string' && img.startsWith('http')) {
+            finalLogo = img;
+            console.log('[enrich] Using hero product image as avatar fallback:', img.substring(0, 60));
+            break;
+          }
+        }
       }
       const enrichFollowers = finalShopInfo.followers_count ?? finalShopInfo.follower_count ?? followerCount;
       const enrichSold = finalShopInfo.sold_count ?? finalShopInfo.total_sold ?? totalItemsSold;
