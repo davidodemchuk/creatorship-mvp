@@ -102,15 +102,20 @@ html[data-theme="light"] [style*="linear-gradient(135deg, #1a2236"]{background:l
 @keyframes creator-welcome-flash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 4px rgba(52,211,153,.4)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.legal-page h1{font-size:32px;font-weight:800;color:#eaeff7;margin-bottom:8px;letter-spacing:-.02em}
-.legal-page .updated{font-size:13px;color:#5a6478;margin-bottom:40px;display:block}
-.legal-page h2{font-size:18px;font-weight:700;color:#eaeff7;margin:36px 0 12px;padding-top:20px;border-top:1px solid var(--cs-a04)}
-.legal-page h3{font-size:15px;font-weight:600;color:#c0c8db;margin:20px 0 8px}
-.legal-page p,.legal-page li{font-size:14px;color:#9ba3b8;line-height:1.8;margin-bottom:12px}
+.legal-page h1{font-size:32px;font-weight:800;color:var(--cs-t0);margin-bottom:8px;letter-spacing:-.02em}
+.legal-page .updated{font-size:13px;color:var(--cs-t4);margin-bottom:40px;display:block}
+.legal-page h2{font-size:18px;font-weight:700;color:var(--cs-t0);margin:36px 0 12px;padding-top:20px;border-top:1px solid var(--cs-a04)}
+.legal-page h3{font-size:15px;font-weight:600;color:var(--cs-t1);margin:20px 0 8px}
+.legal-page p,.legal-page li{font-size:14px;color:var(--cs-t2);line-height:1.8;margin-bottom:12px}
 .legal-page ul,.legal-page ol{padding-left:24px;margin-bottom:16px}
 .legal-page li{margin-bottom:6px}
 .legal-page .caps{text-transform:uppercase;font-size:13px}
 .legal-page a{color:#4da6ff}
+.legal-page table{width:100%;border-collapse:collapse;margin:16px 0}
+.legal-page th,.legal-page td{padding:10px 14px;text-align:left;border:1px solid var(--cs-a06);font-size:13px}
+.legal-page th{background:var(--cs-a03);color:var(--cs-t0);font-weight:600}
+.legal-page td{color:var(--cs-t2)}
+.legal-page strong{color:var(--cs-t1)}
 @media(max-width:900px){.creators-two-panel{flex-direction:column!important}.creators-left-panel{width:100%!important;max-width:100%!important;max-height:200px;overflow-y:auto}}
 @media(max-width:560px){.video-card-grid{grid-template-columns:1fr!important}}
 @media(max-width:680px){.launch-modal{width:100%!important;max-height:100vh!important;height:100vh!important;border-radius:0!important}.launch-step1-layout{flex-direction:column!important}.launch-step1-left{width:100%!important}.launch-obj-grid{grid-template-columns:1fr!important}}
