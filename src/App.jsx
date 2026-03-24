@@ -1219,6 +1219,17 @@ function TikTokSafeHeroSection({ nav }) {
       <p className="hero-sub" style={{ fontSize: 18, color: 'var(--cs-t3)', maxWidth: 520, margin: '0 auto 36px', lineHeight: 1.7 }}>
         CAi analyzes your top-performing creator content, builds ready-to-launch paid campaigns, and optimizes daily — automatically.
       </p>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:20,background:'rgba(254,44,85,.08)',border:'1px solid rgba(254,44,85,.15)',fontSize:12,fontWeight:600,color:'#FE2C55'}}>
+          Built for TikTok Shop
+        </span>
+        <span style={{display:'inline-flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:20,background:'rgba(52,211,153,.08)',border:'1px solid rgba(52,211,153,.15)',fontSize:12,fontWeight:600,color:'#34d399'}}>
+          Creator-First Platform
+        </span>
+        <span style={{display:'inline-flex',alignItems:'center',gap:6,padding:'6px 14px',borderRadius:20,background:'rgba(155,109,255,.08)',border:'1px solid rgba(155,109,255,.15)',fontSize:12,fontWeight:600,color:'#9b6dff'}}>
+          Commission-Based — Creators Always Earn
+        </span>
+      </div>
       <div className="hero-btns" style={{ display: 'flex', justifyContent: 'center', gap: 14, marginBottom: 36, flexWrap: 'wrap' }}>
         <Link to="/brand?mode=signup" style={{ padding: '14px 28px', background: '#0668E1', color: '#fff', fontWeight: 700, fontSize: 15, fontFamily: 'inherit', textDecoration: 'none', borderRadius: 10, border: 'none' }}>Get Started — Free for Brands →</Link>
         <Link to="/creator?mode=signup" style={{ padding: '14px 28px', background: 'transparent', border: '1px solid rgba(238,29,82,.5)', color: '#EE1D52', fontWeight: 700, fontSize: 15, fontFamily: 'inherit', textDecoration: 'none', borderRadius: 10 }}>I'm a Creator →</Link>
@@ -1314,7 +1325,7 @@ function TikTokSafeForBrandsSection({ nav }) {
         <div style={{ display: 'inline-block', padding: '6px 16px', borderRadius: 99, border: '1px solid var(--cs-a10)', fontSize: 13, color: 'var(--cs-t3)', marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' }}>Proven Results</div>
         <h2 className="heading-h2" style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 12, lineHeight: 1.2 }}>Built by a brand that scaled with creators</h2>
         <p style={{ color: 'var(--cs-t3)', fontSize: 16, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.7 }}>
-          Creatorship was born from running the exact playbook by hand — 6 people, 7 tools, weeks per campaign. Now CAi does it in 30 seconds.
+          Creatorship was born from a TikTok Shop brand that wanted to help creators earn more from their content. Now CAi automates creator-brand partnerships in seconds.
         </p>
         <div className="gl" style={{ padding: 32, borderRadius: 16, maxWidth: 700, margin: '0 auto 32px', textAlign: 'left' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -1367,7 +1378,7 @@ function TikTokSafeForCreatorsSection() {
   const steps = [
     { num: '1', title: 'Connect TikTok', desc: '30 seconds. We find the videos you already posted.' },
     { num: '2', title: 'Brands find you', desc: 'CAi surfaces your top-performing content to brands looking for ad creative.' },
-    { num: '3', title: 'Your video becomes an ad', desc: 'Same video, 10x the reach — a massive new audience. No re-filming. No extra work.' },
+    { num: '3', title: 'Your video becomes an ad', desc: 'Same video, new revenue stream. No re-filming. No extra work.' },
     { num: '4', title: 'You get paid every Friday', desc: 'Every sale from your content earns you commission — auto-paid via Stripe.' },
   ];
   return (
@@ -1436,7 +1447,7 @@ function TikTokSafeHomepageFooter() {
       <div className="footer-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 32, marginBottom: 32 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}><span style={LOGO_CR}>Creatorship</span></div>
-          <p style={{ fontSize: 13, color: 'var(--cs-t5)', maxWidth: 300, lineHeight: 1.6 }}>TikTok Shop creator content turned into high-performing paid ads. Commission only.</p>
+          <p style={{ fontSize: 13, color: 'var(--cs-t5)', maxWidth: 300, lineHeight: 1.6 }}>Helping TikTok Shop creators monetize their content through brand partnerships.</p>
         </div>
         <div style={{ display: 'flex', gap: 48 }}>
           <div>
@@ -1469,6 +1480,34 @@ function TikTokSafeHomepageFooter() {
   );
 }
 
+function TikTokSafeCreatorProtectionSection() {
+  return (
+    <div className="sec-pad" style={{textAlign:'center',maxWidth:800,margin:'0 auto'}}>
+      <div style={{display:'inline-block',padding:'4px 14px',borderRadius:20,background:'rgba(254,44,85,.08)',border:'1px solid rgba(254,44,85,.12)',fontSize:12,fontWeight:600,color:'#FE2C55',marginBottom:16}}>Creator Protection</div>
+      <h2 className="heading-h2" style={{fontSize:'clamp(24px,4vw,36px)',fontWeight:800,color:'var(--cs-t0)',marginBottom:12}}>
+        Your creators. Protected.
+      </h2>
+      <p style={{fontSize:15,color:'var(--cs-t3)',lineHeight:1.7,marginBottom:32,maxWidth:600,margin:'0 auto 32px'}}>
+        Creatorship is built to grow the TikTok Shop ecosystem. Creators always come first.
+      </p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))',gap:16,textAlign:'left'}}>
+        {[
+          { icon: '✅', title: 'Opt-In Only', desc: 'Creators must explicitly authorize their content before any brand can use it.' },
+          { icon: '💰', title: 'Creators Always Earn', desc: 'Commission paid on every sale generated. Paid weekly via Stripe.' },
+          { icon: '🔓', title: 'Disconnect Anytime', desc: 'Creators can revoke access and remove their content at any time. No lock-in.' },
+          { icon: '🛡️', title: 'Content Integrity', desc: 'We never modify, edit, or redistribute TikTok content. Read-only access for analytics.' },
+        ].map((item, i) => (
+          <div key={i} className="gl" style={{padding:20,borderRadius:14}}>
+            <div style={{fontSize:24,marginBottom:8}}>{item.icon}</div>
+            <div style={{fontSize:15,fontWeight:700,color:'var(--cs-t0)',marginBottom:4}}>{item.title}</div>
+            <div style={{fontSize:13,color:'var(--cs-t3)',lineHeight:1.6}}>{item.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TikTokSafeHomepage({ nav }) {
   const verifiedParam = new URLSearchParams(window.location.search).get('verified');
   useEffect(() => {
@@ -1485,6 +1524,8 @@ function TikTokSafeHomepage({ nav }) {
       <TikTokSafeHeroSection nav={nav} />
       <div style={{ height: 1, width: '100%', background: 'linear-gradient(to right, transparent, var(--cs-a06), transparent)' }} />
       <TikTokSafeForBrandsSection nav={nav} />
+      <div style={{ height: 1, width: '100%', background: 'linear-gradient(to right, transparent, var(--cs-a06), transparent)' }} />
+      <TikTokSafeCreatorProtectionSection />
       <div style={{ height: 1, width: '100%', background: 'linear-gradient(to right, transparent, var(--cs-a06), transparent)' }} />
       <TikTokSafeForCreatorsSection />
       <TikTokSafeHomepageFooter />
