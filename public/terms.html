@@ -9,11 +9,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Outfit',system-ui;background:#030711;color:#c0c8db;line-height:1.8;-webkit-font-smoothing:antialiased}
 a{color:#4da6ff;text-decoration:none}a:hover{text-decoration:underline}
-nav{padding:16px 32px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
-.logo{font-size:20px;font-weight:900;text-decoration:none;color:inherit}
-.logo .cr{background:linear-gradient(135deg,#EE1D52,#0668E1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:900}
-.nav-links{display:flex;gap:20px;align-items:center}
-.nav-links a{font-size:13px;color:#7d8aaa;font-weight:500}
+header{background:rgba(8,13,30,.95);backdrop-filter:blur(20px);position:sticky;top:0;z-index:100}
 .container{max-width:720px;margin:0 auto;padding:48px 24px 80px}
 h1{font-size:32px;font-weight:800;color:#eaeff7;margin-bottom:8px;letter-spacing:-.02em}
 .updated{font-size:13px;color:#5a6478;margin-bottom:40px}
@@ -51,6 +47,12 @@ footer .links a,footer .links span{font-size:12px;color:#5a6478}
   td, th {
     border-color: #e5e7eb !important;
   }
+  header {
+    border-bottom-color: #e5e7eb !important;
+  }
+  header a:last-child {
+    color: #6b7280 !important;
+  }
 }
 html[data-theme="light"] body {
   background: #f8fafc !important;
@@ -81,19 +83,19 @@ html[data-theme="light"] td,
 html[data-theme="light"] th {
   border-color: #e5e7eb !important;
 }
+html[data-theme="light"] header {
+  border-bottom-color: #e5e7eb !important;
+}
+html[data-theme="light"] header a:last-child {
+  color: #6b7280 !important;
+}
 </style>
 </head>
 <body>
-<nav style="position:sticky;top:0;z-index:100;background:rgba(8,13,30,.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.06);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;">
-  <a href="/" style="text-decoration:none;font-size:20px;font-weight:900;font-family:inherit;">
-    <span style="background:linear-gradient(135deg,#EE1D52,#0668E1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Creatorship</span>
-  </a>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <a href="/creator?mode=signup" style="font-size:13px;font-weight:600;color:rgba(255,255,255,.55);text-decoration:none;padding:8px 14px;">Creator Login</a>
-    <a href="/brand?mode=login" style="font-size:13px;font-weight:600;color:rgba(255,255,255,.55);text-decoration:none;padding:8px 14px;">Brand Login</a>
-    <a href="/brand?mode=signup" style="padding:8px 18px;background:#0668E1;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;text-decoration:none;font-family:inherit;">Get Started</a>
-  </div>
-</nav>
+<header style="padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.06);">
+  <a href="/" style="text-decoration: none; font-family: 'Georgia', serif; font-size: 22px; font-weight: 700; font-style: italic; color: #9b6dff;">Creatorship</a>
+  <a href="/" style="text-decoration: none; font-size: 13px; color: rgba(255,255,255,0.5); font-family: -apple-system, sans-serif;">Back to Home</a>
+</header>
 <div class="container">
 <h1>Terms of Service</h1>
 <p class="updated">Last Updated: March 8, 2026</p>
