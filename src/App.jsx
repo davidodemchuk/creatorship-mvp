@@ -1201,6 +1201,322 @@ function Homepage({ nav }) {
   );
 }
 
+function TikTokSafeHeroSection({ nav }) {
+  return (
+    <div className="hero-pad sec-pad-lg" style={{ textAlign: 'center', padding: '140px 32px 80px', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 400, background: 'radial-gradient(ellipse, rgba(155,109,255,.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 24, background: 'var(--cs-a04)', border: '1px solid var(--cs-a08)', marginBottom: 24 }}>
+        <PoweredByCai />
+      </div>
+      <h1 className="hero-headline" style={{ fontSize: 'clamp(36px, 7vw, 72px)', fontWeight: 900, lineHeight: 1.1, marginBottom: 20, color: 'var(--cs-t0)', position: 'relative' }}>
+        Your TikTok Shop creators.<br /><span style={{ color: '#9b6dff' }}>Scaled</span> by <span style={CAI_BRAND}>CAi</span>.
+      </h1>
+      <p className="hero-sub" style={{ fontSize: 18, color: 'var(--cs-t3)', maxWidth: 520, margin: '0 auto 36px', lineHeight: 1.7 }}>
+        CAi analyzes your top-performing creator content, builds ready-to-launch paid campaigns, and optimizes daily — automatically.
+      </p>
+      <div className="hero-btns" style={{ display: 'flex', justifyContent: 'center', gap: 14, marginBottom: 36, flexWrap: 'wrap' }}>
+        <Link to="/brand?mode=signup" style={{ padding: '14px 28px', background: '#0668E1', color: '#fff', fontWeight: 700, fontSize: 15, fontFamily: 'inherit', textDecoration: 'none', borderRadius: 10, border: 'none' }}>Get Started — Free for Brands →</Link>
+        <Link to="/creator?mode=signup" style={{ padding: '14px 28px', background: 'transparent', border: '1px solid rgba(238,29,82,.5)', color: '#EE1D52', fontWeight: 700, fontSize: 15, fontFamily: 'inherit', textDecoration: 'none', borderRadius: 10 }}>I'm a Creator →</Link>
+      </div>
+      <p style={{ fontSize: 13, color: 'var(--cs-t5)', marginBottom: 48 }}>No credit card required · Commission-based pricing · Cancel anytime</p>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 28, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, color: 'var(--cs-t5)', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>Built on</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--cs-t4)' }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }} aria-hidden>🛡️</span>
+          Enterprise Security
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--cs-t4)' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-2.895 2.76 2.896 2.896 0 0 1-2.895-2.895 2.896 2.896 0 0 1 2.895-2.895c.3 0 .59.04.867.112V9.27a6.34 6.34 0 0 0-.867-.06A6.348 6.348 0 0 0 3.13 15.56a6.348 6.348 0 0 0 6.349 6.348 6.348 6.348 0 0 0 6.348-6.348V9.19a8.218 8.218 0 0 0 4.81 1.54V7.285a4.822 4.822 0 0 1-1.048-.599z" fill="#EE1D52"/></svg>
+          TikTok Shop API
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--cs-t4)' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" fill="#635bff"/></svg>
+          Stripe Connect
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function TikTokSafeForBrandsSection({ nav }) {
+  const [openFaq, setOpenFaq] = useState(null);
+  const steps = [
+    { num: '01', title: 'Connect Your Shop', desc: 'One-time setup. 30 seconds.' },
+    { num: '02', title: 'CAi Scans Your Content', desc: 'CAi ranks every video by ad potential.' },
+    { num: '03', title: 'CAi Builds Campaigns', desc: 'Copy, targeting, budget — all CAi-generated.' },
+    { num: '04', title: 'You Review & Launch', desc: 'Edit anything, or just hit go.' },
+    { num: '05', title: 'CAi Optimizes Daily', desc: 'Scales winners. Pauses losers. Repeat.' },
+  ];
+  const faqs = [
+    { q: 'Do I need a minimum ad budget?', a: 'No minimum. You set your own daily budget when you review each campaign CAi builds. Most brands start at $10-20/day to test, then scale what works.' },
+    { q: 'What happens if I don\'t like the ad copy CAi writes?', a: 'You can edit everything before launch - headlines, primary text, CTA, targeting, budget. CAi gives you a ready-to-go campaign, but you have full control. Campaigns land in your ad dashboard paused. Nothing goes live until you approve.' },
+    { q: 'How does the 4% fee work?', a: 'Creatorship charges 4% of your managed ad spend. If you spend $1,000/month on ads through Creatorship, the fee is $40. No retainers, no setup fees, no contracts. If you pause campaigns, you pay nothing.' },
+    { q: 'Can I edit targeting and audiences?', a: 'Yes. CAi sets intelligent defaults based on your product category, price point, and creator content signals. But you can override any targeting parameter in your ad dashboard after launch.' },
+    { q: 'What if I already run paid ads?', a: 'Creatorship campaigns run alongside your existing campaigns. CAi creates new campaigns with a [CAi] prefix so you can easily identify them. Your existing campaigns are never touched.' },
+    { q: 'Do creators need to approve their videos being used?', a: 'Yes. When a creator joins the Creatorship Creator Portal and connects their TikTok, they authorize their content for use in brand ad campaigns. Creators earn commission on every sale their content generates.' },
+    { q: 'How quickly can I launch my first campaign?', a: 'If your TikTok Shop and ad accounts are connected, CAi can build your first campaign in about 30 seconds. Connect both, click "Let CAi Run," review the campaign, and launch.' },
+  ];
+  return (
+    <div style={{ background: 'linear-gradient(180deg, rgba(6,104,225,.06) 0%, transparent 100%)' }}>
+    <div id="for-brands" className="sec-pad" style={{ padding: '96px 32px', maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, background: 'rgba(6,104,225,.08)', border: '1px solid rgba(6,104,225,.12)', marginBottom: 16 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#4da6ff' }}>For Brands</span>
+        </div>
+        <h2 className="heading-h2" style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 16, lineHeight: 1.2 }}>
+          CAi finds your best content.<br /><span style={{ color: '#0668E1' }}>CAi builds the campaign. You hit launch.</span>
+        </h2>
+        <p style={{ fontSize: 17, color: 'var(--cs-t4)', maxWidth: 600, margin: '0 auto', lineHeight: 1.7 }}>
+          CAi scans every TikTok video featuring your products, writes the ad copy, sets targeting and budget, and hands you a ready-to-launch campaign. No agency. No guesswork.
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 0, marginBottom: 48, background: 'var(--cs-a02)', border: '1px solid var(--cs-a06)', borderRadius: 14, overflow: 'hidden' }} className="auto-grid">
+        {steps.map((s, i) => (
+          <div key={s.num} style={{ padding: '20px 16px', borderRight: i < steps.length - 1 ? '1px solid var(--cs-a06)' : 'none', textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: '#0668E1', marginBottom: 6, letterSpacing: '.1em' }}>{s.num}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 4, lineHeight: 1.3 }}>{s.title}</div>
+            <div style={{ fontSize: 14, color: 'var(--cs-t4)', lineHeight: 1.5 }}>{s.desc}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 24, alignItems: 'center', marginBottom: 48, flexWrap: 'wrap' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="mono" style={{ fontSize: 32, fontWeight: 800, color: 'var(--cs-t5)' }}>2-3 wks</div>
+          <div style={{ fontSize: 14, color: 'var(--cs-t5)' }}>agency + manual workflow</div>
+        </div>
+        <div style={{ fontSize: 24, color: 'var(--cs-a15)' }}>→</div>
+        <div style={{ textAlign: 'center' }}>
+          <div className="mono" style={{ fontSize: 32, fontWeight: 800, color: '#9b6dff' }}>~30 sec</div>
+          <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>with CAi</div>
+        </div>
+      </div>
+      <div style={{ background: 'rgba(6,104,225,.04)', border: '1px solid rgba(6,104,225,.12)', borderRadius: 16, padding: '48px 40px', textAlign: 'center', marginBottom: 32 }}>
+        <h3 style={{ fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 12, lineHeight: 1.2 }}>
+          Your first 3 campaigns are free.<br /><span style={{ color: '#0668E1' }}>You only pay when sales come in.</span>
+        </h3>
+        <p style={{ fontSize: 15, color: 'var(--cs-t4)', maxWidth: 500, margin: '0 auto 32px', lineHeight: 1.7 }}>
+          No credit card. No retainer. Campaigns land paused — you approve before anything goes live.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, maxWidth: 600, margin: '0 auto 32px' }}>
+          <div style={{ background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '20px 16px' }}>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 4 }}>$0</div>
+            <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>Upfront cost. Ever.</div>
+          </div>
+          <div style={{ background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '20px 16px' }}>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 4 }}>3 free</div>
+            <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>Campaigns to start.</div>
+          </div>
+          <div style={{ background: 'var(--cs-a03)', border: '1px solid var(--cs-a06)', borderRadius: 12, padding: '20px 16px' }}>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 4 }}>4%</div>
+            <div style={{ fontSize: 14, color: 'var(--cs-t4)' }}>Of ad spend. That's it.</div>
+          </div>
+        </div>
+        <Link to="/brand?mode=signup" style={{ display: 'inline-block', background: '#0668E1', color: '#fff', fontWeight: 700, fontSize: 16, padding: '14px 36px', borderRadius: 10, textDecoration: 'none' }}>Start Free →</Link>
+      </div>
+    </div>
+    <div className="sec-pad section-glow" style={{ padding: '80px 24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ display: 'inline-block', padding: '6px 16px', borderRadius: 99, border: '1px solid var(--cs-a10)', fontSize: 13, color: 'var(--cs-t3)', marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' }}>Proven Results</div>
+        <h2 className="heading-h2" style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 12, lineHeight: 1.2 }}>Built by a brand that scaled with creators</h2>
+        <p style={{ color: 'var(--cs-t3)', fontSize: 16, maxWidth: 600, margin: '0 auto 40px', lineHeight: 1.7 }}>
+          Creatorship was born from running the exact playbook by hand — 6 people, 7 tools, weeks per campaign. Now CAi does it in 30 seconds.
+        </p>
+        <div className="gl" style={{ padding: 32, borderRadius: 16, maxWidth: 700, margin: '0 auto 32px', textAlign: 'left' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--cs-a06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#00C2FF' }}>IB</div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 16 }}>Intake Breathing</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 13 }}>Nasal breathing strips — Health & Wellness</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginBottom: 20 }}>
+            <div style={{ padding: 16, borderRadius: 12, background: 'var(--cs-a04)' }}>
+              <div className="mono" style={{ fontSize: 24, fontWeight: 700, color: '#34D399' }}>144K+</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Units sold on TikTok Shop</div>
+            </div>
+            <div style={{ padding: 16, borderRadius: 12, background: 'var(--cs-a04)' }}>
+              <div className="mono" style={{ fontSize: 24, fontWeight: 700, color: '#00C2FF' }}>600M+</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Creator content views</div>
+            </div>
+            <div style={{ padding: 16, borderRadius: 12, background: 'var(--cs-a04)' }}>
+              <div className="mono" style={{ fontSize: 24, fontWeight: 700, color: '#9b6dff' }}>1,459</div>
+              <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>TikTok Shop videos to paid ads</div>
+            </div>
+          </div>
+          <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, margin: 0 }}>
+            "We were spending 2-3 weeks to go from finding a creator video to running it as a paid ad. Creatorship replaced our entire 6-person workflow with one button. The first campaign CAi built outperformed our manually-built campaigns on day one."
+          </p>
+          <div style={{ marginTop: 12, color: 'var(--cs-t4)', fontSize: 13, fontStyle: 'italic' }}>— David O., Director of Creator Partnerships, Intake Breathing</div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>~30s</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Average time to launch</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>$0</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>Upfront cost for brands</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 700, color: 'var(--cs-t0)' }}>24/7</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>CAi optimization</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="sec-pad" style={{ padding: '80px 24px' }}>
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ display: 'inline-block', padding: '6px 16px', borderRadius: 99, border: '1px solid var(--cs-a10)', fontSize: 13, color: 'var(--cs-t3)', marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' }}>FAQ</div>
+          <h2 className="heading-h2" style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: 'var(--cs-t0)' }}>Common questions</h2>
+        </div>
+        {faqs.map((faq, i) => (
+          <div key={i} className="gl" style={{ marginBottom: 8, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
+            <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 600, color: 'var(--cs-t0)', fontSize: 14 }}>{faq.q}</span>
+              <span style={{ color: 'var(--cs-t4)', fontSize: 18, transform: openFaq === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span>
+            </div>
+            {openFaq === i && (
+              <div style={{ padding: '0 20px 16px', color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7 }}>{faq.a}</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+    </div>
+  );
+}
+
+function TikTokSafeForCreatorsSection() {
+  const steps = [
+    { num: '1', title: 'Connect TikTok', desc: '30 seconds. We find the videos you already posted.' },
+    { num: '2', title: 'Brands find you', desc: 'CAi surfaces your top-performing content to brands looking for ad creative.' },
+    { num: '3', title: 'Your video becomes an ad', desc: 'Same video, 10x the reach — a massive new audience. No re-filming. No extra work.' },
+    { num: '4', title: 'You get paid every Friday', desc: 'Every sale from your content earns you commission — auto-paid via Stripe.' },
+  ];
+  return (
+    <div style={{ background: 'linear-gradient(180deg, rgba(238,29,82,.05) 0%, transparent 100%)' }}>
+    <div id="for-creators" className="sec-pad" style={{ padding: '96px 32px', maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, background: 'rgba(238,29,82,.08)', border: '1px solid rgba(238,29,82,.12)', marginBottom: 16 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#EE1D52' }}>For Creators</span>
+        </div>
+        <h2 className="heading-h2" style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 16, lineHeight: 1.2 }}>
+          Your content is already selling products.<br /><span style={{ color: '#EE1D52' }}>Now earn commission when it runs as an ad.</span>
+        </h2>
+        <p style={{ fontSize: 16, color: 'var(--cs-t4)', maxWidth: 540, margin: '0 auto', lineHeight: 1.7 }}>
+          Brands want to run your TikTok videos for paid advertising. You keep creating, they handle the ad spend, and you earn a cut of every sale. Paid weekly to your Stripe.
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 48 }} className="creator-steps-grid">
+        {steps.map(s => (
+          <div key={s.num} style={{ background: 'var(--cs-a02)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '24px 20px' }}>
+            <div className="mono" style={{ fontSize: 28, fontWeight: 800, color: '#EE1D52', marginBottom: 10 }}>{s.num}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--cs-t0)', marginBottom: 6 }}>{s.title}</div>
+            <div style={{ fontSize: 13, color: 'var(--cs-t4)', lineHeight: 1.6 }}>{s.desc}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <Link to="/creator?mode=signup" style={{ display: 'inline-block', background: 'transparent', border: '1px solid rgba(238,29,82,.5)', color: '#EE1D52', fontWeight: 700, fontSize: 15, padding: '14px 32px', borderRadius: 10, textDecoration: 'none' }}>Start Earning →</Link>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, maxWidth: 800, margin: '40px auto 0' }}>
+          <div className="gl" style={{ padding: 20, borderRadius: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>0</div>
+            <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15, marginBottom: 6 }}>Zero extra work</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 13, lineHeight: 1.6 }}>You don't re-film anything. Your existing TikTok videos become paid ads as-is.</div>
+          </div>
+          <div className="gl" style={{ padding: 20, borderRadius: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>$</div>
+            <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15, marginBottom: 6 }}>Passive income</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 13, lineHeight: 1.6 }}>Earn commission on every sale your content generates as a paid ad. Paid weekly via Stripe.</div>
+          </div>
+          <div className="gl" style={{ padding: 20, borderRadius: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>10x</div>
+            <div style={{ fontWeight: 700, color: 'var(--cs-t0)', fontSize: 15, marginBottom: 6 }}>Bigger audience</div>
+            <div style={{ color: 'var(--cs-t4)', fontSize: 13, lineHeight: 1.6 }}>Your TikTok video reaches billions of new users. Same content, massively wider distribution.</div>
+          </div>
+        </div>
+        <div className="gl" style={{ maxWidth: 600, margin: '24px auto 0', padding: 20, borderRadius: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, #FE2C55, #ff6b35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0 }}>TT</div>
+            <div>
+              <div style={{ fontWeight: 600, color: 'var(--cs-t0)', fontSize: 14, marginBottom: 6 }}>How it works for you</div>
+              <div style={{ color: 'var(--cs-t3)', fontSize: 13, lineHeight: 1.7 }}>
+                You keep posting on TikTok as usual. When a brand on Creatorship selects your video, CAi handles everything — downloading, uploading for paid campaigns, writing ad copy, setting targeting. You get notified and start earning commission from day one. No contracts, no exclusivity.
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style={{ marginTop: 12, fontSize: 13, color: 'var(--cs-t5)' }}>Already have TikTok Shop sales? You're already qualified.</p>
+      </div>
+    </div>
+    </div>
+  );
+}
+
+function TikTokSafeHomepageFooter() {
+  return (
+    <footer style={{ borderTop: '1px solid var(--cs-a06)', padding: '48px 32px 32px', maxWidth: 960, margin: '0 auto' }}>
+      <div className="footer-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 32, marginBottom: 32 }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}><span style={LOGO_CR}>Creatorship</span></div>
+          <p style={{ fontSize: 13, color: 'var(--cs-t5)', maxWidth: 300, lineHeight: 1.6 }}>TikTok Shop creator content turned into high-performing paid ads. Commission only.</p>
+        </div>
+        <div style={{ display: 'flex', gap: 48 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t5)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 12 }}>Platform</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <a href="/brand" style={{ fontSize: 13, color: 'var(--cs-t3)', textDecoration: 'none' }}>For Brands</a>
+              <a href="/creator" style={{ fontSize: 13, color: 'var(--cs-t3)', textDecoration: 'none' }}>For Creators</a>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t5)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 12 }}>Legal</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <a href="/terms.html" style={{ fontSize: 13, color: 'var(--cs-t3)', textDecoration: 'none' }}>Terms</a>
+              <a href="/privacy.html" style={{ fontSize: 13, color: 'var(--cs-t3)', textDecoration: 'none' }}>Privacy</a>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cs-t5)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 12 }}>Contact</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <a href="/contact" style={{ fontSize: 13, color: 'var(--cs-t3)', textDecoration: 'none' }}>Get in touch</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style={{ borderTop: '1px solid var(--cs-a04)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        <span style={{ fontSize: 14, color: 'var(--cs-t5)' }}>© 2026 Creatorship, LLC</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><PoweredByCai style={{ fontSize: 12, color: 'var(--cs-t5)' }} /><span style={{ fontSize: 12, color: 'var(--cs-a15)' }}>· Enterprise Security · TikTok Shop API · Stripe</span></span>
+      </div>
+    </footer>
+  );
+}
+
+function TikTokSafeHomepage({ nav }) {
+  const verifiedParam = new URLSearchParams(window.location.search).get('verified');
+  useEffect(() => {
+    if (verifiedParam === 'true') {
+      const b = (() => { try { const j = localStorage.getItem('creatorship_brand'); const v = j ? JSON.parse(j) : null; return v && (v.id || v.email) ? v : null; } catch(_) { return null; } })();
+      const c = (() => { try { const j = localStorage.getItem('creatorship_creator'); const v = j ? JSON.parse(j) : null; return v && (v.id || v.email) ? v : null; } catch(_) { return null; } })();
+      if (b) { window.location.href = '/brand?email_verified=true'; return; }
+      if (c) { window.location.href = '/creator?email_verified=true'; return; }
+    }
+  }, []);
+  return (
+    <div style={{ overflowX: 'hidden' }}>
+      <SiteNav nav={nav} />
+      <TikTokSafeHeroSection nav={nav} />
+      <div style={{ height: 1, width: '100%', background: 'linear-gradient(to right, transparent, var(--cs-a06), transparent)' }} />
+      <TikTokSafeForBrandsSection nav={nav} />
+      <div style={{ height: 1, width: '100%', background: 'linear-gradient(to right, transparent, var(--cs-a06), transparent)' }} />
+      <TikTokSafeForCreatorsSection />
+      <TikTokSafeHomepageFooter />
+      <a href="/contact" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 100, width: 48, height: 48, borderRadius: '50%', background: '#0668E1', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(6,104,225,.4)', textDecoration: 'none', fontSize: 20, color: '#fff', border: 'none', cursor: 'pointer', transition: 'transform .2s, box-shadow .2s' }} onMouseEnter={e=>{e.currentTarget.style.transform='scale(1.1)';e.currentTarget.style.boxShadow='0 6px 28px rgba(6,104,225,.5)'}} onMouseLeave={e=>{e.currentTarget.style.transform='scale(1)';e.currentTarget.style.boxShadow='0 4px 20px rgba(6,104,225,.4)'}}>?</a>
+    </div>
+  );
+}
+
 /*══════════════════════════════════════════════════════
   BRAND DASHBOARD — Full working product
 ══════════════════════════════════════════════════════*/
@@ -14662,7 +14978,16 @@ export default function App() {
 function LandingPage() {
   const navigate = useNavigate();
   const nav = (p) => navigate(navPath(p));
-  return <Homepage nav={nav} />;
+  const [homepageMode, setHomepageMode] = useState('default');
+  useEffect(() => {
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.homepageMode) setHomepageMode(String(d.homepageMode).toLowerCase());
+      })
+      .catch(() => {});
+  }, []);
+  return homepageMode === 'tiktok' ? <TikTokSafeHomepage nav={nav} /> : <Homepage nav={nav} />;
 }
 
 function ContactPageWrapper() {

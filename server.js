@@ -11771,6 +11771,13 @@ app.get('/api/version', (req, res) => {
   });
 });
 
+// ═══ PUBLIC CONFIG (homepage mode, etc.) ═══
+app.get('/api/config', (req, res) => {
+  res.json({
+    homepageMode: process.env.HOMEPAGE_MODE || 'default',
+  });
+});
+
 // ═══ SENTRY ERROR HANDLER (must be after all routes, before static serving) ═══
 if (process.env.SENTRY_DSN) {
   Sentry.setupExpressErrorHandler(app);
