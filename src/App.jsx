@@ -7631,6 +7631,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
       _deepDiveCacheBrandId = brand.id;
     }
   }, [deepDive, brand?.id]);
+  useEffect(() => {
+    if (brand?.caiDeepDive && !deepDive) {
+      setDeepDive(brand.caiDeepDive);
+    }
+  }, [brand?.caiDeepDive]);
   useEffect(() => { if (contentSection === 'uploads') setShowUploadForm(true); }, [contentSection]);
   useEffect(() => {
     if (!activating) return;
@@ -8037,7 +8042,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
   }, [brand?.hasMetaToken, brand?.adAccount, brand?.pageId, brand?.id]);
 
   // Reset deep dive (testing)
-  const resetDeepDive = () => { setDeepDive(null); setExpandedMetric(null); setMode(null); setActivationResult(null); setTerminalLines([]); };
+  const resetDeepDive = () => { setDeepDive(null); setExpandedInsight(0); setMode(null); setActivationResult(null); setTerminalLines([]); };
   const rerunDeepDive = () => {
     if (brand?.id) localStorage.removeItem('cai_dd_ran_' + brand.id);
     setDeepDiveLoading(true); setDeepDive(null); setMode(null); setActivationResult(null);
@@ -8198,6 +8203,10 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                     if (setCaiDataParent) setCaiDataParent(freshData);
                   }
                 } catch (_) {}
+                // Also refresh brand profile to pick up caiDeepDive for Analysis tab
+                if (refreshProfile) {
+                  try { await refreshProfile(); } catch (_) {}
+                }
                 if (setBuildInProgress) setBuildInProgress(false);
                 setCaiSubTab('campaigns');
               }
@@ -9585,11 +9594,26 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
 
           </>) : (
-            <div style={{ textAlign: 'center', padding: 60 }}>
-              <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.5 }}>🧠</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 8 }}>No analysis yet</div>
-              <div style={{ fontSize: 14, color: 'var(--cs-t4)', marginBottom: 20, maxWidth: 400, margin: '0 auto 20px' }}>CAi will analyze your content library and generate a deep dive report with ad strategy, content audit, and revenue projections.</div>
-              <button onClick={() => { rerunDeepDive(); }} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #9b6dff, #0668E1)', border: 'none', borderRadius: 10, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Run Deep Dive Analysis</button>
+            <div className="gl" style={{ padding: 32, borderRadius: 16, textAlign: 'center', maxWidth: 500, margin: '40px auto' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>&#x1F4CA;</div>
+              <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t0)', marginBottom: 8 }}>Build Your Analysis</h3>
+              <p style={{ color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7, marginBottom: 20 }}>
+                CAi will analyze your TikTok content library, score every video for Meta ad potential, estimate ROAS and CPA, and build a custom campaign strategy for {brand?.brandName || brand?.storeName || 'your brand'}.
+              </p>
+              <button type="button" onClick={rerunDeepDive} disabled={deepDiveLoading} style={{
+                padding: '14px 32px',
+                borderRadius: 10,
+                background: deepDiveLoading ? 'var(--cs-a06)' : 'linear-gradient(135deg,#9b6dff,#0668E1)',
+                color: deepDiveLoading ? 'var(--cs-t5)' : '#fff',
+                border: 'none',
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: deepDiveLoading ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+              }}>
+                {deepDiveLoading ? 'Analyzing...' : 'Run CAi Analysis'}
+              </button>
+              <div style={{ fontSize: 12, color: 'var(--cs-t5)', marginTop: 8 }}>Takes about 60 seconds</div>
             </div>
           )}
         </>)}
