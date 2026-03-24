@@ -7309,6 +7309,19 @@ Return ONLY valid JSON array. Include ALL ${allVideos.length} videos. Every vide
       steps.push({ step: 'campaign', status: 'reconnected', id: ids.campaign, name: campName });
       console.log('[cai-activate] Reusing existing campaign:', ids.campaign);
     } else {
+      // Prevent duplicate campaigns — local shell may still reference a live Meta campaign
+      if (brand.cai?.campaign?.id) {
+        try {
+          const existingCheck = await apiFetch('https://graph.facebook.com/v22.0/' + brand.cai.campaign.id + '?fields=id,status,effective_status&access_token=' + metaToken);
+          if (existingCheck?.id && existingCheck.effective_status !== 'DELETED' && existingCheck.status !== 'DELETED') {
+            console.log('[cai-activate] Blocked new campaign — ' + brand.cai.campaign.id + ' still on Meta');
+            console.log = originalConsoleLog;
+            return res.status(400).json({ error: 'A campaign already exists (ID: ' + brand.cai.campaign.id + '). Delete or archive it first.' });
+          }
+        } catch (_) {
+          // Campaign missing on Meta — safe to create new
+        }
+      }
       const camp = await metaPost(adAccount + '/campaigns', {
         name: campName,
         objective: campaignObjective,
@@ -7983,6 +7996,170 @@ app.post('/api/cai/sync-meta', authBrand, requireRole('editor'), async (req, res
     res.json(result);
   } catch (e) {
     console.error('[meta-sync] Manual sync error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═══ FULL RECONCILIATION — all [CAi]/[CS] campaigns, ads, metrics, orphans ═══
+app.post('/api/cai/full-sync', authBrand, requireRole('editor'), async (req, res) => {
+  const brandId = req.brandAuth?.brandId;
+  const brand = await getBrandById(brandId);
+  if (!brand) return res.status(404).json({ error: 'Brand not found' });
+  if (!brand.metaToken || !brand.adAccount) return res.status(400).json({ error: 'Meta not connected' });
+
+  let token;
+  try { token = getValidMetaToken(brand); }
+  catch (e) { return res.status(400).json({ error: e.message, metaExpired: true }); }
+
+  const log = [];
+  let changed = false;
+
+  try {
+    const campResp = await apiFetch(
+      'https://graph.facebook.com/v22.0/' + brand.adAccount + '/campaigns?fields=id,name,status,effective_status,daily_budget,objective&limit=200&access_token=' + token
+    );
+    if (campResp.error) {
+      return res.status(400).json({ error: campResp.error.message || 'Failed to list campaigns', log: log.concat(String(campResp.error)) });
+    }
+    const allMetaCampaigns = campResp?.data || [];
+    log.push('Found ' + allMetaCampaigns.length + ' total campaigns on Meta');
+
+    const csCampaigns = allMetaCampaigns.filter(c => c.name && (c.name.includes('[CAi]') || c.name.includes('[CS]')));
+    log.push('Found ' + csCampaigns.length + ' Creatorship campaigns');
+
+    const syncedCampaigns = [];
+    for (const camp of csCampaigns) {
+      let ads = [];
+      try {
+        const adsResp = await apiFetch(
+          'https://graph.facebook.com/v22.0/' + camp.id + '/ads?fields=id,name,status,effective_status,creative{id}&limit=200&access_token=' + token
+        );
+        if (adsResp.error) {
+          log.push('Ads fetch error for ' + camp.id + ': ' + (adsResp.error.message || 'unknown'));
+        } else {
+          ads = adsResp?.data || [];
+        }
+      } catch (e) {
+        log.push('Ads fetch failed for ' + camp.id + ': ' + e.message);
+      }
+
+      let insights = null;
+      try {
+        const insResp = await apiFetch(
+          'https://graph.facebook.com/v22.0/' + camp.id + '/insights?fields=spend,impressions,clicks,actions&date_preset=last_7d&access_token=' + token
+        );
+        const row = insResp?.data?.[0] || null;
+        if (row && !insResp.error) {
+          let roas = 0;
+          if (Array.isArray(row.actions)) {
+            const roasAct = row.actions.find(a => /roas/i.test(a.action_type || ''));
+            if (roasAct && roasAct.value != null) roas = parseFloat(roasAct.value);
+          }
+          insights = {
+            spend: parseFloat(row.spend || 0),
+            impressions: parseInt(row.impressions || 0, 10),
+            clicks: parseInt(row.clicks || 0, 10),
+            roas,
+          };
+        }
+      } catch (_) {}
+
+      syncedCampaigns.push({
+        metaCampaignId: camp.id,
+        name: camp.name,
+        status: camp.effective_status || camp.status,
+        dailyBudget: camp.daily_budget ? parseInt(camp.daily_budget, 10) / 100 : 0,
+        objective: camp.objective,
+        adsCount: ads.length,
+        ads: ads.map(a => ({
+          adId: a.id,
+          name: a.name,
+          status: a.effective_status || a.status,
+          creativeId: a.creative?.id,
+        })),
+        insights,
+      });
+    }
+
+    if (!brand.cai) brand.cai = {};
+    brand.cai.allCampaigns = syncedCampaigns;
+    brand.cai.lastFullSync = new Date().toISOString();
+    changed = true;
+
+    if (brand.cai.campaign?.id) {
+      const primaryMeta = syncedCampaigns.find(c => c.metaCampaignId === brand.cai.campaign.id);
+      if (primaryMeta) {
+        brand.cai.campaign.metaStatus = primaryMeta.status;
+        brand.cai.campaign.adsOnMeta = primaryMeta.adsCount;
+        if (primaryMeta.insights) brand.cai.campaign.lastInsights = primaryMeta.insights;
+        changed = true;
+      } else {
+        log.push('Primary campaign ' + brand.cai.campaign.id + ' not found on Meta — may have been deleted');
+      }
+    }
+
+    if (brand.cai.creatives?.length) {
+      for (const creative of brand.cai.creatives) {
+        if (!creative.adId) continue;
+        for (const sc of syncedCampaigns) {
+          const metaAd = sc.ads.find(a => String(a.adId) === String(creative.adId));
+          if (metaAd) {
+            creative.metaStatus = metaAd.status;
+            changed = true;
+            break;
+          }
+        }
+      }
+    }
+
+    const duplicates = csCampaigns.filter((c, i) => csCampaigns.findIndex(cc => cc.name === c.name) !== i);
+    if (duplicates.length) {
+      log.push('WARNING: ' + duplicates.length + ' duplicate campaign names detected');
+    }
+
+    if (changed) await saveBrand(brand);
+
+    res.json({
+      success: true,
+      campaigns: syncedCampaigns,
+      duplicates: duplicates.map(d => d.id),
+      log,
+    });
+  } catch (e) {
+    console.error('[sync] Full sync error:', e.message);
+    res.status(500).json({ error: e.message, log });
+  }
+});
+
+app.post('/api/cai/campaign-action', authBrand, requireRole('editor'), async (req, res) => {
+  const { campaignId, action } = req.body;
+  const brandId = req.brandAuth?.brandId;
+  const brand = await getBrandById(brandId);
+  if (!brand?.metaToken) return res.status(400).json({ error: 'Meta not connected' });
+  if (!campaignId || !action) return res.status(400).json({ error: 'campaignId and action required' });
+
+  const validActions = { pause: 'PAUSED', delete: 'DELETED', archive: 'ARCHIVED' };
+  const metaStatus = validActions[action];
+  if (!metaStatus) return res.status(400).json({ error: 'Invalid action. Use: pause, delete, archive' });
+
+  try {
+    const token = getValidMetaToken(brand);
+    await metaPost(campaignId, { status: metaStatus, access_token: token });
+
+    if (brand.cai?.campaign?.id === campaignId) {
+      if (action === 'delete') {
+        brand.cai.campaign = null;
+        brand.cai.creatives = [];
+        brand.cai.isActive = false;
+      } else {
+        brand.cai.campaign = brand.cai.campaign || {};
+        brand.cai.campaign.metaStatus = metaStatus;
+      }
+      await saveBrand(brand);
+    }
+
+    res.json({ success: true, campaignId, action, metaStatus });
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });

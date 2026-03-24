@@ -8879,24 +8879,27 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
         {brand?.hasMetaToken && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }}>
             <button onClick={async () => {
+              const token = localStorage.getItem('creatorship_brand_token');
               try {
-                const token = localStorage.getItem('creatorship_brand_token');
-                const r = await fetch('/api/cai/sync-meta', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify({ brandId: brand?.id }) });
-                const d = await r.json().catch(() => ({}));
-                if (d.changed) {
-                  const syncLog = Array.isArray(d.log) ? d.log.join(' | ') : '';
-                  if (/clearing local data|no longer exists on Meta/i.test(syncLog)) {
-                    toast.success('Campaign was deleted on Meta — local data cleared. Build a new campaign to start fresh.');
-                    setTimeout(() => window.location.reload(), 700);
-                  } else {
-                    window.location.reload();
-                  }
-                } else if (d.error) {
-                  alert(d.error);
+                const res = await fetch('/api/cai/full-sync', {
+                  method: 'POST',
+                  headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+                });
+                const data = await res.json().catch(() => ({}));
+                if (data.success) {
+                  try {
+                    if (refreshProfile) await refreshProfile();
+                    const status = await fetch('/api/cai/status?brandId=' + brand.id, { headers }).then(r => r.json()).catch(() => null);
+                    if (status) {
+                      setCaiData(status);
+                      if (setCaiDataParent) setCaiDataParent(status);
+                    }
+                  } catch (_) {}
+                  alert('Sync complete. Found ' + (data.campaigns?.length || 0) + ' Creatorship campaigns.');
                 } else {
-                  alert('Everything is in sync with Meta.');
+                  alert(data.error || 'Sync failed');
                 }
-              } catch (e) { console.error('Sync error:', e); alert(e?.message || 'Sync failed'); }
+              } catch (e) { alert('Sync error: ' + e.message); }
             }} style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--cs-a08)', background: 'var(--cs-a04)', color: 'var(--cs-t2)', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               Sync with Meta
             </button>
