@@ -1244,22 +1244,12 @@ function TikTokSafeHeroSection({ nav }) {
 }
 
 function TikTokSafeForBrandsSection({ nav }) {
-  const [openFaq, setOpenFaq] = useState(null);
   const steps = [
     { num: '01', title: 'Connect Your Shop', desc: 'One-time setup. 30 seconds.' },
     { num: '02', title: 'CAi Scans Your Content', desc: 'CAi ranks every video by ad potential.' },
     { num: '03', title: 'CAi Builds Campaigns', desc: 'Copy, targeting, budget — all CAi-generated.' },
     { num: '04', title: 'You Review & Launch', desc: 'Edit anything, or just hit go.' },
     { num: '05', title: 'CAi Optimizes Daily', desc: 'Scales winners. Pauses losers. Repeat.' },
-  ];
-  const faqs = [
-    { q: 'Do I need a minimum ad budget?', a: 'No minimum. You set your own daily budget when you review each campaign CAi builds. Most brands start at $10-20/day to test, then scale what works.' },
-    { q: 'What happens if I don\'t like the ad copy CAi writes?', a: 'You can edit everything before launch - headlines, primary text, CTA, targeting, budget. CAi gives you a ready-to-go campaign, but you have full control. Campaigns land in your ad dashboard paused. Nothing goes live until you approve.' },
-    { q: 'How does the 4% fee work?', a: 'Creatorship charges 4% of your managed ad spend. If you spend $1,000/month on ads through Creatorship, the fee is $40. No retainers, no setup fees, no contracts. If you pause campaigns, you pay nothing.' },
-    { q: 'Can I edit targeting and audiences?', a: 'Yes. CAi sets intelligent defaults based on your product category, price point, and creator content signals. But you can override any targeting parameter in your ad dashboard after launch.' },
-    { q: 'What if I already run paid ads?', a: 'Creatorship campaigns run alongside your existing campaigns. CAi creates new campaigns with a [CAi] prefix so you can easily identify them. Your existing campaigns are never touched.' },
-    { q: 'Do creators need to approve their videos being used?', a: 'Yes. When a creator joins the Creatorship Creator Portal and connects their TikTok, they authorize their content for use in brand ad campaigns. Creators earn commission on every sale their content generates.' },
-    { q: 'How quickly can I launch my first campaign?', a: 'If your TikTok Shop and ad accounts are connected, CAi can build your first campaign in about 30 seconds. Connect both, click "Let CAi Run," review the campaign, and launch.' },
   ];
   return (
     <div style={{ background: 'linear-gradient(180deg, rgba(6,104,225,.06) 0%, transparent 100%)' }}>
@@ -1367,25 +1357,6 @@ function TikTokSafeForBrandsSection({ nav }) {
             <div style={{ color: 'var(--cs-t4)', fontSize: 12, marginTop: 4 }}>CAi optimization</div>
           </div>
         </div>
-      </div>
-    </div>
-    <div className="sec-pad" style={{ padding: '80px 24px' }}>
-      <div style={{ maxWidth: 700, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ display: 'inline-block', padding: '6px 16px', borderRadius: 99, border: '1px solid var(--cs-a10)', fontSize: 13, color: 'var(--cs-t3)', marginBottom: 20, letterSpacing: 1, textTransform: 'uppercase' }}>FAQ</div>
-          <h2 className="heading-h2" style={{ fontSize: 'clamp(24px, 4vw, 36px)', fontWeight: 800, color: 'var(--cs-t0)' }}>Common questions</h2>
-        </div>
-        {faqs.map((faq, i) => (
-          <div key={i} className="gl" style={{ marginBottom: 8, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-            <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 600, color: 'var(--cs-t0)', fontSize: 14 }}>{faq.q}</span>
-              <span style={{ color: 'var(--cs-t4)', fontSize: 18, transform: openFaq === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.2s' }}>+</span>
-            </div>
-            {openFaq === i && (
-              <div style={{ padding: '0 20px 16px', color: 'var(--cs-t3)', fontSize: 14, lineHeight: 1.7 }}>{faq.a}</div>
-            )}
-          </div>
-        ))}
       </div>
     </div>
     </div>
