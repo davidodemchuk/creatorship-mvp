@@ -1020,13 +1020,19 @@ function ForCreatorsSection() {
   );
 }
 
-function HomepageFooter() {
+function HomepageFooter({ reviewSanitized }) {
+  const tagline = reviewSanitized
+    ? 'TikTok Shop creator content turned into high-performing paid ads. Commission only.'
+    : 'TikTok Shop creator content turned into high-performing Meta ads. Commission only.';
+  const techLine = reviewSanitized
+    ? '· Advertising API · TikTok Shop API'
+    : '· Meta Ads API · TikTok Shop API';
   return (
     <footer style={{ borderTop: '1px solid var(--cs-a06)', padding: '48px 32px 32px', maxWidth: 960, margin: '0 auto' }}>
       <div className="footer-flex" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 32, marginBottom: 32 }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 6 }}><span style={LOGO_CR}>Creatorship</span></div>
-          <p style={{ fontSize: 13, color: 'var(--cs-t5)', maxWidth: 300, lineHeight: 1.6 }}>TikTok Shop creator content turned into high-performing Meta ads. Commission only.</p>
+          <p style={{ fontSize: 13, color: 'var(--cs-t5)', maxWidth: 300, lineHeight: 1.6 }}>{tagline}</p>
         </div>
         <div style={{ display: 'flex', gap: 48 }}>
           <div>
@@ -1053,7 +1059,7 @@ function HomepageFooter() {
       </div>
       <div style={{ borderTop: '1px solid var(--cs-a04)', paddingTop: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <span style={{ fontSize: 14, color: 'var(--cs-t5)' }}>© 2026 Creatorship, LLC</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><PoweredByCai style={{ fontSize: 12, color: 'var(--cs-t5)' }} /><span style={{ fontSize: 12, color: 'var(--cs-a15)' }}>· Meta Ads API · TikTok Shop API</span></span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><PoweredByCai style={{ fontSize: 12, color: 'var(--cs-t5)' }} /><span style={{ fontSize: 12, color: 'var(--cs-a15)' }}>{techLine}</span></span>
       </div>
     </footer>
   );
@@ -15008,18 +15014,73 @@ function PrivacyPageWrapper() {
   return <LegalPage nav={nav} page="privacy" title="Privacy Policy" />;
 }
 
+/** When HOMEPAGE_MODE=tiktok (review mode), strip competitor names from fetched legal HTML. */
+function sanitizeLegalHtmlForTiktok(html, page) {
+  if (!html) return html;
+  let out = html;
+  if (page === 'privacy') {
+    const pairs = [
+      ['<li><strong>Meta (Facebook/Instagram):</strong> Ad account IDs, page IDs, campaign performance data (spend, impressions, clicks, conversions), and OAuth tokens. We use this to create and manage ad campaigns on your behalf.</li>', '<li><strong>Advertising platforms:</strong> Ad account IDs, page IDs, campaign performance data (spend, impressions, clicks, conversions), and OAuth tokens. We use this to create and manage ad campaigns on your behalf.</li>'],
+      ['Facilitate ad campaign creation and management on Meta platforms', 'Facilitate ad campaign creation and management on advertising platforms'],
+      ['Stripe (payments), Meta (advertising), and our hosting provider', 'Stripe (payments), advertising platform partners, and our hosting provider'],
+      ['high-performing Meta ads', 'high-performing paid ads'],
+      ['Meta Ads API', 'Advertising API'],
+    ];
+    for (const [a, b] of pairs) out = out.split(a).join(b);
+  } else if (page === 'terms') {
+    const pairs = [
+      ['Meta Marketing API', 'advertising platform API'],
+      ['Meta Ads Manager', 'your ad platform'],
+      ['Meta Advertising Compliance', 'Advertising Compliance'],
+      ["Meta's Advertising Policies", 'applicable advertising platform policies'],
+      ['Meta ad campaign', 'paid ad campaign'],
+      ['Meta platforms (Facebook and Instagram)', 'advertising platforms'],
+      ['Meta Ads', 'paid ads'],
+      ['Meta ads', 'paid ads'],
+      ['Meta ad spend', 'paid media spend'],
+      ['on Meta platforms', 'on advertising platforms'],
+      ['when run as Meta ads', 'when run as paid ads'],
+      ['run as Meta ads', 'run as paid ads'],
+      ['Meta (Facebook/Instagram)', 'Advertising platforms'],
+      ["Meta's policies", "the advertising platform's policies"],
+      ['through Meta directly', 'through that platform directly'],
+      ['Creatorship fees are non-refundable once a campaign has been created in your ad platform.', 'Creatorship fees are non-refundable once a campaign has been created.'],
+      ['high-performing Meta ads', 'high-performing paid ads'],
+      ['Meta Ads API', 'Advertising API'],
+    ];
+    for (const [a, b] of pairs) out = out.split(a).join(b);
+  }
+  return out;
+}
+
 function LegalPage({ nav, page, title }) {
   const [html, setHtml] = useState('');
   const [loading, setLoading] = useState(true);
+  const [reviewSanitized, setReviewSanitized] = useState(false);
   useEffect(() => {
-    fetch('/_' + page + '_content.html')
-      .then(r => r.text())
-      .then(text => {
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      fetch('/api/config').then(r => r.json()).catch(() => ({ homepageMode: 'default' })),
+      fetch('/_' + page + '_content.html').then(r => r.text()),
+    ])
+      .then(([cfg, text]) => {
+        if (cancelled) return;
+        const mode = String(cfg?.homepageMode || 'default').toLowerCase();
+        setReviewSanitized(mode === 'tiktok');
         const match = text.match(/<div class="container">([\s\S]*?)<\/div>\s*<footer/);
-        setHtml(match ? match[1] : text.replace(/[\s\S]*<body[^>]*>/, '').replace(/<\/body>[\s\S]*/, '').replace(/<nav[\s\S]*?<\/nav>/, '').replace(/<footer[\s\S]*?<\/footer>/, '').replace(/<script[\s\S]*?<\/script>/g, ''));
+        let raw = match ? match[1] : text.replace(/[\s\S]*<body[^>]*>/, '').replace(/<\/body>[\s\S]*/, '').replace(/<nav[\s\S]*?<\/nav>/, '').replace(/<footer[\s\S]*?<\/footer>/, '').replace(/<script[\s\S]*?<\/script>/g, '');
+        if (mode === 'tiktok') raw = sanitizeLegalHtmlForTiktok(raw, page);
+        setHtml(raw);
         setLoading(false);
       })
-      .catch(() => { setHtml('<p>Failed to load. Please try again.</p>'); setLoading(false); });
+      .catch(() => {
+        if (!cancelled) {
+          setHtml('<p>Failed to load. Please try again.</p>');
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
   }, [page]);
 
   return (
@@ -15032,7 +15093,7 @@ function LegalPage({ nav, page, title }) {
           }
         </div>
       </div>
-      <HomepageFooter />
+      <HomepageFooter reviewSanitized={reviewSanitized} />
     </div>
   );
 }
