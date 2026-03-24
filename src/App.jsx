@@ -8636,11 +8636,11 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
 
           {/* ═══ LEARNING PHASE TIMELINE ═══ */}
           <div style={{ background: 'rgba(255,180,0,.04)', border: '1px solid rgba(255,180,0,.12)', borderRadius: 12, padding: '16px 18px', marginBottom: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 10 }}>What to expect — <span style={{ background: 'linear-gradient(90deg, #9b6dff, #0668E1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>CAi Max</span> + Meta Advantage+ need time to learn</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--cs-t1)', marginBottom: 10 }}>What to expect — <span style={{ background: 'linear-gradient(90deg, #9b6dff, #0668E1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>CAi</span> + Meta Advantage+ need time to learn</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>WEEK 1-2</div>
-                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>CAi Max and Meta Advantage+ are learning your audience. Expect your full ${db}/day budget to be spent — that's how the algorithm learns. ROAS will be 0.5x-1.0x. <span style={{ color: '#ffb400', fontWeight: 600 }}>You will likely lose money. This is normal and expected.</span></div>
+                <div style={{ fontSize: 13, color: 'var(--cs-t3)', lineHeight: 1.5 }}>CAi and Meta Advantage+ are learning your audience. Expect your full ${db}/day budget to be spent — that's how the algorithm learns. ROAS will be 0.5x-1.0x. <span style={{ color: '#ffb400', fontWeight: 600 }}>You will likely lose money. This is normal and expected.</span></div>
               </div>
               <div style={{ display: 'flex', gap: 10, alignItems: 'start' }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#ffb400', background: 'rgba(255,180,0,.1)', padding: '2px 8px', borderRadius: 4, flexShrink: 0, marginTop: 1 }}>WEEK 3-4</div>
@@ -9509,7 +9509,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               <div className="cai-section" style={{ background: 'var(--cs-card)', border: '1px solid var(--cs-a06)', borderRadius: 14, padding: '24px', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                   <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 4, background: 'rgba(6,104,225,.1)', border: '1px solid rgba(6,104,225,.2)', color: '#0668E1', fontWeight: 800, fontFamily: 'var(--font-mono)' }}>3</span>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>Ad Strategy — CAi MAX</span>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--cs-t1)' }}>Ad Strategy — CAi</span>
                 </div>
                 {sa.adStrategy.headline && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--cs-t1)', lineHeight: 1.5, marginBottom: 14 }}>{sa.adStrategy.headline}</div>}
                 {sa.adStrategy.approach && <div style={{ fontSize: 14, color: 'var(--cs-t2)', lineHeight: 1.7, marginBottom: 16, padding: '14px 16px', background: 'var(--cs-a04)', borderRadius: 10 }}>{sa.adStrategy.approach}</div>}
@@ -9542,9 +9542,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
               </div>
             )}
 
-            {/* Link to CAi MAX */}
+            {/* Link to CAi */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16, marginTop: -8 }}>
-              <span onClick={() => setCaiTab('optimize')} style={{ fontSize: 12, fontWeight: 600, color: '#9b6dff', cursor: 'pointer' }}>Manage in CAi MAX →</span>
+              <span onClick={() => setCaiTab('optimize')} style={{ fontSize: 12, fontWeight: 600, color: '#9b6dff', cursor: 'pointer' }}>Manage in CAi →</span>
             </div>
 
             {/* ─── THE FUTURE: Creator Content + Commission-Only Pricing ─── */}
@@ -9587,7 +9587,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
                   ...(creatives.filter(c => c.status === 'active').length < 10 ? [{ priority: 'HIGH', text: 'Add more videos to your campaign — Meta\'s algorithm gets dramatically better with volume. Top DTC brands test 20-100+ creatives per month.', action: () => setCaiSubTab('content'), btn: 'Add Content' }] : []),
                   { priority: 'MEDIUM', text: 'Explore creator content — find affiliate videos for your top products and request usage rights', action: () => { setCaiSubTab('content'); setTimeout(() => setContentSection('creator'), 100); }, btn: 'Creator Content' },
                   ...(!isActive && creatives.length > 0 ? [{ priority: 'HIGH', text: 'Resume your paused campaign to start collecting performance data', action: () => setCaiSubTab('campaigns'), btn: 'Resume' }] : []),
-                  { priority: 'LOW', text: 'Review budget and ROAS targets in CAi MAX — adjust based on your margins and growth goals', action: () => setCaiSubTab('optimize'), btn: 'CAi MAX' },
+                  { priority: 'LOW', text: 'Review budget and ROAS targets in CAi — adjust based on your margins and growth goals', action: () => setCaiSubTab('optimize'), btn: 'CAi' },
                 ].map((item, i) => {
                   const pColors = { HIGH: '#ef4444', MEDIUM: '#ffb400', LOW: '#34d399' };
                   return (
@@ -10221,10 +10221,9 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </div>
           )}
 
-          {/* CAi MAX header */}
+          {/* CAi header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <span style={{ fontSize: 16, fontWeight: 900, fontStyle: 'italic', color: '#9b6dff' }}>CAi</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--cs-t1)' }}>MAX</span>
             <span style={{ fontSize: 12, color: 'var(--cs-t4)' }}>— Budget, targeting, and optimization controls</span>
           </div>
           {/* CAi Always-On Campaign Card */}
@@ -10928,7 +10927,7 @@ function BrandAiPlansTab({ brand, profile, setBrandTab, aiPlanStatus = null, tik
             </>
           )}
 
-          <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>CAi MAX</h3>
+          <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--cs-t1)', margin: '0 0 4px' }}>CAi</h3>
           <p style={{ fontSize: 14, color: 'var(--cs-t4)', margin: '0 0 24px' }}>Budget, ROAS target, and automation settings. Changes sync to Meta instantly.</p>
 
           {/* ─── How CAi Manages Your Ads ─── */}
@@ -12325,7 +12324,7 @@ function BrandDashboardView({ brand, setBrand, nav, initialTab }) {
           { id: 'campaigns', label: 'Campaigns' },
           { id: 'content', label: 'Content' },
           { id: 'analysis', label: 'Analysis' },
-          { id: 'optimize', label: 'CAi MAX' },
+          { id: 'optimize', label: 'CAi' },
           { id: null, label: 'Account', isAccount: true },
         ].map(t => {
           const isActive = t.isAccount ? brandTab === 'settings' : activeCaiTab === t.id;
